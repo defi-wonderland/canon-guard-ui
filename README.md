@@ -1,6 +1,6 @@
-# 💻 Web3 Vite Boilerplate
+# 🏦 Canon Guard
 
-This is a boilerplate project for building web applications using Vite and React, with a focus on web3 technologies. It integrates several powerful libraries and tools to streamline development.
+This is a web application for managing Canon Guards, built using Vite and React with a focus on web3 technologies. It integrates several powerful libraries and tools to streamline development.
 
 ## Features
 
@@ -18,13 +18,13 @@ To get started with this project, follow these steps:
 1. **Clone the repository**:
 
    ```bash
-   git clone git@github.com:defi-wonderland/web3-vite-boilerplate.git
+   git clone git@github.com:defi-wonderland/canon-guard-ui.git
    ```
 
 2. **Navigate into the project directory**:
 
    ```bash
-   cd web3-vite-boilerplate
+   cd canon-guard-ui
    ```
 
 3. **Install dependencies** using pnpm:
