@@ -68,11 +68,27 @@ export const getMuiThemeConfig = (customTheme: CustomMuiTheme) => {
       },
       MuiTextField: {
         styleOverrides: {
-          root: {
+          root: ({ theme }) => ({
             "& .MuiOutlinedInput-root": {
               borderRadius: safeDesignTokens.sizes.button.borderRadius,
+              backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.secondary,
+              "& fieldset": {
+                borderColor: safeDesignTokens[theme.palette.mode].borders.primary,
+              },
+              "&:hover fieldset": {
+                borderColor: safeDesignTokens[theme.palette.mode].brand.primary.main,
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: safeDesignTokens[theme.palette.mode].brand.primary.main,
+              },
             },
-          },
+            "& .MuiInputLabel-root": {
+              color: theme.palette.text.secondary,
+              "&.Mui-focused": {
+                color: safeDesignTokens[theme.palette.mode].brand.primary.main,
+              },
+            },
+          }),
         },
       },
       MuiTooltip: {
