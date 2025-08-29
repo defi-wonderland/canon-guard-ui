@@ -1,101 +1,134 @@
 import { Address } from "viem";
-import { QueuedAction, Approval, PreApprovedAction, SafeConfiguration, ActionDetails, SafeData } from "../types/safe";
+import {
+  QueuedTransaction,
+  ExecutedTransaction,
+  PreApprovedItem,
+  CanonGuardConfiguration,
+  ActionDetails,
+  VaultData,
+  ActionFactoryType,
+  QueuedTransactionState,
+  PreApprovedItemType,
+} from "../types/canon-guard";
 import { safeService } from "./safeService";
 
 // Factory labels for known factories
 export const FACTORY_LABELS: Record<string, string> = {
-  "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984": "Uniswap Factory",
-  "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24": "Compound Factory",
-  "0x6B175474E89094C44Da98b954EedeAC495271d0F": "DAI Factory",
+  "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984": "Simple Actions Factory",
+  "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24": "Simple Transfers Factory",
+  "0x6B175474E89094C44Da98b954EedeAC495271d0F": "Capped Token Transfers Factory",
 };
 
 class CanonGuardService {
-  async getQueuedActions(_safe: Address): Promise<QueuedAction[]> {
+  async getQueuedTransactions(_safe: Address): Promise<QueuedTransaction[]> {
     void _safe;
     return [
       {
-        id: "1",
-        actionHash: "0xabcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcd",
-        factoryAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-        factoryLabel: FACTORY_LABELS["0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"],
-        isPreApproved: false,
+        actionBuilder: {
+          address: "0xaddress",
+          factoryType: ActionFactoryType.SIMPLE_ACTIONS,
+          factoryAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          isApproved: false,
+        },
+        state: QueuedTransactionState.QUEUED,
         queuedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        executionTime: new Date(Date.now() + 22 * 60 * 60 * 1000), // 22 hours from now
-        timeRemainingToExecutable: 22 * 60 * 60 * 1000,
+        executableAt: new Date(Date.now() + 22 * 60 * 60 * 1000), // 22 hours from now
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        safeTxHash: "0xaddress",
+        approversCount: 1,
+        requiredApprovals: 2,
+        approvers: ["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"],
       },
       {
-        id: "2",
-        actionHash: "0xefgh5678901234567890abcd5678901234567890abcd5678901234567890efgh",
-        factoryAddress: "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24",
-        factoryLabel: FACTORY_LABELS["0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24"],
-        isPreApproved: true,
+        actionBuilder: {
+          address: "0xefgh5678901234567890abcd5678901234567890",
+          factoryType: ActionFactoryType.SIMPLE_TRANSFERS,
+          factoryAddress: "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24",
+          createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+          isApproved: true,
+          approvalExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+        state: QueuedTransactionState.EXECUTABLE,
         queuedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-        executionTime: new Date(Date.now() + 1 * 60 * 60 * 1000), // 1 hour from now
-        timeRemainingToExecutable: 1 * 60 * 60 * 1000,
+        executableAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago (executable now)
+        expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000), // 6 days from now
+        safeTxHash: "0xaddress",
+        approversCount: 2,
+        requiredApprovals: 2,
+        approvers: ["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"],
       },
     ];
   }
 
-  async getApprovals(_safe: Address): Promise<Approval[]> {
+  async getExecutionHistory(_safe: Address): Promise<ExecutedTransaction[]> {
     void _safe;
     return [
       {
-        id: "1",
-        actionHash: "0xijkl9012345678901234567890123456789012345678901234567890ijkl9012",
-        factoryAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        factoryLabel: FACTORY_LABELS["0x6B175474E89094C44Da98b954EedeAC495271d0F"],
-        isPreApproved: false,
-        queuedAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        executionTime: new Date(Date.now() + 21 * 60 * 60 * 1000),
-        timeRemainingToExecutable: 21 * 60 * 60 * 1000,
-        nonce: 5,
-        approvalsCount: 1,
-        approvalThreshold: 2,
+        actionBuilder: {
+          address: "0xaddress",
+          factoryType: ActionFactoryType.CAPPED_TOKEN_TRANSFERS,
+          factoryAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+          isApproved: false,
+        },
+        safeTxHash: "0xaddress",
+        executedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        executedBy: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        approvers: ["0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"],
+        gasUsed: 150000,
+        txHash: "0xaddress",
       },
     ];
   }
 
-  async getPreApprovedActions(_safe: Address): Promise<PreApprovedAction[]> {
+  async getPreApprovedItems(_safe: Address): Promise<PreApprovedItem[]> {
     void _safe;
     return [
       {
-        id: "1",
-        isHub: false,
         address: "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24",
+        type: PreApprovedItemType.BUILDER,
+        factoryType: ActionFactoryType.SIMPLE_TRANSFERS,
         approvedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
         expiresAt: new Date(Date.now() + 23 * 24 * 60 * 60 * 1000), // 23 days from now
+        approvalDuration: 30 * 24 * 60 * 60, // 30 days in seconds
       },
       {
-        id: "2",
-        isHub: true,
         address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+        type: PreApprovedItemType.HUB,
         approvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
         expiresAt: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000), // 28 days from now
+        approvalDuration: 30 * 24 * 60 * 60, // 30 days in seconds
       },
     ];
   }
 
-  async getGuardConfiguration(safe: Address): Promise<SafeConfiguration> {
+  async getGuardConfiguration(safe: Address): Promise<CanonGuardConfiguration> {
     return {
-      safeAddress: safe,
+      vaultAddress: safe,
       entrypointAddress: "0x1234567890123456789012345678901234567890",
-      shortTransactionDelay: 3600, // 1 hour
-      longTransactionDelay: 86400, // 24 hours
-      transactionExpiryDelay: 604800, // 7 days
+      shortTxExecutionDelay: 3600, // 1 hour
+      longTxExecutionDelay: 86400, // 24 hours
+      txExpiryDelay: 604800, // 7 days
       maxApprovalDuration: 2592000, // 30 days
       emergencyTriggerAddress: "0xabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd",
       emergencyCallerAddress: "0xefefefefefefefefefefefefefefefefefefef",
+      isEmergencyMode: false,
     };
   }
 
-  async getActionDetails(actionHash: string): Promise<ActionDetails> {
+  async getActionDetails(actionBuilder: Address): Promise<ActionDetails> {
     return {
-      actionHash,
-      factoryAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+      actionBuilder,
+      target: "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24",
+      value: "0",
       calldata:
         "0x095ea7b3000000000000000000000000a0b86a33e6441097c3be01cf8ba5c2c70a3c8b24000000000000000000000000000000000000000000000000de0b6b3a7640000",
-      value: "0",
-      target: "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24",
+      fnSignature: "approve(address,uint256)",
+      decodedParams: {
+        spender: "0xa0b86a33e6441097c3be01cf8ba5c2c70a3c8b24",
+        amount: "1000000000000000000",
+      },
     };
   }
 
@@ -114,28 +147,22 @@ class CanonGuardService {
     return nonce === 5 ? 1 : 0;
   }
 
-  // Combined method to get all Safe data at once
-  async getSafeData(safe: Address): Promise<SafeData> {
-    const [safeInfo, configuration, queuedActions, waitingForApprovalActions, preApprovedActions] = await Promise.all([
-      safeService.getSafeInfo(safe),
+  // Combined method to get all vault data at once
+  async getVaultData(safe: Address): Promise<VaultData> {
+    const [vaultInfo, configuration, queuedTransactions, executionHistory, preApprovedItems] = await Promise.all([
+      safeService.getVaultInfo(safe),
       this.getGuardConfiguration(safe),
-      this.getQueuedActions(safe),
-      this.getApprovals(safe),
-      this.getPreApprovedActions(safe),
+      this.getQueuedTransactions(safe),
+      this.getExecutionHistory(safe),
+      this.getPreApprovedItems(safe),
     ]);
 
     return {
-      safeInfo,
+      vaultInfo,
       configuration,
-      queuedActions: queuedActions.map((action) => ({
-        ...action,
-        factoryLabel: action.factoryLabel || FACTORY_LABELS[action.factoryAddress],
-      })),
-      waitingForApprovalActions: waitingForApprovalActions.map((action) => ({
-        ...action,
-        factoryLabel: action.factoryLabel || FACTORY_LABELS[action.factoryAddress],
-      })),
-      preApprovedActions,
+      queuedTransactions,
+      preApprovedItems,
+      executionHistory,
     };
   }
 }

@@ -1,5 +1,5 @@
 import { Address } from "viem";
-import { SafeInfo } from "../types/safe";
+import { VaultInfo } from "../types/canon-guard";
 
 class SafeService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -7,20 +7,24 @@ class SafeService {
     return true;
   }
 
-  async getSafeInfo(safe: Address): Promise<SafeInfo> {
+  async getVaultInfo(safe: Address): Promise<VaultInfo> {
     // Check if safe has guard and valid entrypoint
 
     return {
       address: safe,
+      chainId: 1,
       network: "ethereum",
-      approvalThreshold: 2,
+      threshold: 2,
+      owners: await this.getSafeOwners(safe),
       totalOwners: 3,
-      isValidCanonVault: await this.verifySafeAsCanonVault(safe),
+      hasCanonGuard: await this.verifySafeAsCanonVault(safe),
+      guardAddress: await this.getGuardAddress(safe),
+      nonce: 0,
     };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getGuardAddress(_safe: Address): Promise<Address | null> {
+  async getGuardAddress(_safe: Address): Promise<Address | string> {
     return "0x1234567890123456789012345678901234567890";
   }
 
