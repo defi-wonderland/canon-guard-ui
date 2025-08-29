@@ -7,30 +7,31 @@ import { VaultSetupModal } from "~/components/VaultSetupModal";
 import { SafePageContainer, SafeMainContent } from "~/components/shared/StyledComponents";
 import { useStateContext } from "~/hooks/useStateContext";
 import { canonGuardService } from "~/services/canonGuardService";
-import { SafeData, TabType } from "~/types/safe";
+import { VaultData, TabType } from "~/types/canon-guard";
 
 // Tab content configuration
 const TAB_CONTENT_MAP = {
-  [TabType.QUEUE]: (vaultData: SafeData) => (
+  [TabType.QUEUE]: (vaultData: VaultData) => (
     <QueueSection
-      queuedActions={vaultData.queuedActions}
-      waitingForApprovalActions={vaultData.waitingForApprovalActions}
+      queuedActions={vaultData.queuedTransactions}
+      waitingForApprovalActions={vaultData.queuedTransactions.filter((tx) => tx.approversCount < tx.requiredApprovals)}
     />
   ),
   [TabType.PRE_APPROVED]: () => <ComingSoonMessage>Pre-approved actions coming soon...</ComingSoonMessage>,
   [TabType.HISTORY]: () => <ComingSoonMessage>History coming soon...</ComingSoonMessage>,
   [TabType.CONFIGURATION]: () => <ComingSoonMessage>Configuration coming soon...</ComingSoonMessage>,
+  [TabType.ACTIONS]: () => <ComingSoonMessage>Action creation coming soon...</ComingSoonMessage>,
 };
 
 // Vault content component
 interface VaultContentProps {
-  vaultData: SafeData;
+  vaultData: VaultData;
   activeTab: TabType;
 }
 
 const VaultContent = ({ vaultData, activeTab }: VaultContentProps) => {
   // Check if Safe is valid
-  if (!vaultData.safeInfo.isValidCanonVault) {
+  if (!vaultData.vaultInfo.hasCanonGuard) {
     return (
       <ErrorContainer>
         <ErrorMessage>This address is not a Canon Vault, please set it up and try again.</ErrorMessage>
@@ -43,14 +44,14 @@ const VaultContent = ({ vaultData, activeTab }: VaultContentProps) => {
 };
 
 interface SafeVaultProps {
-  safeData?: SafeData;
+  safeData?: VaultData;
 }
 
 export const SafeVault = ({ safeData }: SafeVaultProps) => {
   const { vaultAddress, rpcUrl, isVaultConfigured, setVaultAddress, setRpcUrl, loading, setLoading } =
     useStateContext();
 
-  const [currentVaultData, setCurrentVaultData] = useState<SafeData | null>(safeData || null);
+  const [currentVaultData, setCurrentVaultData] = useState<VaultData | null>(safeData || null);
   const [activeTab, setActiveTab] = useState<TabType>(TabType.QUEUE);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
@@ -59,7 +60,7 @@ export const SafeVault = ({ safeData }: SafeVaultProps) => {
 
     try {
       setLoading(true);
-      const vaultData = await canonGuardService.getSafeData(vaultAddress);
+      const vaultData = await canonGuardService.getVaultData(vaultAddress);
       setCurrentVaultData(vaultData);
     } catch (error) {
       console.error("Failed to load vault data:", error);
@@ -82,14 +83,15 @@ export const SafeVault = ({ safeData }: SafeVaultProps) => {
 
   // Show setup modal if vault is not configured
   if (!isVaultConfigured) {
-    return <VaultSetupModal open={true} onSubmit={handleSetupSubmit} />;
+    return <VaultSetupModal open onSubmit={handleSetupSubmit} />;
   }
 
+  // Show loading state
   if (loading) {
     return (
       <LoadingContainer>
         <CircularProgress size={48} />
-        <LoadingText>Loading Canon Vault data...</LoadingText>
+        <LoadingText>Loading vault data...</LoadingText>
       </LoadingContainer>
     );
   }
@@ -99,7 +101,7 @@ export const SafeVault = ({ safeData }: SafeVaultProps) => {
       {currentVaultData && (
         <>
           <SafeSidebar
-            safeInfo={currentVaultData.safeInfo}
+            safeInfo={currentVaultData.vaultInfo}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             collapsed={sidebarCollapsed}
@@ -134,20 +136,22 @@ const ErrorContainer = styled(Box)(() => ({
   alignItems: "center",
   justifyContent: "center",
   height: "100vh",
-  textAlign: "center",
-  padding: 24,
-}));
-
-const ErrorMessage = styled(Box)(({ theme }) => ({
   padding: 32,
-  border: `2px solid ${theme.palette.error.main}`,
-  borderRadius: 16,
-  backgroundColor: theme.palette.error.light,
-  color: theme.palette.error.dark,
 }));
 
-const ComingSoonMessage = styled(Box)(({ theme }) => ({
-  padding: 24,
+const ErrorMessage = styled(Typography)(({ theme }) => ({
+  variant: "h6",
+  color: theme.palette.error.main,
   textAlign: "center",
+  maxWidth: 600,
+}));
+
+const ComingSoonMessage = styled(Typography)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "400px",
+  fontSize: "1.25rem",
   color: theme.palette.text.secondary,
+  fontStyle: "italic",
 }));

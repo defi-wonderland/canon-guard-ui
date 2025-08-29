@@ -10,9 +10,11 @@ export const SidebarFooter = ({ collapsed }: SidebarFooterProps) => {
     <StyledFooter display='flex' justifyContent='center'>
       {collapsed && (
         <Tooltip title='Connect Wallet' placement='right'>
-          <IconButton disabled sx={{ width: "100%" }}>
-            <AccountBalanceWallet />
-          </IconButton>
+          <span style={{ width: "100%" }}>
+            <IconButton disabled sx={{ width: "100%" }}>
+              <AccountBalanceWallet />
+            </IconButton>
+          </span>
         </Tooltip>
       )}
       {!collapsed && (
@@ -24,8 +26,8 @@ export const SidebarFooter = ({ collapsed }: SidebarFooterProps) => {
   );
 };
 
-const StyledFooter = styled(Box)(() => ({
-  padding: 2,
-  borderTop: 1,
-  borderColor: "divider",
+const StyledFooter = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2),
+  marginTop: "auto",
+  borderTop: `1px solid ${theme.palette.divider}`,
 }));

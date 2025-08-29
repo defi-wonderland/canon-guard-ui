@@ -1,5 +1,4 @@
-import { OpenInNew } from "@mui/icons-material";
-import { Box, Button, Tooltip, styled } from "@mui/material";
+import { Box, Tooltip, styled } from "@mui/material";
 import {
   SafeActionCard,
   SafeCardContent,
@@ -9,67 +8,59 @@ import {
   SafeAddress,
 } from "~/components/shared/StyledComponents";
 import { safeDesignTokens } from "~/config/themes/safeTheme";
-import { SafeAction } from "~/types/safe";
+import { FACTORY_LABELS } from "~/services/canonGuardService";
+import { QueuedTransaction } from "~/types/canon-guard";
 import { formatTimeRemaining, truncateAddress, formatDate } from "~/utils";
 
 interface ActionCardProps {
-  action: SafeAction;
+  action: QueuedTransaction;
   showApprovalInfo?: boolean;
 }
 
 export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps) => {
-  const handleSimulation = () => {
-    if (action.tenderlySim) {
-      window.open(action.tenderlySim, "_blank");
-    }
-  };
-
   const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
+  // Calculate time remaining until executable
+  const timeRemainingToExecutable = Math.max(0, action.executableAt.getTime() - Date.now());
+
+  // Get factory label from registry
+  const factoryLabel = FACTORY_LABELS[action.actionBuilder.factoryAddress] || "Unknown Factory";
+
   return (
-    <SafeActionCard isPreApproved={action.isPreApproved}>
+    <SafeActionCard isPreApproved={action.actionBuilder.isApproved}>
       <SafeCardContent>
         {/* Compact Row Layout */}
         <FlexRowSpaceBetween>
           <FlexLeft>
-            <ActionCardTitle>{action.factoryLabel || "Unknown Factory"}</ActionCardTitle>
-            {action.isPreApproved && (
+            <ActionCardTitle>{factoryLabel}</ActionCardTitle>
+            {action.actionBuilder.isApproved && (
               <SafeStatusChip label='Pre-Approved' size='small' isPreApproved={true} sx={{ ml: 1 }} />
             )}
           </FlexLeft>
 
           <FlexRight>
             <Tooltip title='Click to copy address'>
-              <ActionCardAddress onClick={() => copyToClipboard(action.factoryAddress)}>
-                {truncateAddress(action.factoryAddress)}
+              <ActionCardAddress onClick={() => copyToClipboard(action.actionBuilder.factoryAddress)}>
+                {truncateAddress(action.actionBuilder.factoryAddress)}
               </ActionCardAddress>
             </Tooltip>
           </FlexRight>
         </FlexRowSpaceBetween>
 
-        {showApprovalInfo && action.nonce && (
+        {showApprovalInfo && (
           <InfoRow>
-            <ActionCardDetail>Nonce: {action.nonce}</ActionCardDetail>
-            {action.approvalsCount !== undefined && action.approvalThreshold && (
-              <ActionCardDetail>
-                • Approvals: {action.approvalsCount}/{action.approvalThreshold}
-              </ActionCardDetail>
-            )}
+            <ActionCardDetail>State: {action.state}</ActionCardDetail>
+            <ActionCardDetail>
+              • Approvals: {action.approversCount}/{action.requiredApprovals}
+            </ActionCardDetail>
           </InfoRow>
         )}
 
         {/* Compact Time Information */}
         <InfoRow>
           <ActionCardDetail>Queued: {formatDate(action.queuedAt)}</ActionCardDetail>
-          <ActionCardDetail>• Executable in: {formatTimeRemaining(action.timeRemainingToExecutable)}</ActionCardDetail>
+          <ActionCardDetail>• Executable in: {formatTimeRemaining(timeRemainingToExecutable)}</ActionCardDetail>
         </InfoRow>
-
-        {/* Action Buttons */}
-        {action.tenderlySim && (
-          <Button variant='contained' size='small' startIcon={<OpenInNew />} onClick={handleSimulation} color='primary'>
-            Simulate on Tenderly
-          </Button>
-        )}
       </SafeCardContent>
     </SafeActionCard>
   );

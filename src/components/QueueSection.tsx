@@ -1,78 +1,63 @@
 import { Queue, HourglassEmpty } from "@mui/icons-material";
 import { Box, Typography, styled } from "@mui/material";
 import { safeDesignTokens } from "~/config/themes/safeTheme";
-import { SafeAction } from "~/types/safe";
+import { QueuedTransaction } from "~/types/canon-guard";
 import { ActionColumn } from "./ActionColumn";
 
 interface QueueSectionProps {
-  queuedActions: SafeAction[];
-  waitingForApprovalActions: SafeAction[];
+  queuedActions: QueuedTransaction[];
+  waitingForApprovalActions: QueuedTransaction[];
 }
 
 export const QueueSection = ({ queuedActions, waitingForApprovalActions }: QueueSectionProps) => {
   return (
     <QueueContentSection>
       <PageTitle>Queue Management</PageTitle>
-
-      <QueueGridContainer>
+      <ColumnsLayout>
         <ActionColumn
-          icon={<Queue color='primary' />}
-          title='On Queue'
+          icon={<Queue />}
+          title='Queued Actions'
           actions={queuedActions}
-          emptyMessage='No actions currently in queue'
+          emptyMessage='No queued actions at the moment'
+          showApprovalInfo={false}
         />
-
         <ActionColumn
-          icon={<HourglassEmpty color='primary' />}
+          icon={<HourglassEmpty />}
           title='Waiting for Approval'
           actions={waitingForApprovalActions}
           emptyMessage='No actions waiting for approval'
-          showApprovalInfo
+          showApprovalInfo={true}
         />
-      </QueueGridContainer>
+      </ColumnsLayout>
     </QueueContentSection>
   );
 };
 
 // Styled Components
-const QueueContentSection = styled(Box)(({ theme }) => ({
-  padding: `${safeDesignTokens.spacing.lg} ${safeDesignTokens.spacing.md}`,
-  height: "100%",
-  overflow: "auto",
-  maxWidth: "100%",
-  [theme.breakpoints.down("sm")]: {
-    padding: `${safeDesignTokens.spacing.sm} ${safeDesignTokens.spacing.xs}`,
-  },
-  [theme.breakpoints.up("lg")]: {
-    padding: `${safeDesignTokens.spacing.xl} ${safeDesignTokens.spacing.lg}`,
-  },
-}));
-
-const QueueGridContainer = styled(Box)(({ theme }) => ({
-  display: "grid",
-  gap: safeDesignTokens.spacing.md,
-  height: "calc(100% - 100px)",
-  gridTemplateColumns: "1fr",
-  [theme.breakpoints.down("sm")]: {
-    gap: safeDesignTokens.spacing.sm,
-    height: "calc(100% - 80px)",
-  },
-  [theme.breakpoints.up("md")]: {
-    gridTemplateColumns: "1fr 1fr",
-    gap: safeDesignTokens.spacing.lg,
-  },
-  [theme.breakpoints.up("lg")]: {
-    gap: safeDesignTokens.spacing.xl,
-  },
+const QueueContentSection = styled(Box)(() => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: safeDesignTokens.spacing.xl,
+  padding: safeDesignTokens.spacing.xl,
+  maxWidth: "1400px",
+  margin: "0 auto",
+  width: "100%",
 }));
 
 const PageTitle = styled(Typography)(({ theme }) => ({
-  ...safeDesignTokens.typography.pageTitle,
-  marginBottom: safeDesignTokens.spacing.xl,
+  fontSize: "1.75rem",
+  fontWeight: 700,
+  color: theme.palette.text.primary,
+  marginBottom: safeDesignTokens.spacing.lg,
   textAlign: "center",
-  color: safeDesignTokens[theme.palette.mode].brand.primary.main,
-  [theme.breakpoints.down("sm")]: {
-    fontSize: "1.5rem",
-    marginBottom: safeDesignTokens.spacing.md,
+}));
+
+const ColumnsLayout = styled(Box)(({ theme }) => ({
+  display: "flex",
+  gap: safeDesignTokens.spacing.xl,
+  alignItems: "stretch",
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column",
+    gap: safeDesignTokens.spacing.lg,
   },
 }));

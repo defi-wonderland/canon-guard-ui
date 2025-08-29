@@ -1,6 +1,6 @@
 import { Queue, CheckCircle, History, Settings } from "@mui/icons-material";
 import { List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton, Tooltip } from "@mui/material";
-import { TabType } from "~/types/safe";
+import { TabType } from "~/types/canon-guard";
 
 const navigationItems = [
   { id: TabType.QUEUE, label: "Queue", icon: <Queue /> },
@@ -17,22 +17,38 @@ interface SidebarNavigationProps {
 
 export const SidebarNavigation = ({ activeTab, onTabChange, collapsed }: SidebarNavigationProps) => {
   return (
-    <List sx={{ flexGrow: 1, p: 1 }}>
+    <List sx={{ flex: 1, py: 0 }}>
       {navigationItems.map((item) => (
         <ListItem key={item.id} disablePadding>
-          {collapsed && (
+          {collapsed ? (
             <Tooltip title={item.label} placement='right'>
               <IconButton
                 onClick={() => onTabChange(item.id)}
-                color={activeTab === item.id ? "primary" : "default"}
-                sx={{ width: "100%" }}
+                sx={{
+                  width: "100%",
+                  borderRadius: 0,
+                  color: activeTab === item.id ? "primary.main" : "text.secondary",
+                  backgroundColor: activeTab === item.id ? "action.selected" : "transparent",
+                }}
               >
                 {item.icon}
               </IconButton>
             </Tooltip>
-          )}
-          {!collapsed && (
-            <ListItemButton selected={activeTab === item.id} onClick={() => onTabChange(item.id)} sx={{ mb: 0.5 }}>
+          ) : (
+            <ListItemButton
+              selected={activeTab === item.id}
+              onClick={() => onTabChange(item.id)}
+              sx={{
+                borderRadius: 0,
+                "&.Mui-selected": {
+                  backgroundColor: "action.selected",
+                  color: "primary.main",
+                  "& .MuiListItemIcon-root": {
+                    color: "primary.main",
+                  },
+                },
+              }}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>
