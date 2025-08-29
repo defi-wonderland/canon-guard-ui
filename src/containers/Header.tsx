@@ -1,8 +1,7 @@
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
-import { IconButton, Typography } from "@mui/material";
+import { IconButton, Typography, Button } from "@mui/material";
 import { styled, useColorScheme } from "@mui/material/styles";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { zIndex, HEADER_HEIGHT } from "~/utils";
 
 export const Header = () => {
@@ -14,9 +13,13 @@ export const Header = () => {
 
   return (
     <StyledHeader>
-      <Typography data-testid='boilerplate-title'>Vite Boilerplate</Typography>
+      <Typography data-testid='app-title' sx={{ fontWeight: 600, fontSize: "1.25rem" }}>
+        Canon Guard
+      </Typography>
       <SIconButton onClick={changeTheme}>{mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}</SIconButton>
-      <ConnectButton />
+      <Button variant='contained' disabled sx={{ opacity: 0.5 }}>
+        Connect Wallet
+      </Button>
     </StyledHeader>
   );
 };

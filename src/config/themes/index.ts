@@ -8,3 +8,6 @@ export const getCustomThemes = () => {
     rainbow: rainbowTheme,
   };
 };
+
+// Export safe-specific design tokens
+export * from "./safeTheme";
