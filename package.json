@@ -1,5 +1,5 @@
 {
-  "name": "web3-vite-boilerplate",
+  "name": "canon-vault-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -33,6 +33,7 @@
     "src/**/*.{js,jsx,ts,tsx,css,scss,md,html}": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "@defi-wonderland/canon-guard-interfaces": "0.0.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@mui/icons-material": "6.1.3",

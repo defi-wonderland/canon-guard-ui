@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@defi-wonderland/canon-guard-interfaces':
+        specifier: 0.0.1
+        version: 0.0.1
       '@emotion/react':
         specifier: 11.14.0
         version: 11.14.0(@types/react@19.1.6)(react@19.1.0)
@@ -296,6 +299,9 @@ packages:
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
+
+  '@defi-wonderland/canon-guard-interfaces@0.0.1':
+    resolution: {integrity: sha512-jdO9/NVJ0+ThM/CKCF0aA9VUgwZMBvONdt6jiDKMlij1p3Ax5FfusmC0bvOf19RIGUGnUdZNWswBZPKmzaac6Q==}
 
   '@defi-wonderland/crypto-husky-checks@1.5.6':
     resolution: {integrity: sha512-YvrAVALo/rckBUjHMJnbTrTORDxajXVQGKwFXHOqAZkbDeMcrUCzQ7fPQC94bk2XuGzpsVCVZEXX8beI1cFhOA==}
@@ -1409,6 +1415,10 @@ packages:
   '@safe-global/safe-gateway-typescript-sdk@3.23.1':
     resolution: {integrity: sha512-6ORQfwtEJYpalCeVO21L4XXGSdbEMfyp2hEv6cP82afKXSwvse6d3sdelgaPWUxHIsFRkWvHDdzh8IyyKHZKxw==}
     engines: {node: '>=16'}
+
+  '@safe-global/safe-smart-account@https://codeload.github.com/safe-global/safe-smart-account/tar.gz/b75e250':
+    resolution: {tarball: https://codeload.github.com/safe-global/safe-smart-account/tar.gz/b75e250}
+    version: 1.4.1-build.0
 
   '@scure/base@1.1.9':
     resolution: {integrity: sha512-8YKhl8GHiNI/pU2VMaofa2Tor7PJRAjwQLBBuilkJ9L5+13yVbC7JO/wS7piioAvPSwR3JKM1IJ/u4xQzbcXKg==}
@@ -3858,6 +3868,10 @@ packages:
     resolution: {integrity: sha512-/GbIKmo8ioc+NIWIhwdecY0ge+qVBSMdgxGygevmdHj24bsfgtCmcUUcQ5ZzcylGFHsN3k4HB4Cgkl96KVnuew==}
     engines: {node: '>=10.0.0'}
 
+  solady@https://codeload.github.com/vectorized/solady/tar.gz/701406e:
+    resolution: {tarball: https://codeload.github.com/vectorized/solady/tar.gz/701406e}
+    version: 0.1.19
+
   sonic-boom@2.8.0:
     resolution: {integrity: sha512-kuonw1YOYYNOve5iHdSahXPOK49GqwA+LZhI6Wz/l0rP57iKyXXIHaRagOBHAPmGwJC6od2Z9zgvZ5loSgMlVg==}
 
@@ -4841,6 +4855,11 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.4
 
   '@csstools/css-tokenizer@3.0.4': {}
+
+  '@defi-wonderland/canon-guard-interfaces@0.0.1':
+    dependencies:
+      '@safe-global/safe-contracts': '@safe-global/safe-smart-account@https://codeload.github.com/safe-global/safe-smart-account/tar.gz/b75e250'
+      solady: https://codeload.github.com/vectorized/solady/tar.gz/701406e
 
   '@defi-wonderland/crypto-husky-checks@1.5.6': {}
 
@@ -6208,6 +6227,8 @@ snapshots:
       - zod
 
   '@safe-global/safe-gateway-typescript-sdk@3.23.1': {}
+
+  '@safe-global/safe-smart-account@https://codeload.github.com/safe-global/safe-smart-account/tar.gz/b75e250': {}
 
   '@scure/base@1.1.9': {}
 
@@ -9546,6 +9567,8 @@ snapshots:
       debug: 4.3.7
     transitivePeerDependencies:
       - supports-color
+
+  solady@https://codeload.github.com/vectorized/solady/tar.gz/701406e: {}
 
   sonic-boom@2.8.0:
     dependencies:
