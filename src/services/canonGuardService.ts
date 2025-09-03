@@ -1,4 +1,5 @@
 import { Address } from "viem";
+import { optimism } from "viem/chains";
 import {
   QueuedTransaction,
   ExecutedTransaction,
@@ -10,7 +11,12 @@ import {
   QueuedTransactionState,
   PreApprovedItemType,
 } from "../types/canon-guard";
-import { safeService } from "./safeService";
+import { ClientService } from "./clientService";
+import { SafeService } from "./safeService";
+
+// Temporary instance for compatibility - will be properly injected later
+const tempClientService = new ClientService("https://mainnet.optimism.io", optimism);
+const safeService = new SafeService(tempClientService);
 
 // Factory labels for known factories
 export const FACTORY_LABELS: Record<string, string> = {

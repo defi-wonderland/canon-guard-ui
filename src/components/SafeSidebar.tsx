@@ -1,6 +1,7 @@
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { Box, Drawer, IconButton, styled } from "@mui/material";
-import { VaultInfo, TabType } from "~/types/canon-guard";
+import { optimism } from "viem/chains";
+import { VaultInfo, TabType } from "~/types";
 import { SidebarFooter } from "./sidebar/SidebarFooter";
 import { SidebarHeader } from "./sidebar/SidebarHeader";
 import { SidebarNavigation } from "./sidebar/SidebarNavigation";
@@ -18,7 +19,7 @@ export const SafeSidebar = ({ safeInfo, activeTab, onTabChange, collapsed, onTog
   const drawerContent = (
     <SidebarContainer>
       <SidebarHeader collapsed={collapsed} onToggleCollapse={onToggleCollapse} />
-      <SidebarSafeInfo safeInfo={safeInfo} collapsed={collapsed} />
+      <SidebarSafeInfo safeInfo={safeInfo} collapsed={collapsed} chain={optimism} />
       <SidebarNavigation activeTab={activeTab} onTabChange={onTabChange} collapsed={collapsed} />
       <SidebarFooter collapsed={collapsed} />
     </SidebarContainer>

@@ -1,6 +1,7 @@
 import React from "react";
-import { Language, MoreVert } from "@mui/icons-material";
+import { MoreVert } from "@mui/icons-material";
 import { Box, Typography, IconButton, Chip, Tooltip, useTheme, styled } from "@mui/material";
+import { optimism } from "viem/chains";
 import { VaultInfo } from "~/types/canon-guard";
 import { truncateAddress } from "~/utils";
 import safeLogoBlack from "~/assets/safe-logo-black.png";
@@ -23,7 +24,7 @@ export const SidebarSafeInfoCollapsed = ({ safeInfo, onMenuClick }: SidebarSafeI
         </SafeLogoWrapper>
       </Tooltip>
       <Tooltip title='More options' placement='right'>
-        <IconButton onClick={onMenuClick} size='small' sx={{ color: "text.secondary" }}>
+        <IconButton onClick={onMenuClick} size='small' color='secondary'>
           <MoreVert fontSize='small' />
         </IconButton>
       </Tooltip>
@@ -49,7 +50,7 @@ export const SidebarSafeInfoExpanded = ({ safeInfo, onMenuClick }: SidebarSafeIn
             {formatAddress(safeInfo.address)}
           </SafeAddress>
         </SafeDetails>
-        <IconButton onClick={onMenuClick} size='small' sx={{ color: "text.secondary" }}>
+        <IconButton onClick={onMenuClick} size='small' color='secondary' data-testid='safe-more-options'>
           <MoreVert fontSize='small' />
         </IconButton>
       </SafeHeader>
@@ -57,11 +58,11 @@ export const SidebarSafeInfoExpanded = ({ safeInfo, onMenuClick }: SidebarSafeIn
       <SafeMetrics>
         <MetricItem>
           <MetricLabel variant='caption'>Network</MetricLabel>
-          <NetworkChip label={<Language fontSize='small' />} size='small' />
+          <NetworkChip label={optimism.name} size='small' data-testid='safe-network' />
         </MetricItem>
         <MetricItem>
           <MetricLabel variant='caption'>Threshold</MetricLabel>
-          <MetricValue variant='body2'>
+          <MetricValue variant='body2' data-testid='safe-threshold'>
             {safeInfo.threshold}/{safeInfo.totalOwners}
           </MetricValue>
         </MetricItem>

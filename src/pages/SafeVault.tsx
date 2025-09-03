@@ -96,6 +96,22 @@ export const SafeVault = ({ safeData }: SafeVaultProps) => {
     );
   }
 
+  if (!currentVaultData) {
+    return (
+      <ErrorContainer>
+        <ErrorMessage>Failed to load vault data, please try again.</ErrorMessage>
+      </ErrorContainer>
+    );
+  }
+
+  if (!currentVaultData.vaultInfo.hasCanonGuard) {
+    return (
+      <ErrorContainer>
+        <ErrorMessage>This address is not a Canon Vault, please set it up and try again.</ErrorMessage>
+      </ErrorContainer>
+    );
+  }
+
   return (
     <SafePageContainer>
       {currentVaultData && (
