@@ -1,5 +1,5 @@
 import { Queue, CheckCircle, History, Settings } from "@mui/icons-material";
-import { List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton, Tooltip } from "@mui/material";
+import { List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton, Tooltip, styled } from "@mui/material";
 import { TabType } from "~/types/canon-guard";
 
 const navigationItems = [
@@ -17,44 +17,47 @@ interface SidebarNavigationProps {
 
 export const SidebarNavigation = ({ activeTab, onTabChange, collapsed }: SidebarNavigationProps) => {
   return (
-    <List sx={{ flex: 1, py: 0 }}>
+    <StyledList>
       {navigationItems.map((item) => (
         <ListItem key={item.id} disablePadding>
           {collapsed ? (
             <Tooltip title={item.label} placement='right'>
-              <IconButton
-                onClick={() => onTabChange(item.id)}
-                sx={{
-                  width: "100%",
-                  borderRadius: 0,
-                  color: activeTab === item.id ? "primary.main" : "text.secondary",
-                  backgroundColor: activeTab === item.id ? "action.selected" : "transparent",
-                }}
-              >
+              <StyledIconButton onClick={() => onTabChange(item.id)} $isActive={activeTab === item.id}>
                 {item.icon}
-              </IconButton>
+              </StyledIconButton>
             </Tooltip>
           ) : (
-            <ListItemButton
-              selected={activeTab === item.id}
-              onClick={() => onTabChange(item.id)}
-              sx={{
-                borderRadius: 0,
-                "&.Mui-selected": {
-                  backgroundColor: "action.selected",
-                  color: "primary.main",
-                  "& .MuiListItemIcon-root": {
-                    color: "primary.main",
-                  },
-                },
-              }}
-            >
+            <StyledListItemButton selected={activeTab === item.id} onClick={() => onTabChange(item.id)}>
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.label} />
-            </ListItemButton>
+            </StyledListItemButton>
           )}
         </ListItem>
       ))}
-    </List>
+    </StyledList>
   );
 };
+
+const StyledList = styled(List)({
+  flex: 1,
+  paddingTop: 0,
+  paddingBottom: 0,
+});
+
+const StyledIconButton = styled(IconButton)<{ $isActive?: boolean }>(({ theme, $isActive }) => ({
+  width: "100%",
+  borderRadius: 0,
+  color: $isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+  backgroundColor: $isActive ? theme.palette.action.selected : "transparent",
+}));
+
+const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
+  borderRadius: 0,
+  "&.Mui-selected": {
+    backgroundColor: theme.palette.action.selected,
+    color: theme.palette.primary.main,
+    "& .MuiListItemIcon-root": {
+      color: theme.palette.primary.main,
+    },
+  },
+}));

@@ -78,10 +78,10 @@ export const SidebarSafeInfo = ({ safeInfo, collapsed }: SidebarSafeInfoProps) =
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
         {menuItems.map((item, index) => (
-          <MenuItem key={index} onClick={item.onClick} sx={{ fontSize: "0.875rem" }}>
-            <ListItemIcon sx={{ minWidth: 32 }}>{item.icon}</ListItemIcon>
+          <StyledMenuItem key={index} onClick={item.onClick}>
+            <StyledListItemIcon>{item.icon}</StyledListItemIcon>
             <ListItemText primary={item.label} />
-          </MenuItem>
+          </StyledMenuItem>
         ))}
       </Menu>
     </>
@@ -95,3 +95,11 @@ const SafeInfoContainer = styled(Box)(({ theme }) => ({
   flexDirection: "column",
   gap: theme.spacing(1),
 }));
+
+const StyledMenuItem = styled(MenuItem)({
+  fontSize: "0.875rem",
+});
+
+const StyledListItemIcon = styled(ListItemIcon)({
+  minWidth: 32,
+});

@@ -22,7 +22,7 @@ export const SidebarSafeInfoCollapsed = ({ safeInfo, onMenuClick }: SidebarSafeI
         </SafeLogoWrapper>
       </Tooltip>
       <Tooltip title='More options' placement='right'>
-        <IconButton onClick={onMenuClick} size='small' sx={{ color: "text.secondary" }}>
+        <IconButton onClick={onMenuClick} size='small' color='secondary'>
           <MoreVert fontSize='small' />
         </IconButton>
       </Tooltip>
@@ -47,7 +47,7 @@ export const SidebarSafeInfoExpanded = ({ safeInfo, onMenuClick }: SidebarSafeIn
             {formatAddress(safeInfo.address)}
           </SafeAddress>
         </SafeDetails>
-        <IconButton onClick={onMenuClick} size='small' sx={{ color: "text.secondary" }}>
+        <IconButton onClick={onMenuClick} size='small' color='secondary'>
           <MoreVert fontSize='small' />
         </IconButton>
       </SafeHeader>

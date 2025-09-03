@@ -28,21 +28,18 @@ export const SafeSidebar = ({ safeInfo, activeTab, onTabChange, collapsed, onTog
 
   return (
     <>
-      {/* Mobile Toggle Button */}
       {isMobile && (
         <MobileToggleButton onClick={onToggleCollapse}>
           <MenuIcon />
         </MobileToggleButton>
       )}
 
-      {/* Desktop Sidebar */}
       {!isMobile && (
         <DesktopSidebar variant='permanent' collapsed={collapsed}>
           {drawerContent}
         </DesktopSidebar>
       )}
 
-      {/* Mobile Drawer */}
       {isMobile && (
         <Drawer variant='temporary' open={!collapsed} onClose={onToggleCollapse} ModalProps={{ keepMounted: true }}>
           {drawerContent}
