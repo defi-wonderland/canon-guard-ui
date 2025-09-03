@@ -14,11 +14,9 @@ import {
 import { ClientService } from "./clientService";
 import { SafeService } from "./safeService";
 
-// Temporary instance for compatibility - will be properly injected later
 const tempClientService = new ClientService("https://mainnet.optimism.io", optimism);
 const safeService = new SafeService(tempClientService);
 
-// Factory labels for known factories
 export const FACTORY_LABELS: Record<string, string> = {
   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984": "Simple Actions Factory",
   "0xA0b86a33E6441097C3be01cF8BA5c2C70A3c8B24": "Simple Transfers Factory",
@@ -153,7 +151,6 @@ class CanonGuardService {
     return nonce === 5 ? 1 : 0;
   }
 
-  // Combined method to get all vault data at once
   async getVaultData(safe: Address): Promise<VaultData> {
     const [vaultInfo, configuration, queuedTransactions, executionHistory, preApprovedItems] = await Promise.all([
       safeService.getVaultInfo(safe),

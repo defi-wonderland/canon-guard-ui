@@ -88,7 +88,6 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
   );
 };
 
-// Styled Components
 const SetupModalContainer = styled(Box)(() => ({
   position: "relative",
   width: "100%",

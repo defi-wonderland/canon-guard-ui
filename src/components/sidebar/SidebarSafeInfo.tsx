@@ -6,20 +6,17 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { VaultInfo } from "~/types/canon-guard";
 import { SidebarSafeInfoCollapsed, SidebarSafeInfoExpanded } from "./SidebarSafeInfoParts";
 
-// Helper function to get Safe network prefix
 const getSafeNetworkPrefix = (chain: Chain): string => {
   switch (chain.id) {
-    case 10: // Optimism
+    case 10:
       return "oeth";
-    case 1: // Ethereum
+    case 1:
       return "eth";
-    // Add more networks as needed
     default:
       return "eth";
   }
 };
 
-// Menu configuration
 const createMenuItems = (
   safeInfo: VaultInfo,
   clearVaultConfig: () => void,
@@ -90,14 +87,11 @@ export const SidebarSafeInfo = ({ safeInfo, collapsed, chain }: SidebarSafeInfoP
   return (
     <>
       <SafeInfoContainer>
-        {/* Collapsed state */}
         {collapsed && <SidebarSafeInfoCollapsed safeInfo={safeInfo} onMenuClick={handleMenuClick} />}
 
-        {/* Expanded state */}
         {!collapsed && <SidebarSafeInfoExpanded safeInfo={safeInfo} onMenuClick={handleMenuClick} />}
       </SafeInfoContainer>
 
-      {/* Menu is always available regardless of collapsed state */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -116,7 +110,6 @@ export const SidebarSafeInfo = ({ safeInfo, collapsed, chain }: SidebarSafeInfoP
   );
 };
 
-// Styled Components
 const SafeInfoContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
   borderBottom: `1px solid ${theme.palette.divider}`,

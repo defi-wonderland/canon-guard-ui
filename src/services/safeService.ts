@@ -66,7 +66,6 @@ export class SafeService {
    * Get complete vault information using multicall for efficiency
    */
   async getVaultInfo(safe: Address): Promise<VaultInfo> {
-    // Get all Safe data in parallel - multicall for contract calls + storage read for guard
     const [multicallResults, guardAddress] = await Promise.all([
       this.client.multicall({
         contracts: [
@@ -90,7 +89,6 @@ export class SafeService {
       this.getGuardAddress(safe),
     ]);
 
-    // Process multicall results
     const [ownersResult, thresholdResult, nonceResult] = multicallResults;
 
     if (ownersResult.status === "failure") {
@@ -107,7 +105,6 @@ export class SafeService {
     const threshold = Number(thresholdResult.result);
     const nonce = Number(nonceResult.result);
     const chain = this.clientService.getChain();
-
     return {
       address: safe,
       chainId: chain.id,

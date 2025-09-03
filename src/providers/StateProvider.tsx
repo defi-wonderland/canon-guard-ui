@@ -8,17 +8,14 @@ type ContextType = {
   isError: boolean;
   setIsError: (val: boolean) => void;
 
-  // Vault configuration
   vaultAddress: Address | null;
   setVaultAddress: (address: Address) => void;
 
   rpcUrl: string | null;
   setRpcUrl: (url: string) => void;
 
-  // Helper to check if vault is configured
   isVaultConfigured: boolean;
 
-  // Clear vault configuration
   clearVaultConfig: () => void;
 };
 
@@ -34,7 +31,6 @@ export const StateProvider = ({ children }: StateProps) => {
   const [vaultAddress, setVaultAddressState] = useState<Address | null>(null);
   const [rpcUrl, setRpcUrlState] = useState<string | null>(null);
 
-  // Wrapper functions for state management
   const setVaultAddress = (address: Address) => {
     setVaultAddressState(address);
   };
@@ -43,10 +39,8 @@ export const StateProvider = ({ children }: StateProps) => {
     setRpcUrlState(url);
   };
 
-  // Derived state for vault configuration status
   const isVaultConfigured = Boolean(vaultAddress && rpcUrl);
 
-  // Helper to clear vault configuration
   const clearVaultConfig = () => {
     setVaultAddressState(null);
     setRpcUrlState(null);

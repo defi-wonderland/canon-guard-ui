@@ -20,16 +20,13 @@ interface ActionCardProps {
 export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps) => {
   const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
-  // Calculate time remaining until executable
   const timeRemainingToExecutable = Math.max(0, action.executableAt.getTime() - Date.now());
 
-  // Get factory label from registry
   const factoryLabel = FACTORY_LABELS[action.actionBuilder.factoryAddress] || "Unknown Factory";
 
   return (
     <SafeActionCard isPreApproved={action.actionBuilder.isApproved}>
       <SafeCardContent>
-        {/* Compact Row Layout */}
         <FlexRowSpaceBetween>
           <FlexLeft>
             <ActionCardTitle>{factoryLabel}</ActionCardTitle>
@@ -56,7 +53,6 @@ export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps
           </InfoRow>
         )}
 
-        {/* Compact Time Information */}
         <InfoRow>
           <ActionCardDetail>Queued: {formatDate(action.queuedAt)}</ActionCardDetail>
           <ActionCardDetail>• Executable in: {formatTimeRemaining(timeRemainingToExecutable)}</ActionCardDetail>
@@ -66,7 +62,6 @@ export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps
   );
 };
 
-// Styled components for ActionCard-specific patterns
 const ActionCardTitle = styled(SafeCardTitle)(({ theme }) => ({
   fontSize: "1rem",
   lineHeight: 1.3,
@@ -88,7 +83,6 @@ const ActionCardAddress = styled(SafeAddress)(() => ({
   fontSize: "0.8rem",
 }));
 
-// Layout styled components
 const FlexRowSpaceBetween = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",

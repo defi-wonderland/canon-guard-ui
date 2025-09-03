@@ -12,7 +12,6 @@ interface SidebarSafeInfoPartProps {
   onMenuClick: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
-// Collapsed state component
 export const SidebarSafeInfoCollapsed = ({ safeInfo, onMenuClick }: SidebarSafeInfoPartProps) => {
   const theme = useTheme();
 
@@ -32,7 +31,6 @@ export const SidebarSafeInfoCollapsed = ({ safeInfo, onMenuClick }: SidebarSafeI
   );
 };
 
-// Expanded state component
 export const SidebarSafeInfoExpanded = ({ safeInfo, onMenuClick }: SidebarSafeInfoPartProps) => {
   const theme = useTheme();
 
@@ -71,7 +69,6 @@ export const SidebarSafeInfoExpanded = ({ safeInfo, onMenuClick }: SidebarSafeIn
   );
 };
 
-// Shared styled components
 const SafeLogoWrapper = styled(Box)(() => ({
   width: 32,
   height: 32,
