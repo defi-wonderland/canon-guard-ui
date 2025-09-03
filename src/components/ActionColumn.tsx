@@ -23,7 +23,6 @@ export const ActionColumn = ({ icon, title, actions, emptyMessage, showApprovalI
         {hasActions && <ActionCount variant='body2'>({actions.length})</ActionCount>}
       </ColumnHeader>
 
-      {/* Column Content */}
       <ColumnContent>
         {hasActions ? (
           actions.map((action) => (
@@ -39,7 +38,6 @@ export const ActionColumn = ({ icon, title, actions, emptyMessage, showApprovalI
   );
 };
 
-// Styled Components
 const ColumnContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",

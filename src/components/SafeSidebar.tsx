@@ -52,7 +52,6 @@ export const SafeSidebar = ({ safeInfo, activeTab, onTabChange, collapsed, onTog
   );
 };
 
-// Styled Components
 const SidebarContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",

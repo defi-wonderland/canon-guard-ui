@@ -33,7 +33,6 @@ export const QueueSection = ({ queuedActions, waitingForApprovalActions }: Queue
   );
 };
 
-// Styled Components
 const QueueContentSection = styled(Box)(() => ({
   display: "flex",
   flexDirection: "column",

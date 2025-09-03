@@ -9,7 +9,6 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { canonGuardService } from "~/services/canonGuardService";
 import { VaultData, TabType } from "~/types/canon-guard";
 
-// Tab content configuration
 const TAB_CONTENT_MAP = {
   [TabType.QUEUE]: (vaultData: VaultData) => (
     <QueueSection
@@ -23,14 +22,12 @@ const TAB_CONTENT_MAP = {
   [TabType.ACTIONS]: () => <ComingSoonMessage>Action creation coming soon...</ComingSoonMessage>,
 };
 
-// Vault content component
 interface VaultContentProps {
   vaultData: VaultData;
   activeTab: TabType;
 }
 
 const VaultContent = ({ vaultData, activeTab }: VaultContentProps) => {
-  // Check if Safe is valid
   if (!vaultData.vaultInfo.hasCanonGuard) {
     return (
       <ErrorContainer>
@@ -81,12 +78,10 @@ export const SafeVault = ({ safeData }: SafeVaultProps) => {
     setRpcUrl(rpc);
   };
 
-  // Show setup modal if vault is not configured
   if (!isVaultConfigured) {
     return <VaultSetupModal open onSubmit={handleSetupSubmit} />;
   }
 
-  // Show loading state
   if (loading) {
     return (
       <LoadingContainer>
@@ -116,7 +111,6 @@ export const SafeVault = ({ safeData }: SafeVaultProps) => {
   );
 };
 
-// Styled Components
 const LoadingContainer = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",

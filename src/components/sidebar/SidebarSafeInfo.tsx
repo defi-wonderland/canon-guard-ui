@@ -5,7 +5,6 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { VaultInfo } from "~/types/canon-guard";
 import { SidebarSafeInfoCollapsed, SidebarSafeInfoExpanded } from "./SidebarSafeInfoParts";
 
-// Menu configuration
 const createMenuItems = (safeInfo: VaultInfo, clearVaultConfig: () => void, handleMenuClose: () => void) => [
   {
     icon: <ContentCopy fontSize='small' />,
@@ -66,14 +65,11 @@ export const SidebarSafeInfo = ({ safeInfo, collapsed }: SidebarSafeInfoProps) =
   return (
     <>
       <SafeInfoContainer>
-        {/* Collapsed state */}
         {collapsed && <SidebarSafeInfoCollapsed safeInfo={safeInfo} onMenuClick={handleMenuClick} />}
 
-        {/* Expanded state */}
         {!collapsed && <SidebarSafeInfoExpanded safeInfo={safeInfo} onMenuClick={handleMenuClick} />}
       </SafeInfoContainer>
 
-      {/* Menu is always available regardless of collapsed state */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -92,7 +88,6 @@ export const SidebarSafeInfo = ({ safeInfo, collapsed }: SidebarSafeInfoProps) =
   );
 };
 
-// Styled Components
 const SafeInfoContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
   borderBottom: `1px solid ${theme.palette.divider}`,

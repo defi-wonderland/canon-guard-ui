@@ -9,5 +9,4 @@ export const getCustomThemes = () => {
   };
 };
 
-// Export safe-specific design tokens
 export * from "./safeTheme";

@@ -1,7 +1,6 @@
 import { styled, Box, Card, Typography, Chip, alpha } from "@mui/material";
 import { safeDesignTokens } from "~/config/themes/safeTheme";
 
-// Layout Components - Modern and clean
 export const SafePageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   height: "100vh",
@@ -18,14 +17,12 @@ export const SafeMainContent = styled(Box, {
   overflow: "auto",
   transition: safeDesignTokens.components.sidebar.transition,
   marginLeft: 0,
-  // Adaptive spacing based on sidebar state
   [theme.breakpoints.up("md")]: {
     marginLeft: 0,
     paddingLeft: sidebarCollapsed ? safeDesignTokens.sizes.sidebar.collapsed : safeDesignTokens.sizes.sidebar.expanded,
   },
 }));
 
-// Card Components - Modern minimal design
 export const SafeActionCard = styled(Card, {
   shouldForwardProp: (prop) => prop !== "isPreApproved",
 })<{ isPreApproved?: boolean }>(({ theme, isPreApproved = false }) => {
@@ -36,24 +33,22 @@ export const SafeActionCard = styled(Card, {
   return {
     marginBottom: safeDesignTokens.spacing.md,
     border: `${safeDesignTokens.sizes.card.borderWidth} solid ${borderColor}`,
-    minHeight: "80px", // Much smaller row-like height instead of 140px
+    minHeight: "80px",
     backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.elevated,
-    // Removed hover effects for minimal design
     [theme.breakpoints.down("sm")]: {
       marginBottom: safeDesignTokens.spacing.xs,
-      minHeight: "60px", // Even more compact on mobile
+      minHeight: "60px",
     },
   };
 });
 
 export const SafeCardContent = styled(Box)(({ theme }) => ({
-  padding: `${safeDesignTokens.spacing.md} ${safeDesignTokens.spacing.lg}`, // Reduced vertical padding for row-like layout
+  padding: `${safeDesignTokens.spacing.md} ${safeDesignTokens.spacing.lg}`,
   [theme.breakpoints.down("sm")]: {
-    padding: `${safeDesignTokens.spacing.sm} ${safeDesignTokens.spacing.md}`, // Much more compact on mobile
+    padding: `${safeDesignTokens.spacing.sm} ${safeDesignTokens.spacing.md}`,
   },
 }));
 
-// Typography Components
 export const SafeCardTitle = styled(Typography)(({ theme }) => ({
   ...safeDesignTokens.typography.cardTitle,
   color: theme.palette.text.primary,
@@ -71,7 +66,6 @@ export const SafeCardBody = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-// Status Components
 export const SafeStatusChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "isPreApproved",
 })<{ isPreApproved?: boolean }>(({ theme, isPreApproved = false }) => {
@@ -90,7 +84,6 @@ export const SafeStatusChip = styled(Chip, {
   };
 });
 
-// Address Component - Modern minimal approach
 export const SafeAddress = styled(Typography)(({ theme }) => ({
   fontFamily: "monospace",
   fontSize: "0.875rem",

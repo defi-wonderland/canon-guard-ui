@@ -22,7 +22,6 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
   const handleTestModeToggle = (checked: boolean) => {
     setTestMode(checked);
     if (checked) {
-      // Fill with hardcoded test data
       setVaultAddress(TEST_MODE_DATA.vaultAddress);
       setRpcUrl(TEST_MODE_DATA.rpcUrl);
     } else {
@@ -86,7 +85,6 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
   );
 };
 
-// Styled Components
 const SetupModalContainer = styled(Box)(() => ({
   position: "relative",
   width: "100%",
