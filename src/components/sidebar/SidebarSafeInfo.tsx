@@ -1,16 +1,16 @@
 import React, { useMemo, useCallback } from "react";
 import { ContentCopy, OpenInNew, Explore, Clear } from "@mui/icons-material";
 import { Box, Menu, MenuItem, ListItemIcon, ListItemText, styled } from "@mui/material";
-import { Chain } from "viem";
+import { Chain, mainnet, optimism } from "viem/chains";
 import { useStateContext } from "~/hooks/useStateContext";
 import { VaultInfo } from "~/types/canon-guard";
 import { SidebarSafeInfoCollapsed, SidebarSafeInfoExpanded } from "./SidebarSafeInfoParts";
 
 const getSafeNetworkPrefix = (chain: Chain): string => {
   switch (chain.id) {
-    case 10:
+    case optimism.id:
       return "oeth";
-    case 1:
+    case mainnet.id:
       return "eth";
     default:
       return "eth";

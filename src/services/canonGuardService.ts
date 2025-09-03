@@ -1,5 +1,6 @@
 import { Address } from "viem";
 import { optimism } from "viem/chains";
+import { OPTIMISM_MAINNET_RPC } from "../constants/addresses";
 import {
   QueuedTransaction,
   ExecutedTransaction,
@@ -14,7 +15,7 @@ import {
 import { ClientService } from "./clientService";
 import { SafeService } from "./safeService";
 
-const tempClientService = new ClientService("https://mainnet.optimism.io", optimism);
+const tempClientService = new ClientService(OPTIMISM_MAINNET_RPC, optimism);
 const safeService = new SafeService(tempClientService);
 
 export const FACTORY_LABELS: Record<string, string> = {
