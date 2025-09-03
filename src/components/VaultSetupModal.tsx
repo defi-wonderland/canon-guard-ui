@@ -40,7 +40,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
   };
 
   return (
-    <Modal open={open} disableEscapeKeyDown keepMounted={false} sx={{ zIndex: 2000 }}>
+    <StyledModal open={open} disableEscapeKeyDown keepMounted={false}>
       <SetupModalContainer>
         <SetupModalContent>
           <SetupModalHeader>
@@ -84,9 +84,13 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
           </Box>
         </SetupModalContent>
       </SetupModalContainer>
-    </Modal>
+    </StyledModal>
   );
 };
+
+const StyledModal = styled(Modal)({
+  zIndex: 2000,
+});
 
 const SetupModalContainer = styled(Box)(() => ({
   position: "relative",

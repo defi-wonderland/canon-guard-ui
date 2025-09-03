@@ -30,9 +30,7 @@ export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps
         <FlexRowSpaceBetween>
           <FlexLeft>
             <ActionCardTitle>{factoryLabel}</ActionCardTitle>
-            {action.actionBuilder.isApproved && (
-              <SafeStatusChip label='Pre-Approved' size='small' isPreApproved={true} sx={{ ml: 1 }} />
-            )}
+            {action.actionBuilder.isApproved && <SafeStatusChip label='Pre-Approved' size='small' isPreApproved />}
           </FlexLeft>
 
           <FlexRight>

@@ -13,11 +13,9 @@ export const Header = () => {
 
   return (
     <StyledHeader>
-      <Typography data-testid='app-title' sx={{ fontWeight: 600, fontSize: "1.25rem" }}>
-        Canon Guard
-      </Typography>
+      <StyledTitle data-testid='app-title'>Canon Guard</StyledTitle>
       <SIconButton onClick={changeTheme}>{mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}</SIconButton>
-      <Button variant='contained' disabled sx={{ opacity: 0.5 }}>
+      <Button variant='contained' disabled>
         Connect Wallet
       </Button>
     </StyledHeader>
@@ -38,6 +36,11 @@ const StyledHeader = styled("header")(({ theme }) => {
       zIndex: zIndex.HEADER,
     },
   ];
+});
+
+const StyledTitle = styled(Typography)({
+  fontWeight: 600,
+  fontSize: "1.25rem",
 });
 
 const SIconButton = styled(IconButton)({

@@ -78,6 +78,7 @@ export const SafeStatusChip = styled(Chip, {
     backgroundColor: alpha(colors.main, 0.1),
     color: colors.dark,
     border: `1px solid ${alpha(colors.main, 0.3)}`,
+    marginLeft: 8,
     "& .MuiChip-label": {
       fontWeight: safeDesignTokens.components.chip.fontWeight,
     },
