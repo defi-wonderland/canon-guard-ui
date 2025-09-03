@@ -1,5 +1,6 @@
 import { createTheme } from "@mui/material";
 import { CustomMuiTheme } from "~/types";
+import { safeDesignTokens } from "./safeTheme";
 
 export const getMuiThemeConfig = (customTheme: CustomMuiTheme) => {
   return createTheme({
@@ -22,14 +23,94 @@ export const getMuiThemeConfig = (customTheme: CustomMuiTheme) => {
       colorSchemeSelector: "class",
     },
     components: {
-      MuiCssBaseline: {
-        styleOverrides: (theme) => ({
-          body: {
-            background: theme.palette.background.default,
-            color: theme.palette.text.primary,
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: safeDesignTokens.sizes.button.borderRadius,
+            fontWeight: 500,
+            textTransform: "none",
+            height: safeDesignTokens.sizes.button.height,
           },
-          borderRadius: customTheme.borderRadius.sm,
-        }),
+        },
+        variants: [
+          {
+            props: { variant: "contained", size: "small" },
+            style: ({ theme }) => ({
+              marginTop: safeDesignTokens.spacing.sm,
+              width: "100%",
+              [theme.breakpoints.up("sm")]: {
+                width: "auto",
+              },
+            }),
+          },
+        ],
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: safeDesignTokens.sizes.card.borderRadius,
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            ...safeDesignTokens.components.chip,
+          },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: safeDesignTokens.sizes.button.borderRadius,
+          },
+        },
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            "& .MuiOutlinedInput-root": {
+              borderRadius: safeDesignTokens.sizes.button.borderRadius,
+            },
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            borderRadius: safeDesignTokens.sizes.button.borderRadius,
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            borderRadius: 0,
+            boxSizing: "border-box",
+            transition: "width 0.2s",
+            backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.primary,
+          }),
+          paperAnchorLeft: ({ theme }) => ({
+            borderRight: `1px solid ${safeDesignTokens[theme.palette.mode].borders.primary}`,
+          }),
+        },
+      },
+      MuiModal: {
+        styleOverrides: {
+          root: {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          },
+        },
+      },
+      MuiBackdrop: {
+        styleOverrides: {
+          root: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            backdropFilter: "blur(8px)",
+          },
+        },
       },
     },
   });
