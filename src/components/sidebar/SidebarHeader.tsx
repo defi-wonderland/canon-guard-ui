@@ -21,7 +21,7 @@ export const SidebarHeader = ({ collapsed, onToggleCollapse }: SidebarHeaderProp
           Canon Vault
         </Typography>
       )}
-      <IconButton onClick={onToggleCollapse} size='small'>
+      <IconButton onClick={onToggleCollapse} size='small' data-testid='sidebar-toggle'>
         <MenuIcon />
       </IconButton>
       {!collapsed && (

@@ -1,4 +1,6 @@
 import { Address } from "viem";
+import { optimism } from "viem/chains";
+import { OPTIMISM_MAINNET_RPC } from "../constants/addresses";
 import {
   QueuedTransaction,
   ExecutedTransaction,
@@ -10,7 +12,11 @@ import {
   QueuedTransactionState,
   PreApprovedItemType,
 } from "../types/canon-guard";
-import { safeService } from "./safeService";
+import { ClientService } from "./clientService";
+import { SafeService } from "./safeService";
+
+const tempClientService = new ClientService(OPTIMISM_MAINNET_RPC, optimism);
+const safeService = new SafeService(tempClientService);
 
 export const FACTORY_LABELS: Record<string, string> = {
   "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984": "Simple Actions Factory",

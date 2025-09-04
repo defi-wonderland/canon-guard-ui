@@ -3,10 +3,11 @@ import { Modal, Box, Typography, Switch, FormControlLabel, Button, TextField } f
 import { styled } from "@mui/material/styles";
 import { Address, isAddress } from "viem";
 import { safeDesignTokens } from "~/config/themes/safeTheme";
+import { DEMO_SAFE_WITH_GUARD, OPTIMISM_MAINNET_RPC } from "~/constants/addresses";
 
-const TEST_MODE_DATA = {
-  vaultAddress: "0x1234567890123456789012345678901234567890",
-  rpcUrl: "https://mainnet.infura.io/v3/test-project-id",
+const DEMO_DATA = {
+  vaultAddress: DEMO_SAFE_WITH_GUARD,
+  rpcUrl: OPTIMISM_MAINNET_RPC,
 };
 
 interface VaultSetupModalProps {
@@ -17,13 +18,13 @@ interface VaultSetupModalProps {
 export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
   const [vaultAddress, setVaultAddress] = useState("");
   const [rpcUrl, setRpcUrl] = useState("");
-  const [testMode, setTestMode] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
-  const handleTestModeToggle = (checked: boolean) => {
-    setTestMode(checked);
+  const handleDemoModeToggle = (checked: boolean) => {
+    setDemoMode(checked);
     if (checked) {
-      setVaultAddress(TEST_MODE_DATA.vaultAddress);
-      setRpcUrl(TEST_MODE_DATA.rpcUrl);
+      setVaultAddress(DEMO_DATA.vaultAddress);
+      setRpcUrl(DEMO_DATA.rpcUrl);
     } else {
       setVaultAddress("");
       setRpcUrl("");
@@ -49,8 +50,8 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
 
           <Box display='flex' justifyContent='center'>
             <FormControlLabel
-              control={<Switch checked={testMode} onChange={(e) => handleTestModeToggle(e.target.checked)} />}
-              label='Test Mode'
+              control={<Switch checked={demoMode} onChange={(e) => handleDemoModeToggle(e.target.checked)} />}
+              label='Demo Mode (Use example Canon Guard Safe)'
             />
           </Box>
 
@@ -61,7 +62,8 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
               placeholder='0x...'
               value={vaultAddress}
               onChange={(e) => setVaultAddress(e.target.value)}
-              disabled={testMode}
+              disabled={demoMode}
+              data-testid='vault-address-input'
             />
 
             <TextField
@@ -70,12 +72,13 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
               placeholder='https://...'
               value={rpcUrl}
               onChange={(e) => setRpcUrl(e.target.value)}
-              disabled={testMode}
+              disabled={demoMode}
+              data-testid='rpc-url-input'
             />
           </Box>
 
           <Box display='flex' justifyContent='center'>
-            <Button variant='contained' onClick={handleSubmit} fullWidth>
+            <Button variant='contained' onClick={handleSubmit} fullWidth data-testid='continue-to-vault-button'>
               Continue to Vault
             </Button>
           </Box>
