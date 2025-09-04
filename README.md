@@ -46,4 +46,4 @@ pnpm run test:e2e
 - **RainbowKit** + **Wagmi** + **Viem** for Web3 integration
 - **React Router** for navigation
 
-Created by [Wonderland](https://wonderland.xyz).
+Created with love by [Wonderland](https://wonderland.xyz).
