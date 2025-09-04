@@ -1,8 +1,7 @@
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
-import { IconButton, Typography } from "@mui/material";
+import { IconButton, Typography, Button } from "@mui/material";
 import { styled, useColorScheme } from "@mui/material/styles";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { zIndex, HEADER_HEIGHT } from "~/utils";
 
 export const Header = () => {
@@ -14,9 +13,11 @@ export const Header = () => {
 
   return (
     <StyledHeader>
-      <Typography data-testid='boilerplate-title'>Vite Boilerplate</Typography>
+      <StyledTitle data-testid='app-title'>Canon Guard</StyledTitle>
       <SIconButton onClick={changeTheme}>{mode === "dark" ? <LightModeIcon /> : <DarkModeIcon />}</SIconButton>
-      <ConnectButton />
+      <Button variant='contained' disabled>
+        Connect Wallet
+      </Button>
     </StyledHeader>
   );
 };
@@ -35,6 +36,11 @@ const StyledHeader = styled("header")(({ theme }) => {
       zIndex: zIndex.HEADER,
     },
   ];
+});
+
+const StyledTitle = styled(Typography)({
+  fontWeight: 600,
+  fontSize: "1.25rem",
 });
 
 const SIconButton = styled(IconButton)({

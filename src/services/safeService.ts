@@ -8,8 +8,6 @@ class SafeService {
   }
 
   async getVaultInfo(safe: Address): Promise<VaultInfo> {
-    // Check if safe has guard and valid entrypoint
-
     return {
       address: safe,
       chainId: 1,

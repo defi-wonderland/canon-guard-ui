@@ -1,7 +1,5 @@
-// Theme mode type
 type ThemeMode = "light" | "dark";
 
-// Theme-specific color tokens
 type ThemeTokens = {
   brand: {
     primary: {
@@ -50,7 +48,6 @@ type ThemeTokens = {
   };
 };
 
-// Canon Guard modern design tokens
 export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
   spacing: {
     xs: string;
@@ -149,9 +146,7 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
     };
   };
 } = {
-  // Colors organized by theme mode
   light: {
-    // Brand colors
     brand: {
       primary: {
         main: "#6366f1", // Indigo
@@ -167,7 +162,6 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
       },
     },
 
-    // Action status colors
     actionStatus: {
       preApproved: {
         main: "#10b981", // Emerald
@@ -185,21 +179,18 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
       },
     },
 
-    // Surface colors
     surfaces: {
       primary: "#ffffff",
       secondary: "#f8fafc",
       elevated: "#ffffff",
     },
 
-    // Border colors
     borders: {
       primary: "#e5e7eb",
       secondary: "#f3f4f6",
       accent: "#d1d5db",
     },
 
-    // Text colors
     text: {
       primary: "#111827",
       secondary: "#6b7280",
@@ -208,7 +199,6 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
   },
 
   dark: {
-    // Brand colors
     brand: {
       primary: {
         main: "#6366f1", // Indigo
@@ -224,7 +214,6 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
       },
     },
 
-    // Action status colors
     actionStatus: {
       preApproved: {
         main: "#10b981", // Emerald
@@ -242,21 +231,18 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
       },
     },
 
-    // Surface colors
     surfaces: {
       primary: "#1f2937",
       secondary: "#111827",
       elevated: "#374151",
     },
 
-    // Border colors
     borders: {
       primary: "#4b5563",
       secondary: "#374151",
       accent: "#6b7280",
     },
 
-    // Text colors
     text: {
       primary: "#f9fafb",
       secondary: "#d1d5db",
@@ -264,7 +250,6 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
     },
   },
 
-  // Component spacing
   spacing: {
     xs: "0.25rem", // 4px
     sm: "0.5rem", // 8px
@@ -274,11 +259,10 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
     xxl: "3rem", // 48px
   },
 
-  // Component sizes - refined proportions
   sizes: {
     sidebar: {
-      collapsed: "64px", // Reduced from 72px to save space
-      expanded: "280px", // Reduced from 320px to save space
+      collapsed: "64px",
+      expanded: "280px",
     },
     card: {
       minHeight: "140px",
@@ -294,19 +278,16 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
     },
   },
 
-  // Responsive breakpoints (extending MUI defaults)
   breakpoints: {
     xs: 0,
     sm: 600,
     md: 960,
     lg: 1280,
     xl: 1920,
-    // Custom breakpoints for specific layouts
     tablet: 768,
     desktop: 1024,
   },
 
-  // Component-specific styles - minimal and modern
   components: {
     actionCard: {
       borderRadius: "16px",
@@ -326,7 +307,6 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
     },
   },
 
-  // Typography variants - modern and clean
   typography: {
     safeAddress: {
       fontFamily: "'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace",
@@ -359,7 +339,6 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
     },
   },
 
-  // Animation and transitions
   animations: {
     duration: {
       short: "0.2s",
