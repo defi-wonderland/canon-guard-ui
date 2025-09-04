@@ -11,14 +11,17 @@ Canon Guard transforms your Safe from "execute immediately" to "execute thoughtf
 ## Quick Start
 
 1. **Install dependencies**:
+
    ```bash
    pnpm install
    ```
 
 2. **Configure environment**:
+
    ```bash
    cp .env.example .env
    ```
+
    Add your API keys from [WalletConnect Cloud](https://cloud.walletconnect.com) and [Alchemy Dashboard](https://dashboard.alchemy.com).
 
 3. **Start development server**:
@@ -35,7 +38,7 @@ pnpm run test
 # Unit tests only
 pnpm run test:unit
 
-# E2E tests only  
+# E2E tests only
 pnpm run test:e2e
 ```
 
