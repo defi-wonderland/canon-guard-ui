@@ -13,13 +13,26 @@ interface SafeSidebarProps {
   onTabChange: (tab: TabType) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  onClearVaultConfig: () => void;
 }
 
-export const SafeSidebar = ({ safeInfo, activeTab, onTabChange, collapsed, onToggleCollapse }: SafeSidebarProps) => {
+export const SafeSidebar = ({
+  safeInfo,
+  activeTab,
+  onTabChange,
+  collapsed,
+  onToggleCollapse,
+  onClearVaultConfig,
+}: SafeSidebarProps) => {
   const drawerContent = (
     <SidebarContainer>
       <SidebarHeader collapsed={collapsed} onToggleCollapse={onToggleCollapse} />
-      <SidebarSafeInfo safeInfo={safeInfo} collapsed={collapsed} chain={optimism} />
+      <SidebarSafeInfo
+        safeInfo={safeInfo}
+        collapsed={collapsed}
+        chain={optimism}
+        onClearVaultConfig={onClearVaultConfig}
+      />
       <SidebarNavigation activeTab={activeTab} onTabChange={onTabChange} collapsed={collapsed} />
       <SidebarFooter collapsed={collapsed} />
     </SidebarContainer>

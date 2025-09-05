@@ -1,2 +1,2 @@
-export * from "./addresses";
+export * from "./safe";
 export * from "./canonGuard";

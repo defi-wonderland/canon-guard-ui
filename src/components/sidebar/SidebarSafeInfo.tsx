@@ -2,7 +2,6 @@ import React, { useMemo, useCallback } from "react";
 import { ContentCopy, OpenInNew, Explore, Clear } from "@mui/icons-material";
 import { Box, Menu, MenuItem, ListItemIcon, ListItemText, styled } from "@mui/material";
 import { Chain, mainnet, optimism } from "viem/chains";
-import { useStateContext } from "~/hooks/useStateContext";
 import { VaultInfo } from "~/types/canon-guard";
 import { SidebarSafeInfoCollapsed, SidebarSafeInfoExpanded } from "./SidebarSafeInfoParts";
 
@@ -19,7 +18,7 @@ const getSafeNetworkPrefix = (chain: Chain): string => {
 
 const createMenuItems = (
   safeInfo: VaultInfo,
-  clearVaultConfig: () => void,
+  onClearVaultConfig: () => void,
   handleMenuClose: () => void,
   chain: Chain,
 ) => {
@@ -54,7 +53,7 @@ const createMenuItems = (
       icon: <Clear fontSize='small' />,
       label: "Clear Vault Configuration",
       onClick: () => {
-        clearVaultConfig();
+        onClearVaultConfig();
         handleMenuClose();
       },
     },
@@ -65,10 +64,10 @@ interface SidebarSafeInfoProps {
   safeInfo: VaultInfo;
   collapsed: boolean;
   chain: Chain;
+  onClearVaultConfig: () => void;
 }
 
-export const SidebarSafeInfo = ({ safeInfo, collapsed, chain }: SidebarSafeInfoProps) => {
-  const { clearVaultConfig } = useStateContext();
+export const SidebarSafeInfo = ({ safeInfo, collapsed, chain, onClearVaultConfig }: SidebarSafeInfoProps) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -80,8 +79,8 @@ export const SidebarSafeInfo = ({ safeInfo, collapsed, chain }: SidebarSafeInfoP
   }, []);
 
   const menuItems = useMemo(
-    () => createMenuItems(safeInfo, clearVaultConfig, handleMenuClose, chain),
-    [safeInfo, clearVaultConfig, handleMenuClose, chain],
+    () => createMenuItems(safeInfo, onClearVaultConfig, handleMenuClose, chain),
+    [safeInfo, onClearVaultConfig, handleMenuClose, chain],
   );
 
   return (

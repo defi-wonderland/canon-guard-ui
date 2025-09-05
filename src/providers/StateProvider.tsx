@@ -1,10 +1,30 @@
 import { createContext, useState } from "react";
 import { Address } from "viem";
+import { optimism } from "viem/chains";
+import { OPTIMISM_MAINNET_RPC } from "../constants/addresses";
+import { ClientService, SafeService, CanonGuardService } from "../services";
+
+interface ServiceInstances {
+  clientService: ClientService;
+  safeService: SafeService;
+  canonGuardService: CanonGuardService;
+}
+
+const createServiceInstances = (rpcUrl: string = OPTIMISM_MAINNET_RPC): ServiceInstances => {
+  const clientService = new ClientService(rpcUrl, optimism);
+  const safeService = new SafeService(clientService);
+  const canonGuardService = new CanonGuardService(clientService);
+
+  return {
+    clientService,
+    safeService,
+    canonGuardService,
+  };
+};
+
+const initialServices = createServiceInstances();
 
 type ContextType = {
-  loading: boolean;
-  setLoading: (val: boolean) => void;
-
   isError: boolean;
   setIsError: (val: boolean) => void;
 
@@ -13,8 +33,7 @@ type ContextType = {
 
   rpcUrl: string | null;
   setRpcUrl: (url: string) => void;
-
-  isVaultConfigured: boolean;
+  services: ServiceInstances;
 
   clearVaultConfig: () => void;
 };
@@ -26,10 +45,15 @@ interface StateProps {
 export const StateContext = createContext({} as ContextType);
 
 export const StateProvider = ({ children }: StateProps) => {
-  const [loading, setLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [vaultAddress, setVaultAddressState] = useState<Address | null>(null);
   const [rpcUrl, setRpcUrlState] = useState<string | null>(null);
+  const [services, setServices] = useState<ServiceInstances>(initialServices);
+
+  const updateServicesRpcUrl = (newRpcUrl: string) => {
+    const newServices = createServiceInstances(newRpcUrl);
+    setServices(newServices);
+  };
 
   const setVaultAddress = (address: Address) => {
     setVaultAddressState(address);
@@ -37,9 +61,8 @@ export const StateProvider = ({ children }: StateProps) => {
 
   const setRpcUrl = (url: string) => {
     setRpcUrlState(url);
+    updateServicesRpcUrl(url);
   };
-
-  const isVaultConfigured = Boolean(vaultAddress && rpcUrl);
 
   const clearVaultConfig = () => {
     setVaultAddressState(null);
@@ -49,15 +72,13 @@ export const StateProvider = ({ children }: StateProps) => {
   return (
     <StateContext.Provider
       value={{
-        loading,
-        setLoading,
         isError,
         setIsError,
         vaultAddress,
         setVaultAddress,
         rpcUrl,
         setRpcUrl,
-        isVaultConfigured,
+        services,
         clearVaultConfig,
       }}
     >

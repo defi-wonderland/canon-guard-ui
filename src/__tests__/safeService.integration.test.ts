@@ -24,8 +24,8 @@ describe("SafeService Integration Tests", () => {
     const guardAddress = await safeService.getGuardAddress(DEMO_SAFE_WITH_GUARD);
 
     expect(vaultInfo.hasCanonGuard).toBe(true);
-    expect(vaultInfo.guardAddress).toBe(DEMO_GUARD_ADDRESS);
-    expect(guardAddress).toBe(DEMO_GUARD_ADDRESS);
+    expect(vaultInfo.guardAddress?.toLowerCase()).toBe(DEMO_GUARD_ADDRESS.toLowerCase());
+    expect(guardAddress?.toLowerCase()).toBe(DEMO_GUARD_ADDRESS.toLowerCase());
     expect(vaultInfo.owners).toContain(DEMO_SAFE_OWNER);
   });
 

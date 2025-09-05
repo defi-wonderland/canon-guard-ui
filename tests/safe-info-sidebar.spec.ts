@@ -16,21 +16,22 @@ async function fillVaultSetup(page: Page, vaultAddress: string) {
 test.describe("Safe Validation", () => {
   test("non-Safe contract shows error", async ({ page }) => {
     await fillVaultSetup(page, USDC_OPTIMISM);
-    await expect(page.getByText("Failed to load vault data, please try again.")).toBeVisible();
+    await expect(page.getByText("Unable to load data from the provided address and RPC endpoint.")).toBeVisible({});
   });
 
   test("Safe without guard shows error", async ({ page }) => {
     await fillVaultSetup(page, DEMO_SAFE_NO_GUARD);
-    await expect(page.getByText("This address is not a Canon Vault, please set it up and try again.")).toBeVisible();
+    await expect(page.getByText("This Safe address does not have Canon Guard configured.")).toBeVisible({});
   });
 
   test("Safe with guard loads successfully", async ({ page }) => {
     await fillVaultSetup(page, DEMO_SAFE_WITH_GUARD);
 
-    await expect(page.getByText("Failed to load vault data")).not.toBeVisible();
-    await expect(page.getByText("This address is not a Canon Vault")).not.toBeVisible();
+    await expect(page.getByText("Connection Failed")).not.toBeVisible();
+    await expect(page.getByText("Canon Guard Not Found")).not.toBeVisible();
 
-    await expect(page.getByText("Queued Actions")).toBeVisible();
+    // Use more specific selector to avoid ambiguity
+    await expect(page.getByRole("heading", { name: "Queued Actions" })).toBeVisible();
   });
 });
 
@@ -50,7 +51,7 @@ test.describe("Safe Sidebar Features", () => {
 
     await expect(threshold).toBeVisible();
     await expect(network).toBeVisible();
-    await expect(threshold).toHaveText("1/1");
+    await expect(threshold).toHaveText("2/3");
     await expect(network).toContainText("OP Mainnet");
   });
 

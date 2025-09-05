@@ -9,7 +9,7 @@
 import { Address, keccak256, toHex, PublicClient } from "viem";
 import { ZERO_ADDRESS } from "~/utils/hex";
 import { safeAbi } from "../abis/safe";
-import { VaultInfo } from "../types";
+import { SafeInfo } from "../types";
 import { ClientService } from "./clientService";
 
 export class SafeService {
@@ -65,7 +65,7 @@ export class SafeService {
   /**
    * Get complete vault information using multicall for efficiency
    */
-  async getVaultInfo(safe: Address): Promise<VaultInfo> {
+  async getVaultInfo(safe: Address): Promise<SafeInfo> {
     const [multicallResults, guardAddress] = await Promise.all([
       this.client.multicall({
         contracts: [

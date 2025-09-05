@@ -18,11 +18,13 @@ export enum QueuedTransactionState {
  * Types of action factories available in the Canon Guard system
  */
 export enum ActionFactoryType {
+  SAFE_ENTRYPOINT = "safe_entrypoint",
   SIMPLE_ACTIONS = "simple_actions",
   SIMPLE_TRANSFERS = "simple_transfers",
   CAPPED_TOKEN_TRANSFERS = "capped_token_transfers",
   ALLOWANCE_CLAIMOR = "allowance_claimor",
   APPROVE_ACTION = "approve_action",
+  UNKNOWN = "unknown",
 }
 
 /**
@@ -55,7 +57,8 @@ export interface CanonRegistry {
 export interface ActionBuilder {
   address: Address;
   factoryType: ActionFactoryType;
-  factoryAddress: Address;
+  actionBuilderAddress: Address;
+  factoryLabel: string;
   createdAt: Date;
   isApproved: boolean;
   approvalExpiresAt?: Date;
@@ -67,7 +70,7 @@ export interface ActionBuilder {
  */
 export interface ActionHub {
   address: Address;
-  factoryAddress: Address;
+  actionBuilderAddress: Address;
   type: ActionFactoryType;
   isApproved: boolean;
   approvalExpiresAt?: Date;
@@ -91,7 +94,7 @@ export interface QueuedTransaction {
 }
 
 /**
- * Pre-approved action builder or hub
+ * Pre-approved action builder or hub -  represents Safe transactions waiting for approval
  */
 export interface PreApprovedItem {
   address: Address;
@@ -99,7 +102,13 @@ export interface PreApprovedItem {
   factoryType?: ActionFactoryType;
   approvedAt: Date;
   expiresAt: Date;
-  approvalDuration: number; // in seconds
+  approvalDuration: number;
+
+  // Safe transaction specific fields for "Waiting for Approval" column
+  safeTxHash?: Hash;
+  approversCount?: number;
+  requiredApprovals?: number;
+  approvers?: Address[];
 }
 
 // ================================================================
@@ -110,37 +119,31 @@ export interface PreApprovedItem {
  * Canon Guard configuration for a specific vault
  */
 export interface CanonGuardConfiguration {
-  vaultAddress: string;
-  entrypointAddress: string;
-  shortTxExecutionDelay: number; // in seconds
-  longTxExecutionDelay: number; // in seconds
-  txExpiryDelay: number; // in seconds
-  maxApprovalDuration: number; // in seconds
-  emergencyTriggerAddress: string;
-  emergencyCallerAddress: string;
+  vaultAddress: Address;
+  entrypointAddress: Address;
+  shortTxExecutionDelay: number;
+  longTxExecutionDelay: number;
+  txExpiryDelay: number;
+  maxApprovalDuration: number;
+  emergencyTriggerAddress: Address;
+  emergencyCallerAddress: Address;
   isEmergencyMode: boolean;
 }
 
-/**
- * Information about a Safe vault with Canon Guard
- */
-export interface VaultInfo {
-  address: string;
+export interface SafeInfo {
+  address: Address;
   chainId: number;
   network: string;
   threshold: number;
-  owners: string[];
+  owners: Address[];
   totalOwners: number;
   hasCanonGuard: boolean;
-  guardAddress?: string;
+  guardAddress?: Address;
   nonce: number;
 }
 
-/**
- * Complete vault data including configuration and actions
- */
-export interface VaultData {
-  vaultInfo: VaultInfo;
+export interface CanonVaultData {
+  safeInfo: SafeInfo;
   configuration?: CanonGuardConfiguration;
   queuedTransactions: QueuedTransaction[];
   preApprovedItems: PreApprovedItem[];
@@ -171,7 +174,7 @@ export interface ExecutedTransaction {
 export interface ActionDetails {
   actionBuilder: Address;
   target: Address;
-  value: string; // in wei
+  value: bigint;
   calldata: Hex;
   fnSignature?: string; // Function signature like "approve(address,uint256)"
   decodedParams?: Record<string, unknown>;
@@ -184,7 +187,7 @@ export interface SimpleAction {
   target: Address;
   fnSignature: string; // Function signature like "transfer(address,uint256)"
   data: Hex; // ABI-encoded parameters
-  value: string; // in wei
+  value: bigint;
 }
 
 /**
@@ -193,7 +196,7 @@ export interface SimpleAction {
 export interface TransferAction {
   token: Address;
   to: Address;
-  amount: string; // in token units
+  amount: bigint;
 }
 
 // ================================================================
@@ -211,26 +214,39 @@ export enum TabType {
   ACTIONS = "actions",
 }
 
+// ================================================================
+// CANON GUARD UTILITIES TYPES
+// ================================================================
+
 /**
- * Action creation wizard steps
+ * Canon Guard entrypoint configuration
  */
-export enum ActionWizardStep {
-  SELECT_TYPE = "select-type",
-  CONFIGURE_ACTION = "configure-action",
-  REVIEW = "review",
-  DEPLOY = "deploy",
-  QUEUE = "queue",
+export interface EntrypointConfiguration {
+  shortTxExecutionDelay: bigint;
+  longTxExecutionDelay: bigint;
+  txExpiryDelay: bigint;
+  maxApprovalDuration: bigint;
 }
 
 /**
- * Filter options for transaction lists
+ * Transaction details from Canon Guard
  */
-export interface TransactionFilters {
-  state?: QueuedTransactionState[];
-  factoryType?: ActionFactoryType[];
-  dateRange?: {
-    from: Date;
-    to: Date;
-  };
-  hasHub?: boolean;
+export interface TransactionDetails {
+  actionsData: Hex;
+  executableAt: bigint;
+  expiresAt: bigint;
+  safeTxHash: Hash;
+  approvalExpiry: bigint;
+}
+
+/**
+ * Batched transaction details with approvers
+ */
+export interface BatchedTransactionDetails {
+  actionsData: Hex;
+  executableAt: bigint;
+  expiresAt: bigint;
+  safeTxHash: Hash;
+  approvalExpiry: bigint;
+  approvers: Address[];
 }

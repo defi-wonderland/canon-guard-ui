@@ -8,7 +8,6 @@ import {
   SafeAddress,
 } from "~/components/shared/StyledComponents";
 import { safeDesignTokens } from "~/config/themes/safeTheme";
-import { FACTORY_LABELS } from "~/services/canonGuardService";
 import { QueuedTransaction } from "~/types/canon-guard";
 import { formatTimeRemaining, truncateAddress, formatDate } from "~/utils";
 
@@ -18,29 +17,27 @@ interface ActionCardProps {
 }
 
 export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps) => {
-  const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
-
-  const timeRemainingToExecutable = Math.max(0, action.executableAt.getTime() - Date.now());
-
-  const factoryLabel = FACTORY_LABELS[action.actionBuilder.factoryAddress] || "Unknown Factory";
+  const copyAddressToClipboard = (address: string) => navigator.clipboard.writeText(address);
+  const timeUntilExecutable = Math.max(0, action.executableAt.getTime() - Date.now());
+  const isExecutableNow = timeUntilExecutable === 0;
 
   return (
     <SafeActionCard isPreApproved={action.actionBuilder.isApproved}>
       <SafeCardContent>
-        <FlexRowSpaceBetween>
-          <FlexLeft>
-            <ActionCardTitle>{factoryLabel}</ActionCardTitle>
+        <CardHeaderRow>
+          <CardTitleSection>
+            <ActionCardTitle>{action.actionBuilder.factoryLabel}</ActionCardTitle>
             {action.actionBuilder.isApproved && <SafeStatusChip label='Pre-Approved' size='small' isPreApproved />}
-          </FlexLeft>
+          </CardTitleSection>
 
-          <FlexRight>
-            <Tooltip title='Click to copy address'>
-              <ActionCardAddress onClick={() => copyToClipboard(action.actionBuilder.factoryAddress)}>
-                {truncateAddress(action.actionBuilder.factoryAddress)}
+          <CardAddressSection>
+            <Tooltip title='Click to copy action builder address'>
+              <ActionCardAddress onClick={() => copyAddressToClipboard(action.actionBuilder.actionBuilderAddress)}>
+                {truncateAddress(action.actionBuilder.actionBuilderAddress)}
               </ActionCardAddress>
             </Tooltip>
-          </FlexRight>
-        </FlexRowSpaceBetween>
+          </CardAddressSection>
+        </CardHeaderRow>
 
         {showApprovalInfo && (
           <InfoRow>
@@ -53,7 +50,10 @@ export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps
 
         <InfoRow>
           <ActionCardDetail>Queued: {formatDate(action.queuedAt)}</ActionCardDetail>
-          <ActionCardDetail>• Executable in: {formatTimeRemaining(timeRemainingToExecutable)}</ActionCardDetail>
+          <ActionCardDetail>
+            {isExecutableNow && "• Ready to execute"}
+            {!isExecutableNow && `• Executable in: ${formatTimeRemaining(timeUntilExecutable)}`}
+          </ActionCardDetail>
         </InfoRow>
       </SafeCardContent>
     </SafeActionCard>
@@ -81,7 +81,7 @@ const ActionCardAddress = styled(SafeAddress)(() => ({
   fontSize: "0.8rem",
 }));
 
-const FlexRowSpaceBetween = styled(Box)(() => ({
+const CardHeaderRow = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -89,7 +89,7 @@ const FlexRowSpaceBetween = styled(Box)(() => ({
   gap: safeDesignTokens.spacing.md,
 }));
 
-const FlexLeft = styled(Box)(() => ({
+const CardTitleSection = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",
   gap: safeDesignTokens.spacing.sm,
@@ -97,7 +97,7 @@ const FlexLeft = styled(Box)(() => ({
   minWidth: 0,
 }));
 
-const FlexRight = styled(Box)(() => ({
+const CardAddressSection = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",
   flexShrink: 0,

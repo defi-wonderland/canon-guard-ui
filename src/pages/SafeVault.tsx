@@ -1,167 +1,115 @@
 import { useState, useEffect, useCallback } from "react";
 import { Box, Typography, CircularProgress, styled } from "@mui/material";
-import { Address } from "viem";
-import { QueueSection } from "~/components/QueueSection";
-import { SafeSidebar } from "~/components/SafeSidebar";
+import { useSearchParams } from "react-router-dom";
+import { Address, isAddress } from "viem";
+import { CanonGuardVault } from "~/components/CanonGuardVault";
+import { ErrorState } from "~/components/ErrorState";
 import { VaultSetupModal } from "~/components/VaultSetupModal";
-import { SafePageContainer, SafeMainContent } from "~/components/shared/StyledComponents";
+import { useSafeService } from "~/hooks/useServices";
 import { useStateContext } from "~/hooks/useStateContext";
-import { canonGuardService } from "~/services/canonGuardService";
-import { VaultData, TabType } from "~/types/canon-guard";
+import { SafeInfo } from "~/types";
 
-const TAB_CONTENT_MAP = {
-  [TabType.QUEUE]: (vaultData: VaultData) => (
-    <QueueSection
-      queuedActions={vaultData.queuedTransactions}
-      waitingForApprovalActions={vaultData.queuedTransactions.filter((tx) => tx.approversCount < tx.requiredApprovals)}
-    />
-  ),
-  [TabType.PRE_APPROVED]: () => <ComingSoonMessage>Pre-approved actions coming soon...</ComingSoonMessage>,
-  [TabType.HISTORY]: () => <ComingSoonMessage>History coming soon...</ComingSoonMessage>,
-  [TabType.CONFIGURATION]: () => <ComingSoonMessage>Configuration coming soon...</ComingSoonMessage>,
-  [TabType.ACTIONS]: () => <ComingSoonMessage>Action creation coming soon...</ComingSoonMessage>,
-};
+export const SafeVault = () => {
+  const { vaultAddress, rpcUrl, setVaultAddress, setRpcUrl, clearVaultConfig } = useStateContext();
+  const safeService = useSafeService();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-interface VaultContentProps {
-  vaultData: VaultData;
-  activeTab: TabType;
-}
+  const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
+  const [loading, setLoading] = useState(false);
 
-const VaultContent = ({ vaultData, activeTab }: VaultContentProps) => {
-  if (!vaultData.vaultInfo.hasCanonGuard) {
-    return (
-      <ErrorContainer>
-        <ErrorMessage>This address is not a Canon Vault, please set it up and try again.</ErrorMessage>
-      </ErrorContainer>
-    );
-  }
-
-  const renderTabContent = TAB_CONTENT_MAP[activeTab];
-  return renderTabContent ? renderTabContent(vaultData) : null;
-};
-
-interface SafeVaultProps {
-  safeData?: VaultData;
-}
-
-export const SafeVault = ({ safeData }: SafeVaultProps) => {
-  const { vaultAddress, rpcUrl, isVaultConfigured, setVaultAddress, setRpcUrl, loading, setLoading } =
-    useStateContext();
-
-  const [currentVaultData, setCurrentVaultData] = useState<VaultData | null>(safeData || null);
-  const [activeTab, setActiveTab] = useState<TabType>(TabType.QUEUE);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-
-  const loadVaultData = useCallback(async () => {
-    if (!vaultAddress || !rpcUrl) return;
-
-    try {
-      setLoading(true);
-      const vaultData = await canonGuardService.getVaultData(vaultAddress);
-      setCurrentVaultData(vaultData);
-    } catch (error) {
-      console.error("Failed to load vault data:", error);
-      setCurrentVaultData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [vaultAddress, rpcUrl, setLoading]);
+  const handleLoadVaultInfo = useCallback(
+    async (address: Address) => {
+      try {
+        setLoading(true);
+        const info = await safeService.getVaultInfo(address);
+        setSafeInfo(info);
+      } catch (error) {
+        console.error("Failed to load vault info:", error);
+        setSafeInfo(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [safeService],
+  );
 
   useEffect(() => {
-    if (isVaultConfigured) {
-      loadVaultData();
-    }
-  }, [isVaultConfigured, loadVaultData]);
+    const safeAddress = searchParams.get("safeAddress");
+    const rpcUrlParam = searchParams.get("rpcUrl");
 
-  const handleSetupSubmit = (address: Address, rpc: string) => {
+    if (safeAddress && isAddress(safeAddress) && rpcUrlParam) {
+      const decodedRpcUrl = decodeURIComponent(rpcUrlParam);
+      if (decodedRpcUrl.startsWith("http://") || decodedRpcUrl.startsWith("https://")) {
+        setVaultAddress(safeAddress as Address);
+        setRpcUrl(decodedRpcUrl);
+
+        handleLoadVaultInfo(safeAddress as Address);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSetupSubmit = async (address: Address, rpc: string) => {
     setVaultAddress(address);
     setRpcUrl(rpc);
+    setSearchParams({
+      safeAddress: address,
+      rpcUrl: encodeURIComponent(rpc),
+    });
+
+    handleLoadVaultInfo(address);
   };
 
-  if (!isVaultConfigured) {
+  const handleClearVaultConfig = () => {
+    clearVaultConfig();
+    setSearchParams({});
+    setSafeInfo(null);
+  };
+
+  if (!vaultAddress || !rpcUrl) {
     return <VaultSetupModal open onSubmit={handleSetupSubmit} />;
   }
 
   if (loading) {
     return (
       <LoadingContainer>
-        <CircularProgress size={48} />
-        <LoadingText>Loading vault data...</LoadingText>
+        <CircularProgress />
+        <LoadingText variant='h6'>Loading Safe info...</LoadingText>
       </LoadingContainer>
     );
   }
 
-  if (!currentVaultData) {
+  if (!safeInfo) {
     return (
-      <ErrorContainer>
-        <ErrorMessage>Failed to load vault data, please try again.</ErrorMessage>
-      </ErrorContainer>
+      <ErrorState
+        title='Connection Failed'
+        message='Unable to load data from the provided address and RPC endpoint.'
+        onChangeSetup={handleClearVaultConfig}
+      />
     );
   }
 
-  if (!currentVaultData.vaultInfo.hasCanonGuard) {
+  if (!safeInfo.hasCanonGuard) {
     return (
-      <ErrorContainer>
-        <ErrorMessage>This address is not a Canon Vault, please set it up and try again.</ErrorMessage>
-      </ErrorContainer>
+      <ErrorState
+        title='Canon Guard Not Found'
+        message='This Safe address does not have Canon Guard configured.'
+        onChangeSetup={handleClearVaultConfig}
+      />
     );
   }
 
-  return (
-    <SafePageContainer>
-      {currentVaultData && (
-        <>
-          <SafeSidebar
-            safeInfo={currentVaultData.vaultInfo}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-          <SafeMainContent sidebarCollapsed={sidebarCollapsed}>
-            <VaultContent vaultData={currentVaultData} activeTab={activeTab} />
-          </SafeMainContent>
-        </>
-      )}
-    </SafePageContainer>
-  );
+  return <CanonGuardVault safeInfo={safeInfo} onClearVaultConfig={handleClearVaultConfig} />;
 };
 
-const LoadingContainer = styled(Box)(() => ({
+const LoadingContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   height: "100vh",
   flexDirection: "column",
-  gap: 16,
+  gap: theme.spacing(2),
 }));
 
 const LoadingText = styled(Typography)(({ theme }) => ({
-  variant: "h6",
   color: theme.palette.text.secondary,
-}));
-
-const ErrorContainer = styled(Box)(() => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "100vh",
-  padding: 32,
-}));
-
-const ErrorMessage = styled(Typography)(({ theme }) => ({
-  variant: "h6",
-  color: theme.palette.error.main,
-  textAlign: "center",
-  maxWidth: 600,
-}));
-
-const ComingSoonMessage = styled(Typography)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "400px",
-  fontSize: "1.25rem",
-  color: theme.palette.text.secondary,
-  fontStyle: "italic",
 }));

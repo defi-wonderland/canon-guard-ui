@@ -5,6 +5,7 @@ export const truncateAddress = (address: string) => {
 export const formatTimeRemaining = (milliseconds: number) => {
   const hours = Math.floor(milliseconds / (1000 * 60 * 60));
   const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
 
   if (hours >= 24) {
     const days = Math.floor(hours / 24);
@@ -12,7 +13,15 @@ export const formatTimeRemaining = (milliseconds: number) => {
     return `${days}d ${remainingHours}h`;
   }
 
-  return `${hours}h ${minutes}m`;
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+
+  return `${seconds}s`;
 };
 
 export const formatDate = (date: Date) => {

@@ -1,15 +1,20 @@
 import { Queue, HourglassEmpty } from "@mui/icons-material";
 import { Box, Typography, styled } from "@mui/material";
 import { safeDesignTokens } from "~/config/themes/safeTheme";
-import { QueuedTransaction } from "~/types/canon-guard";
+import { CanonVaultData } from "~/types";
 import { ActionColumn } from "./ActionColumn";
 
 interface QueueSectionProps {
-  queuedActions: QueuedTransaction[];
-  waitingForApprovalActions: QueuedTransaction[];
+  canonVaultData: CanonVaultData;
 }
 
-export const QueueSection = ({ queuedActions, waitingForApprovalActions }: QueueSectionProps) => {
+export const QueueSection = ({ canonVaultData }: QueueSectionProps) => {
+  const waitingForApproval = canonVaultData.queuedTransactions.filter(
+    (tx) => tx.safeTxHash && (tx.approversCount || 0) > 0,
+  );
+  const queuedActions = canonVaultData.queuedTransactions.filter(
+    (tx) => !tx.safeTxHash || (tx.approversCount || 0) === 0,
+  );
   return (
     <QueueContentSection>
       <PageTitle>Queue Management</PageTitle>
@@ -24,7 +29,7 @@ export const QueueSection = ({ queuedActions, waitingForApprovalActions }: Queue
         <ActionColumn
           icon={<HourglassEmpty />}
           title='Waiting for Approval'
-          actions={waitingForApprovalActions}
+          actions={waitingForApproval}
           emptyMessage='No actions waiting for approval'
           showApprovalInfo={true}
         />

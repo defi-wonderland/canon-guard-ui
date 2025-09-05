@@ -5,8 +5,8 @@ export const Landing = () => {
   return (
     <LandingContainer>
       <LandingContent>
-        <LandingTitle>Canon Guard</LandingTitle>
-        <LandingSubtitle>View-only interface for Canon Guard management</LandingSubtitle>
+        <LandingTitle variant='h3'>Canon Guard</LandingTitle>
+        <LandingSubtitle variant='h6'>View-only interface for Canon Guard management</LandingSubtitle>
       </LandingContent>
     </LandingContainer>
   );
@@ -28,13 +28,11 @@ const LandingContent = styled(Box)(() => ({
 }));
 
 const LandingTitle = styled(Typography)(() => ({
-  variant: "h3",
   fontWeight: 700,
   marginBottom: 16,
 }));
 
 const LandingSubtitle = styled(Typography)(({ theme }) => ({
-  variant: "h6",
   color: theme.palette.text.secondary,
   marginBottom: 32,
 }));
