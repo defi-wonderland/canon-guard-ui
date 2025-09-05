@@ -31,6 +31,13 @@ const ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
 const ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 const ZERO_HASH = `0x${"0".repeat(64)}`;
 
+const FUNCTION_SELECTORS = {
+  ERC20_TRANSFER: "0x" + "a9059cbb",
+  ERC20_TRANSFER_FROM: "0x" + "23b872dd",
+  ERC20_APPROVE: "0x" + "095ea7b3",
+  CUSTOM_APPROVAL: "0x" + "d77c9b49",
+} as const;
+
 interface ActionDetails {
   actionsData: Hex;
   executableAt: bigint;
@@ -210,14 +217,14 @@ export class CanonGuardService {
 
     const data = (firstAction as { data: string }).data.toLowerCase();
 
-    if (data.startsWith("0xa9059cbb") || data.startsWith("0x23b872dd")) {
+    if (data.startsWith(FUNCTION_SELECTORS.ERC20_TRANSFER) || data.startsWith(FUNCTION_SELECTORS.ERC20_TRANSFER_FROM)) {
       return {
         factoryType: ActionFactoryType.SIMPLE_TRANSFERS,
         factoryLabel: getFactoryLabelByType(ActionFactoryType.SIMPLE_TRANSFERS),
       };
     }
 
-    if (data.startsWith("0x095ea7b3") || data.startsWith("0xd77c9b49")) {
+    if (data.startsWith(FUNCTION_SELECTORS.ERC20_APPROVE) || data.startsWith(FUNCTION_SELECTORS.CUSTOM_APPROVAL)) {
       return {
         factoryType: ActionFactoryType.APPROVE_ACTION,
         factoryLabel: getFactoryLabelByType(ActionFactoryType.APPROVE_ACTION),
