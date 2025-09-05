@@ -36,7 +36,21 @@ export const getFactoryType = (actionBuilderAddress: Address): ActionFactoryType
   return mapping?.type || ActionFactoryType.UNKNOWN;
 };
 
+export const FACTORY_TYPE_TO_LABEL: Record<ActionFactoryType, string> = {
+  [ActionFactoryType.SAFE_ENTRYPOINT]: "Safe Entrypoint Factory",
+  [ActionFactoryType.ALLOWANCE_CLAIMOR]: "Allowance Claimor Factory",
+  [ActionFactoryType.APPROVE_ACTION]: "Approve Action Factory",
+  [ActionFactoryType.CAPPED_TOKEN_TRANSFERS]: "Capped Token Transfers Hub Factory",
+  [ActionFactoryType.SIMPLE_ACTIONS]: "Simple Actions Factory",
+  [ActionFactoryType.SIMPLE_TRANSFERS]: "Simple Transfers Factory",
+  [ActionFactoryType.UNKNOWN]: "Unknown Factory",
+};
+
 export const getFactoryLabel = (actionBuilderAddress: Address): string => {
   const mapping = KNOWN_FACTORY_MAPPINGS[actionBuilderAddress];
-  return mapping?.label || "Unknown Factory";
+  return mapping?.label || FACTORY_TYPE_TO_LABEL[ActionFactoryType.UNKNOWN];
+};
+
+export const getFactoryLabelByType = (factoryType: ActionFactoryType): string => {
+  return FACTORY_TYPE_TO_LABEL[factoryType] || FACTORY_TYPE_TO_LABEL[ActionFactoryType.UNKNOWN];
 };

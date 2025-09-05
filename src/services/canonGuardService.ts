@@ -9,7 +9,12 @@
 
 import { Address, PublicClient, Hash, Hex } from "viem";
 import { canonGuardEntrypointAbi, actionBuilderAbi } from "../abis";
-import { getFactoryType, getFactoryLabel } from "../constants/canonGuard";
+import {
+  getFactoryType,
+  getFactoryLabel,
+  getFactoryLabelByType,
+  KNOWN_FACTORY_MAPPINGS,
+} from "../constants/canonGuard";
 import {
   QueuedTransaction,
   PreApprovedItem,
@@ -20,6 +25,11 @@ import {
 } from "../types";
 import { parseMulticallResults } from "../utils/multicall";
 import { ClientService } from "./clientService";
+
+const SECONDS_TO_MILLISECONDS = 1000;
+const ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+const ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+const ZERO_HASH = `0x${"0".repeat(64)}`;
 
 interface ActionDetails {
   actionsData: Hex;
@@ -34,7 +44,7 @@ interface FactoryClassification {
   [actionAddress: Address]: {
     factoryType: ActionFactoryType;
     factoryLabel: string;
-    factoryAddress: Address;
+    actionBuilderAddress: Address;
   };
 }
 
@@ -169,50 +179,80 @@ export class CanonGuardService {
     }
   }
 
-  private async classifyActionsByFactory(factoryAddresses: Address[]): Promise<FactoryClassification> {
-    if (factoryAddresses.length === 0) return {};
+  private async identifyActionBuilderFactory(actionBuilderAddress: Address): Promise<{
+    factoryType: ActionFactoryType;
+    factoryLabel: string;
+  }> {
+    const directFactoryMatch = KNOWN_FACTORY_MAPPINGS[actionBuilderAddress];
+    if (directFactoryMatch) {
+      return { factoryType: directFactoryMatch.type, factoryLabel: directFactoryMatch.label };
+    }
+
+    let actionsResult;
+    try {
+      actionsResult = await this.client.readContract({
+        address: actionBuilderAddress,
+        abi: actionBuilderAbi,
+        functionName: "getActions",
+      });
+    } catch {
+      actionsResult = null;
+    }
+
+    if (!actionsResult || !Array.isArray(actionsResult) || actionsResult.length === 0) {
+      return { factoryType: ActionFactoryType.UNKNOWN, factoryLabel: getFactoryLabel(actionBuilderAddress) };
+    }
+
+    const firstAction = actionsResult[0];
+    if (!firstAction || typeof firstAction !== "object" || !("data" in firstAction)) {
+      return { factoryType: ActionFactoryType.UNKNOWN, factoryLabel: getFactoryLabel(actionBuilderAddress) };
+    }
+
+    const data = (firstAction as { data: string }).data.toLowerCase();
+
+    if (data.startsWith("0xa9059cbb") || data.startsWith("0x23b872dd")) {
+      return {
+        factoryType: ActionFactoryType.SIMPLE_TRANSFERS,
+        factoryLabel: getFactoryLabelByType(ActionFactoryType.SIMPLE_TRANSFERS),
+      };
+    }
+
+    if (data.startsWith("0x095ea7b3") || data.startsWith("0xd77c9b49")) {
+      return {
+        factoryType: ActionFactoryType.APPROVE_ACTION,
+        factoryLabel: getFactoryLabelByType(ActionFactoryType.APPROVE_ACTION),
+      };
+    }
+
+    return { factoryType: ActionFactoryType.UNKNOWN, factoryLabel: getFactoryLabel(actionBuilderAddress) };
+  }
+
+  private async classifyActionsByFactory(actionBuilderAddresses: Address[]): Promise<FactoryClassification> {
+    if (actionBuilderAddresses.length === 0) return {};
 
     const classification: FactoryClassification = {};
 
-    try {
-      const contracts = factoryAddresses.map((address) => ({
-        address,
-        abi: actionBuilderAbi,
-        functionName: "getActions",
-      }));
+    for (const actionBuilderAddress of actionBuilderAddresses) {
+      const factoryInfo = await this.identifyActionBuilderFactory(actionBuilderAddress);
 
-      const results = await this.client.multicall({ contracts });
-      const values = parseMulticallResults(results);
-
-      for (let i = 0; i < factoryAddresses.length; i++) {
-        const factoryAddress = factoryAddresses[i];
-        const actionsResult = values[i];
-
-        if (actionsResult && Array.isArray(actionsResult) && actionsResult.length > 0) {
-          const factoryType = getFactoryType(factoryAddress);
-          const factoryLabel = getFactoryLabel(factoryAddress);
-
-          classification[factoryAddress] = {
-            factoryType,
-            factoryLabel,
-            factoryAddress,
-          };
-        }
-      }
-    } catch (error) {
-      console.error("Failed to classify actions by factory:", error);
+      classification[actionBuilderAddress] = {
+        factoryType: factoryInfo.factoryType,
+        factoryLabel: factoryInfo.factoryLabel,
+        actionBuilderAddress: actionBuilderAddress,
+      };
     }
+    // TODO: Research using blockchain events to track factory deployments for proper classification
 
     return classification;
   }
 
   private buildFinalActionObjects(
-    allActionAddresses: ActionAddresses,
+    allActionAddresses: Address[],
     actionDetailsMap: Map<Address, ActionDetails>,
     factoryClassifications: FactoryClassification,
     safeThreshold: number,
   ): { queuedTransactions: QueuedTransaction[]; preApprovedItems: PreApprovedItem[] } {
-    const now = Date.now() / 1000;
+    const now = Date.now() / SECONDS_TO_MILLISECONDS;
     const queuedTransactions: QueuedTransaction[] = [];
     const preApprovedItems: PreApprovedItem[] = [];
 
@@ -235,24 +275,27 @@ export class CanonGuardService {
       const factoryType =
         classification?.factoryType || getFactoryType(actionAddress) || ActionFactoryType.SIMPLE_ACTIONS;
       const factoryLabel = classification?.factoryLabel || getFactoryLabel(actionAddress);
-      const factoryAddress = classification?.factoryAddress || actionAddress;
+      const actionBuilderAddress = classification?.actionBuilderAddress || actionAddress;
       const isApproved = Number(approvalExpiry) > now;
       const actionBuilder = {
         address: actionAddress,
         factoryType,
-        factoryAddress,
+        actionBuilderAddress,
         factoryLabel,
-        createdAt: new Date(executableTimestamp * 1000 - 86400000),
+        // TODO: Get real creation timestamp from blockchain events instead of assuming 1 day before executable
+        createdAt: new Date(executableTimestamp * SECONDS_TO_MILLISECONDS - ONE_DAY_IN_MILLISECONDS),
         isApproved,
-        approvalExpiresAt: isApproved ? new Date(Number(approvalExpiry) * 1000) : undefined,
+        approvalExpiresAt: isApproved ? new Date(Number(approvalExpiry) * SECONDS_TO_MILLISECONDS) : undefined,
       };
-      if (allActionAddresses.queued.includes(actionAddress)) {
+
+      if (allActionAddresses.includes(actionAddress)) {
         queuedTransactions.push({
           actionBuilder,
           state,
-          queuedAt: new Date(executableTimestamp * 1000 - 3600000),
-          executableAt: new Date(executableTimestamp * 1000),
-          expiresAt: new Date(expiresTimestamp * 1000),
+          // TODO: Get real queued timestamp from blockchain events instead of assuming 1 hour before executable
+          queuedAt: new Date(executableTimestamp * SECONDS_TO_MILLISECONDS - ONE_HOUR_IN_MILLISECONDS),
+          executableAt: new Date(executableTimestamp * SECONDS_TO_MILLISECONDS),
+          expiresAt: new Date(expiresTimestamp * SECONDS_TO_MILLISECONDS),
           safeTxHash,
           approversCount: approvers.length,
           requiredApprovals: safeThreshold,
@@ -260,17 +303,22 @@ export class CanonGuardService {
         });
       }
 
-      if (allActionAddresses.preApproved.includes(actionAddress) && isApproved) {
-        const expiryTimestamp = Number(approvalExpiry);
-        const approvalDuration = expiryTimestamp - now;
+      const hasPartialApprovals = approvers.length > 0 && approvers.length < safeThreshold;
+      const hasValidNonce = safeTxHash && safeTxHash !== ZERO_HASH;
 
+      if (hasPartialApprovals && hasValidNonce) {
         preApprovedItems.push({
           address: actionAddress,
           type: PreApprovedItemType.BUILDER,
           factoryType,
-          approvedAt: new Date(expiryTimestamp * 1000 - approvalDuration * 1000),
-          expiresAt: new Date(expiryTimestamp * 1000),
-          approvalDuration,
+          // TODO: Get real approval timestamp from blockchain events instead of assuming 1 day before executable
+          approvedAt: new Date(executableTimestamp * SECONDS_TO_MILLISECONDS - ONE_DAY_IN_MILLISECONDS),
+          expiresAt: new Date(expiresTimestamp * SECONDS_TO_MILLISECONDS),
+          approvalDuration: Math.max(0, expiresTimestamp - now),
+          safeTxHash,
+          approversCount: approvers.length,
+          requiredApprovals: safeThreshold,
+          approvers,
         });
       }
     }
