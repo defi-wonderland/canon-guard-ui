@@ -4,7 +4,7 @@
  * Responsibilities:
  * - Fetch queued transactions
  * - Classify actions by factory type and determine transaction states
- * - Aggregate complete Canon Vault data with execution history
+ * - Aggregate complete Canon Guard data with execution history
  */
 
 import { Address, PublicClient, Hash, Hex } from "viem";
@@ -18,7 +18,7 @@ import {
 import {
   QueuedTransaction,
   PreApprovedItem,
-  CanonVaultData,
+  CanonGuardData,
   QueuedTransactionState,
   PreApprovedItemType,
   ActionFactoryType,
@@ -66,10 +66,10 @@ export class CanonGuardService {
     return this.clientService.getClient();
   }
 
-  async getCanonVaultData(
+  async getCanonGuardData(
     entrypointAddress: Address,
     safeThreshold: number,
-  ): Promise<Omit<CanonVaultData, "safeInfo">> {
+  ): Promise<Omit<CanonGuardData, "safeInfo">> {
     const allActionAddresses = await this.fetchAllActionAddresses(entrypointAddress);
 
     const actionDetailsMap = await this.fetchActionDetails(entrypointAddress, allActionAddresses);
@@ -97,13 +97,13 @@ export class CanonGuardService {
         abi: [
           {
             type: "function",
-            name: "getQueuedTransactions",
+            name: "getQueuedActionBuilders",
             inputs: [],
-            outputs: [{ name: "", type: "address[]" }],
+            outputs: [{ name: "_queuedActionBuilders", type: "address[]" }],
             stateMutability: "view",
           },
         ],
-        functionName: "getQueuedTransactions",
+        functionName: "getQueuedActionBuilders",
       });
 
       const queued = Array.isArray(queuedResult) ? queuedResult : [];

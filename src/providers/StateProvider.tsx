@@ -1,41 +1,50 @@
 import { createContext, useState } from "react";
 import { Address } from "viem";
-import { optimism } from "viem/chains";
-import { OPTIMISM_MAINNET_RPC } from "../constants/addresses";
-import { ClientService, SafeService, CanonGuardService } from "../services";
+import { SupportedChainId, DEFAULT_CHAIN_ID, getRpcUrlForChain, getViemChain } from "~/config/chains";
+import { ClientService, SafeService, CanonGuardService, QueueService } from "../services";
 
 interface ServiceInstances {
   clientService: ClientService;
   safeService: SafeService;
   canonGuardService: CanonGuardService;
+  queueService: QueueService;
 }
 
-const createServiceInstances = (rpcUrl: string = OPTIMISM_MAINNET_RPC): ServiceInstances => {
-  const clientService = new ClientService(rpcUrl, optimism);
+const createServiceInstances = (chainId: SupportedChainId): ServiceInstances => {
+  const rpcUrl = getRpcUrlForChain(chainId);
+  const chain = getViemChain(chainId);
+
+  const clientService = new ClientService(rpcUrl, chain);
   const safeService = new SafeService(clientService);
   const canonGuardService = new CanonGuardService(clientService);
+  const queueService = new QueueService(clientService);
 
   return {
     clientService,
     safeService,
     canonGuardService,
+    queueService,
   };
 };
 
-const initialServices = createServiceInstances();
+const initialServices = createServiceInstances(DEFAULT_CHAIN_ID);
 
 type ContextType = {
   isError: boolean;
   setIsError: (val: boolean) => void;
 
-  vaultAddress: Address | null;
-  setVaultAddress: (address: Address) => void;
+  safeAddress: Address | null;
+  setSafeAddress: (address: Address) => void;
 
-  rpcUrl: string | null;
-  setRpcUrl: (url: string) => void;
+  guardAddress: Address | null;
+  setGuardAddress: (address: Address) => void;
+
+  chainId: SupportedChainId | null;
+  setChainId: (chainId: SupportedChainId) => void;
+
   services: ServiceInstances;
 
-  clearVaultConfig: () => void;
+  clearConfig: () => void;
 };
 
 interface StateProps {
@@ -46,27 +55,33 @@ export const StateContext = createContext({} as ContextType);
 
 export const StateProvider = ({ children }: StateProps) => {
   const [isError, setIsError] = useState<boolean>(false);
-  const [vaultAddress, setVaultAddressState] = useState<Address | null>(null);
-  const [rpcUrl, setRpcUrlState] = useState<string | null>(null);
+  const [safeAddress, setSafeAddressState] = useState<Address | null>(null);
+  const [guardAddress, setGuardAddressState] = useState<Address | null>(null);
+  const [chainId, setChainIdState] = useState<SupportedChainId | null>(null);
   const [services, setServices] = useState<ServiceInstances>(initialServices);
 
-  const updateServicesRpcUrl = (newRpcUrl: string) => {
-    const newServices = createServiceInstances(newRpcUrl);
+  const updateServicesForChain = (newChainId: SupportedChainId) => {
+    const newServices = createServiceInstances(newChainId);
     setServices(newServices);
   };
 
-  const setVaultAddress = (address: Address) => {
-    setVaultAddressState(address);
+  const setSafeAddress = (address: Address) => {
+    setSafeAddressState(address);
   };
 
-  const setRpcUrl = (url: string) => {
-    setRpcUrlState(url);
-    updateServicesRpcUrl(url);
+  const setGuardAddress = (address: Address) => {
+    setGuardAddressState(address);
   };
 
-  const clearVaultConfig = () => {
-    setVaultAddressState(null);
-    setRpcUrlState(null);
+  const setChainId = (newChainId: SupportedChainId) => {
+    setChainIdState(newChainId);
+    updateServicesForChain(newChainId);
+  };
+
+  const clearConfig = () => {
+    setSafeAddressState(null);
+    setGuardAddressState(null);
+    setChainIdState(null);
   };
 
   return (
@@ -74,12 +89,14 @@ export const StateProvider = ({ children }: StateProps) => {
       value={{
         isError,
         setIsError,
-        vaultAddress,
-        setVaultAddress,
-        rpcUrl,
-        setRpcUrl,
+        safeAddress,
+        setSafeAddress,
+        guardAddress,
+        setGuardAddress,
+        chainId,
+        setChainId,
         services,
-        clearVaultConfig,
+        clearConfig,
       }}
     >
       <>{children}</>

@@ -21,7 +21,7 @@ describe("CanonGuardService", () => {
   it("returns empty data when no actions exist", async () => {
     mockReadContract.mockResolvedValue([]);
 
-    const result = await service.getCanonVaultData("0x123" as Address, 1);
+    const result = await service.getCanonGuardData("0x123" as Address, 1);
 
     expect(result.queuedTransactions).toEqual([]);
     expect(result.preApprovedItems).toEqual([]);
@@ -44,7 +44,7 @@ describe("CanonGuardService", () => {
 
     mockReadContract.mockResolvedValueOnce([{ target: "0xtoken", data: "0xa9059cbb", value: 0n }]);
 
-    const result = await service.getCanonVaultData("0x123" as Address, 1);
+    const result = await service.getCanonGuardData("0x123" as Address, 1);
 
     expect(result.queuedTransactions).toHaveLength(1);
   });
@@ -52,7 +52,7 @@ describe("CanonGuardService", () => {
   it("handles errors gracefully", async () => {
     mockReadContract.mockRejectedValue(new Error("Network error"));
 
-    const result = await service.getCanonVaultData("0x123" as Address, 1);
+    const result = await service.getCanonGuardData("0x123" as Address, 1);
 
     expect(result.queuedTransactions).toEqual([]);
     expect(result.preApprovedItems).toEqual([]);

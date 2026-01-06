@@ -65,6 +65,6 @@ test.describe("Safe Sidebar Features", () => {
     await page.getByTestId("safe-more-options").click();
     await page.getByText("Clear Vault Configuration").click();
 
-    await expect(page.getByText("Setup Canon Vault")).toBeVisible();
+    await expect(page.getByText("Connect Safe")).toBeVisible();
   });
 });

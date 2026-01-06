@@ -1,27 +1,46 @@
-import { styled, Box, Card, Typography, Chip, alpha } from "@mui/material";
-import { safeDesignTokens } from "~/config/themes/safeTheme";
+import { styled, Box, Card, Typography, Chip, alpha, Tooltip, tooltipClasses } from "@mui/material";
+import { safeDesignTokens, canonHeaderTokens } from "~/config/themes/safeTheme";
+import type { TooltipProps } from "@mui/material";
 
-export const SafePageContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  height: "100vh",
-  overflow: "hidden",
-  backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.secondary,
-}));
-
-export const SafeMainContent = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "sidebarCollapsed",
-})<{ sidebarCollapsed?: boolean }>(({ theme, sidebarCollapsed }) => ({
-  flexGrow: 1,
-  width: "100%",
-  backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.secondary,
-  overflow: "auto",
-  transition: safeDesignTokens.components.sidebar.transition,
-  marginLeft: 0,
-  [theme.breakpoints.up("md")]: {
-    marginLeft: 0,
-    paddingLeft: sidebarCollapsed ? safeDesignTokens.sizes.sidebar.collapsed : safeDesignTokens.sizes.sidebar.expanded,
+/**
+ * Styled tooltip with consistent dark theme styling
+ * Use this across the app for all tooltips
+ */
+export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
+  <Tooltip {...props} classes={{ popper: className }} />
+))({
+  [`& .${tooltipClasses.tooltip}`]: {
+    backgroundColor: "#37373e",
+    color: "#b5b5b7",
+    fontSize: "13px",
+    fontWeight: 400,
+    lineHeight: "20px",
+    padding: "12px 16px",
+    borderRadius: "6px",
+    maxWidth: "347px",
+    boxShadow: "0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)",
   },
-}));
+});
+
+// Page container with vertical flex layout (header + content)
+export const PageContainer = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  minHeight: "100vh",
+  width: "100%",
+  backgroundColor: canonHeaderTokens.background.layer0,
+});
+
+// Main content area below header
+export const MainContent = styled(Box)({
+  flex: 1,
+  overflow: "auto",
+  backgroundColor: canonHeaderTokens.background.layer0,
+});
+
+// Legacy exports for backwards compatibility (will be removed in future)
+export const SafePageContainer = PageContainer;
+export const SafeMainContent = MainContent;
 
 export const SafeActionCard = styled(Card, {
   shouldForwardProp: (prop) => prop !== "isPreApproved",
@@ -34,7 +53,7 @@ export const SafeActionCard = styled(Card, {
     marginBottom: safeDesignTokens.spacing.md,
     border: `${safeDesignTokens.sizes.card.borderWidth} solid ${borderColor}`,
     minHeight: "80px",
-    backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.elevated,
+    backgroundColor: canonHeaderTokens.background.layer1,
     [theme.breakpoints.down("sm")]: {
       marginBottom: safeDesignTokens.spacing.xs,
       minHeight: "60px",
@@ -49,22 +68,19 @@ export const SafeCardContent = styled(Box)(({ theme }) => ({
   },
 }));
 
-export const SafeCardTitle = styled(Typography)(({ theme }) => ({
+export const SafeCardTitle = styled(Typography)({
   ...safeDesignTokens.typography.cardTitle,
-  color: theme.palette.text.primary,
+  color: canonHeaderTokens.foreground.accent0,
   fontSize: "1.125rem",
   fontWeight: 600,
   lineHeight: 1.4,
   marginBottom: safeDesignTokens.spacing.xs,
-  [theme.breakpoints.down("sm")]: {
-    fontSize: "1rem",
-  },
-}));
+});
 
-export const SafeCardBody = styled(Typography)(({ theme }) => ({
+export const SafeCardBody = styled(Typography)({
   ...safeDesignTokens.typography.cardBody,
-  color: theme.palette.text.secondary,
-}));
+  color: canonHeaderTokens.foreground.accent10,
+});
 
 export const SafeStatusChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "isPreApproved",
@@ -88,7 +104,7 @@ export const SafeStatusChip = styled(Chip, {
 export const SafeAddress = styled(Typography)(({ theme }) => ({
   fontFamily: "monospace",
   fontSize: "0.875rem",
-  color: theme.palette.text.secondary,
+  color: canonHeaderTokens.foreground.accent10,
   cursor: "pointer",
   padding: `${safeDesignTokens.spacing.xs} ${safeDesignTokens.spacing.sm}`,
   backgroundColor: alpha(theme.palette.primary.main, 0.04),
@@ -96,6 +112,6 @@ export const SafeAddress = styled(Typography)(({ theme }) => ({
   transition: "all 0.2s ease-in-out",
   "&:hover": {
     backgroundColor: alpha(theme.palette.primary.main, 0.08),
-    color: theme.palette.primary.main,
+    color: canonHeaderTokens.brand.green,
   },
 }));

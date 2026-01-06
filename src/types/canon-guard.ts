@@ -24,6 +24,11 @@ export enum ActionFactoryType {
   CAPPED_TOKEN_TRANSFERS = "capped_token_transfers",
   ALLOWANCE_CLAIMOR = "allowance_claimor",
   APPROVE_ACTION = "approve_action",
+  CHANGE_SAFE_GUARD = "change_safe_guard",
+  SET_EMERGENCY_CALLER = "set_emergency_caller",
+  SET_EMERGENCY_TRIGGER = "set_emergency_trigger",
+  EVERCLEAR_TOKEN_CONVERSION = "everclear_token_conversion",
+  OPX_ACTION = "opx_action",
   UNKNOWN = "unknown",
 }
 
@@ -116,10 +121,10 @@ export interface PreApprovedItem {
 // ================================================================
 
 /**
- * Canon Guard configuration for a specific vault
+ * Canon Guard configuration for a specific Safe
  */
 export interface CanonGuardConfiguration {
-  vaultAddress: Address;
+  safeAddress: Address;
   entrypointAddress: Address;
   shortTxExecutionDelay: number;
   longTxExecutionDelay: number;
@@ -137,12 +142,15 @@ export interface SafeInfo {
   threshold: number;
   owners: Address[];
   totalOwners: number;
-  hasCanonGuard: boolean;
+  /** Whether the Safe has any guard attached */
+  hasGuard: boolean;
+  /** Whether the attached guard is a valid Canon Guard (deployed from supported factory) */
+  isValidCanonGuard: boolean;
   guardAddress?: Address;
   nonce: number;
 }
 
-export interface CanonVaultData {
+export interface CanonGuardData {
   safeInfo: SafeInfo;
   configuration?: CanonGuardConfiguration;
   queuedTransactions: QueuedTransaction[];
@@ -204,14 +212,12 @@ export interface TransferAction {
 // ================================================================
 
 /**
- * UI tab types for navigation
+ * UI tab types for navigation (matches Figma header design)
  */
 export enum TabType {
   QUEUE = "queue",
-  PRE_APPROVED = "pre-approved",
-  HISTORY = "history",
-  CONFIGURATION = "configuration",
-  ACTIONS = "actions",
+  CANON_LIST = "canon-list",
+  CREATE = "create",
 }
 
 // ================================================================

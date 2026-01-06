@@ -28,7 +28,7 @@ describe("CanonGuardService Integration", () => {
   });
 
   it("fetches real Canon Guard vault data", async () => {
-    const data = await service.getCanonVaultData(NEW_GUARD_ADDRESS, 3);
+    const data = await service.getCanonGuardData(NEW_GUARD_ADDRESS, 3);
 
     expect(data.queuedTransactions).toHaveLength(EXPECTED_QUEUED_TRANSACTIONS.length);
     expect(data.preApprovedItems).toHaveLength(EXPECTED_PRE_APPROVED_ITEMS.length);

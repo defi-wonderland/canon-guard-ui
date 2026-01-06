@@ -4,4 +4,6 @@ export * from "./ActionCard";
 export * from "./ActionColumn";
 export * from "./QueueSection";
 export * from "./VaultSetupModal";
+export * from "./GuardSetupWizard";
+export * from "./ErrorState";
 export * from "./shared/StyledComponents";

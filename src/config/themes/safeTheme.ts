@@ -45,7 +45,41 @@ type ThemeTokens = {
     primary: string;
     secondary: string;
     tertiary: string;
+    muted: string;
   };
+};
+
+// Figma design tokens for Canon Guard header
+export const canonHeaderTokens = {
+  background: {
+    layer0: "#111114",
+    layer1: "#24242b",
+    layer1Variation: "#202026",
+  },
+  foreground: {
+    accent0: "#f9f9fa",
+    accent10: "#b5b5b7",
+    accent20: "#858589",
+    accent30: "#505057",
+    accent40: "#37373e",
+    accent50: "#111114",
+  },
+  brand: {
+    green: "#15a43e",
+    greenLight: "#149b3a",
+  },
+  status: {
+    red: "#da2828",
+    greenTransparent10: "rgba(21, 164, 62, 0.1)",
+    greenTransparent50: "rgba(21, 164, 62, 0.5)",
+    amber: "#e1ab11",
+    amberLight: "rgba(225, 171, 17, 0.5)",
+  },
+  amber: {
+    base: "#e1ab11",
+    border: "rgba(225, 171, 17, 0.1)",
+    text: "rgba(225, 171, 17, 0.5)",
+  },
 };
 
 export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
@@ -195,58 +229,60 @@ export const safeDesignTokens: Record<ThemeMode, ThemeTokens> & {
       primary: "#111827",
       secondary: "#6b7280",
       tertiary: "#9ca3af",
+      muted: "#d1d5db",
     },
   },
 
   dark: {
     brand: {
       primary: {
-        main: "#6366f1", // Indigo
-        light: "#a5b4fc",
-        dark: "#4338ca",
+        main: "#15a43e", // Canon Green
+        light: "#149b3a",
+        dark: "#0d7a2d",
         contrast: "#ffffff",
       },
       secondary: {
-        main: "#8b5cf6", // Purple
-        light: "#c4b5fd",
-        dark: "#7c3aed",
+        main: "#15a43e", // Canon Green
+        light: "#149b3a",
+        dark: "#0d7a2d",
         contrast: "#ffffff",
       },
     },
 
     actionStatus: {
       preApproved: {
-        main: "#10b981", // Emerald
-        light: "#d1fae5",
-        dark: "#047857",
+        main: "#15a43e", // Canon Green
+        light: "#149b3a",
+        dark: "#0d7a2d",
         contrast: "#ffffff",
-        surface: "#ecfdf5",
+        surface: "#111114",
       },
       notPreApproved: {
         main: "#ef4444", // Red
         light: "#fecaca",
         dark: "#dc2626",
         contrast: "#ffffff",
-        surface: "#fef2f2",
+        surface: "#111114",
       },
     },
 
     surfaces: {
-      primary: "#1f2937",
-      secondary: "#111827",
-      elevated: "#374151",
+      primary: "#24242b", // layer-1 (header/cards)
+      secondary: "#111114", // layer-0 (page background)
+      elevated: "#24242b", // layer-1
     },
 
     borders: {
-      primary: "#4b5563",
-      secondary: "#374151",
-      accent: "#6b7280",
+      primary: "#505057", // accent-30
+      secondary: "#24242b", // layer-1
+      accent: "#858589", // accent-20
     },
 
     text: {
-      primary: "#f9fafb",
-      secondary: "#d1d5db",
-      tertiary: "#9ca3af",
+      primary: "#f9f9fa", // accent-0
+      secondary: "#b5b5b7", // accent-10
+      tertiary: "#858589", // accent-20
+      muted: "#505057", // accent-30
     },
   },
 

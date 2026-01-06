@@ -1,5 +1,5 @@
 {
-  "name": "canon-vault-ui",
+  "name": "canon-guard-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -41,6 +41,7 @@
     "@rainbow-me/rainbowkit": "2.2.5",
     "@tanstack/react-query": "5.80.3",
     "lodash.merge": "4.6.2",
+    "lucide-react": "^0.562.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-router-dom": "7.6.2",
