@@ -275,6 +275,7 @@ export interface HubTokenConfig {
   address: Address;
   cap: bigint;
   capLeft: bigint;
+  decimals: number;
 }
 
 /**

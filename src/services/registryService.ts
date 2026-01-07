@@ -4,7 +4,7 @@
  * Uses viem's multicall to batch PARENT() and approvalExpiries() calls for efficiency
  */
 
-import { Address, PublicClient } from "viem";
+import { Address, PublicClient, erc20Abi } from "viem";
 import {
   canonGuardRegistryAbi,
   actionBuilderParentAbi,
@@ -266,8 +266,8 @@ export class RegistryService {
         };
       }
 
-      // Fetch cap and capLeft for each token using multicall
-      const capContracts = tokens.flatMap((token) => [
+      // Fetch cap, capLeft, and decimals for each token using multicall
+      const tokenContracts = tokens.flatMap((token) => [
         {
           address: hubAddress,
           abi: cappedTokenTransfersHubAbi,
@@ -280,21 +280,28 @@ export class RegistryService {
           functionName: "capLeft" as const,
           args: [token],
         },
+        {
+          address: token,
+          abi: erc20Abi,
+          functionName: "decimals" as const,
+        },
       ]);
 
-      const capResults = await this.client.multicall({
-        contracts: capContracts,
+      const tokenResults = await this.client.multicall({
+        contracts: tokenContracts,
         allowFailure: true,
       });
 
       const tokenConfigs: HubTokenConfig[] = tokens.map((tokenAddress, index) => {
-        const capResult = capResults[index * 2];
-        const capLeftResult = capResults[index * 2 + 1];
+        const capResult = tokenResults[index * 3];
+        const capLeftResult = tokenResults[index * 3 + 1];
+        const decimalsResult = tokenResults[index * 3 + 2];
 
         return {
           address: tokenAddress,
           cap: capResult.status === "success" ? (capResult.result as bigint) : 0n,
           capLeft: capLeftResult.status === "success" ? (capLeftResult.result as bigint) : 0n,
+          decimals: decimalsResult.status === "success" ? (decimalsResult.result as number) : 18,
         };
       });
 

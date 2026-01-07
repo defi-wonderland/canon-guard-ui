@@ -7,9 +7,6 @@ import { ActionFactoryType, CappedTokenTransfersHubInfo, HubTokenConfig } from "
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
 import { Breadcrumb, FormSection, FormInput, ActionButton, ButtonRow } from "../shared";
 
-// Token decimals default (ERC20 standard is 18)
-const DEFAULT_DECIMALS = 18;
-
 export interface HubChildFormData {
   title: string;
   token: Address | "";
@@ -43,11 +40,10 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
     return hubInfo.tokens.find((t) => t.address.toLowerCase() === formData.token.toLowerCase()) || null;
   }, [formData.token, hubInfo]);
 
-  // Format cap left for display
+  // Format cap left for display using the token's actual decimals
   const capLeftDisplay = useMemo(() => {
     if (!selectedTokenConfig) return null;
-    // Format with 18 decimals as default for display
-    return formatUnits(selectedTokenConfig.capLeft, DEFAULT_DECIMALS);
+    return formatUnits(selectedTokenConfig.capLeft, selectedTokenConfig.decimals);
   }, [selectedTokenConfig]);
 
   // Validation
@@ -163,7 +159,7 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
                               $isSelected={tokenConfig.address.toLowerCase() === formData.token.toLowerCase()}
                             >
                               <TokenAddress>{tokenConfig.address}</TokenAddress>
-                              <TokenCapInfo>Cap: {formatUnits(tokenConfig.cap, DEFAULT_DECIMALS)}</TokenCapInfo>
+                              <TokenCapInfo>Cap: {formatUnits(tokenConfig.cap, tokenConfig.decimals)}</TokenCapInfo>
                             </TokenDropdownItem>
                           ))}
                         </TokenDropdownMenu>
