@@ -9,6 +9,7 @@ import { CopyableText } from "~/components/shared/CopyButton";
 import { DurationInput } from "~/components/shared/DurationInput";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { humanizeDuration } from "~/hooks/useCanonGuardConfig";
 import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
 import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
 import type { TransferFormData, SimpleActionFormData } from "./index";
@@ -16,22 +17,6 @@ import type { TransferFormData, SimpleActionFormData } from "./index";
 // Type guard to detect transfer form data
 const isTransferFormData = (data: TransferFormData | SimpleActionFormData): data is TransferFormData => {
   return "transfers" in data;
-};
-
-/**
- * Convert seconds to a human-readable duration string
- */
-const humanizeDuration = (seconds: number): string => {
-  const years = Math.floor(seconds / (365 * 24 * 3600));
-  const months = Math.floor((seconds % (365 * 24 * 3600)) / (30 * 24 * 3600));
-  const days = Math.floor((seconds % (30 * 24 * 3600)) / (24 * 3600));
-
-  const parts: string[] = [];
-  if (years > 0) parts.push(`${years} year${years !== 1 ? "s" : ""}`);
-  if (months > 0) parts.push(`${months} month${months !== 1 ? "s" : ""}`);
-  if (days > 0 && years === 0) parts.push(`${days} day${days !== 1 ? "s" : ""}`);
-
-  return parts.length > 0 ? parts.join(", ") : "0 seconds";
 };
 
 // Tooltip content
@@ -104,7 +89,7 @@ export const ReviewDeployStep = ({
     const totalSeconds = BigInt(Math.floor(amount * multiplier));
 
     if (maxApprovalDuration !== null && totalSeconds > maxApprovalDuration) {
-      const maxHumanized = humanizeDuration(Number(maxApprovalDuration));
+      const maxHumanized = humanizeDuration(maxApprovalDuration);
       return {
         totalDurationSeconds: totalSeconds,
         isValid: false,
