@@ -1,36 +1,25 @@
 import { useMemo } from "react";
 import { Box, Typography, styled } from "@mui/material";
-import { isAddress, isHex, keccak256, toBytes, slice } from "viem";
+import { keccak256, toBytes, slice } from "viem";
 import { BoxIcon, AsteriskIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { FACTORY_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection, FormInput, ActionButton, ButtonRow } from "../shared";
-import type { SimpleActionFormData } from "./index";
-
-// Validation helpers
-const isValidAddress = (value: string): boolean => {
-  if (!value.trim()) return true; // Empty is not invalid (just incomplete)
-  return isAddress(value);
-};
-
-const isValidSignature = (value: string): boolean => {
-  if (!value.trim()) return true; // Empty is not invalid
-  // Basic validation: should be a function signature like "transfer(address,uint256)"
-  return /^[a-zA-Z_][a-zA-Z0-9_]*\([^)]*\)$/.test(value);
-};
-
-const isValidHexData = (value: string): boolean => {
-  if (!value.trim()) return true; // Empty is not invalid
-  if (value === "0x") return true; // Empty bytes
-  return isHex(value);
-};
-
-const isValidValue = (value: string): boolean => {
-  if (!value.trim()) return true; // Empty is not invalid
-  const num = parseFloat(value);
-  return !isNaN(num) && num >= 0 && /^[0-9]*\.?[0-9]*$/.test(value);
-};
+import { isValidAddress, isValidSignature, isValidHexData, isValidValue } from "~/utils/validation";
+import {
+  Breadcrumb,
+  FormSection,
+  FormInput,
+  ActionButton,
+  ItemsCard,
+  ItemSection,
+  ItemDividerHeader,
+  ItemFieldsSection,
+  AddItemRow,
+  ActionButtonRow,
+  ButtonsContainer,
+} from "../shared";
+import type { SimpleActionFormData, SimpleActionItem } from "./index";
 
 // Compute function selector from signature (first 4 bytes of keccak256)
 const computeSelector = (signature: string): string | null => {
@@ -60,41 +49,72 @@ export const SimpleActionFormStep = ({
   onNavigateToCreate,
   onChangeFactory,
 }: SimpleActionFormStepProps) => {
-  const updateField = (field: keyof SimpleActionFormData, value: string) => {
-    onFormDataChange({ ...formData, [field]: value });
+  // Update title field
+  const updateTitle = (value: string) => {
+    onFormDataChange({ ...formData, title: value });
   };
 
-  // Validation errors and warnings
-  const { errors, warnings } = useMemo(() => {
-    const selector = computeSelector(formData.signature);
-    const dataTrimmed = formData.data.trim().toLowerCase();
+  // Update a specific action item
+  const updateAction = (index: number, field: keyof SimpleActionItem, value: string) => {
+    const newActions = [...formData.actions];
+    newActions[index] = { ...newActions[index], [field]: value };
+    onFormDataChange({ ...formData, actions: newActions });
+  };
 
-    // Check if data starts with the computed selector (potential duplication)
-    const hasDuplicateSelector = selector && dataTrimmed.length >= 10 && dataTrimmed.startsWith(selector.toLowerCase());
+  // Add a new action item
+  const addAction = () => {
+    onFormDataChange({
+      ...formData,
+      actions: [...formData.actions, { target: "", signature: "", data: "", value: "" }],
+    });
+  };
+
+  // Remove an action item
+  const removeAction = (index: number) => {
+    const newActions = formData.actions.filter((_, i) => i !== index);
+    onFormDataChange({ ...formData, actions: newActions });
+  };
+
+  // Validation errors and warnings for each action
+  const { errors, warnings } = useMemo(() => {
+    const actionErrors = formData.actions.map((action) => {
+      const selector = computeSelector(action.signature);
+      const dataTrimmed = action.data.trim().toLowerCase();
+      const hasDuplicateSelector =
+        selector && dataTrimmed.length >= 10 && dataTrimmed.startsWith(selector.toLowerCase());
+
+      return {
+        errors: {
+          target: action.target.trim() && !isValidAddress(action.target) ? "Invalid address format" : undefined,
+          signature:
+            action.signature.trim() && !isValidSignature(action.signature)
+              ? "Invalid signature format (e.g. transfer(address,uint256))"
+              : undefined,
+          data:
+            action.data.trim() && !isValidHexData(action.data)
+              ? "Must be a valid hex string starting with 0x"
+              : undefined,
+          value: action.value.trim() && !isValidValue(action.value) ? "Must be a valid number" : undefined,
+        },
+        warnings: {
+          data: hasDuplicateSelector ? "The encoded parameters should not contain the function selector." : undefined,
+        },
+      };
+    });
 
     return {
-      errors: {
-        target: formData.target.trim() && !isValidAddress(formData.target) ? "Invalid address format" : undefined,
-        signature:
-          formData.signature.trim() && !isValidSignature(formData.signature)
-            ? "Invalid signature format (e.g. transfer(address,uint256))"
-            : undefined,
-        data:
-          formData.data.trim() && !isValidHexData(formData.data)
-            ? "Must be a valid hex string starting with 0x"
-            : undefined,
-        value: formData.value.trim() && !isValidValue(formData.value) ? "Must be a valid number" : undefined,
-      },
-      warnings: {
-        data: hasDuplicateSelector ? "The encoded parameters should not contain the function selector." : undefined,
-      },
+      errors: actionErrors.map((e) => e.errors),
+      warnings: actionErrors.map((e) => e.warnings),
     };
-  }, [formData.target, formData.signature, formData.data, formData.value]);
+  }, [formData.actions]);
 
-  const hasErrors = Boolean(errors.target || errors.signature || errors.data || errors.value);
+  const hasErrors = errors.some((e) => e.target || e.signature || e.data || e.value);
 
   const isValid =
-    formData.title.trim() !== "" && formData.target.trim() !== "" && formData.signature.trim() !== "" && !hasErrors;
+    formData.title.trim() !== "" &&
+    formData.actions.length > 0 &&
+    formData.actions.every((action) => action.target.trim() !== "" && action.signature.trim() !== "") &&
+    !hasErrors;
 
   return (
     <Container>
@@ -121,7 +141,7 @@ export const SimpleActionFormStep = ({
                   label='Transaction Title'
                   placeholder='Eg. Deposit 1 ETH to Vault...'
                   value={formData.title}
-                  onChange={(value) => updateField("title", value)}
+                  onChange={updateTitle}
                 />
                 <PublicBadge>Public</PublicBadge>
               </FormInputWrapper>
@@ -137,47 +157,71 @@ export const SimpleActionFormStep = ({
 
         {/* Set Action Parameters Section */}
         <FormSection label='SET ACTION PARAMETERS'>
-          <ParametersCard>
-            <CardContent>
-              <FormInput
-                label='Target Address'
-                placeholder='0x...'
-                value={formData.target}
-                onChange={(value) => updateField("target", value)}
-                error={errors.target}
-              />
-              <FormInput
-                label='Function Signature'
-                placeholder='e.g. transfer(address,uint256)'
-                value={formData.signature}
-                onChange={(value) => updateField("signature", value)}
-                error={errors.signature}
-              />
-              <FormInput
-                label='Encoded Parameters'
-                placeholder='0x... (encoded arguments, without selector)'
-                value={formData.data}
-                onChange={(value) => updateField("data", value)}
-                error={errors.data}
-                warning={warnings.data}
-              />
-              <FormInput
-                label='Value (wei)'
-                placeholder='0'
-                value={formData.value}
-                onChange={(value) => updateField("value", value)}
-                error={errors.value}
-              />
-            </CardContent>
-            <ButtonRow>
-              <ActionButton variant='secondary' onClick={onBack}>
-                BACK
-              </ActionButton>
-              <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
-                CONTINUE
-              </ActionButton>
-            </ButtonRow>
-          </ParametersCard>
+          <ItemsCard>
+            {/* Action Items */}
+            {formData.actions.map((action, index) => (
+              <ItemSection key={index}>
+                {/* Divider header with action number and remove button */}
+                <ItemDividerHeader
+                  label={`Action ${index + 1}`}
+                  showRemove={formData.actions.length > 1}
+                  onRemove={() => removeAction(index)}
+                />
+
+                {/* Action Fields */}
+                <ItemFieldsSection>
+                  <FormInput
+                    label='Target Address'
+                    placeholder='0x...'
+                    value={action.target}
+                    onChange={(value) => updateAction(index, "target", value)}
+                    error={errors[index]?.target}
+                  />
+                  <FormInput
+                    label='Function Signature'
+                    placeholder='e.g. transfer(address,uint256)'
+                    value={action.signature}
+                    onChange={(value) => updateAction(index, "signature", value)}
+                    error={errors[index]?.signature}
+                  />
+                  <FormInput
+                    label='Encoded Parameters'
+                    placeholder='0x... (encoded arguments, without selector)'
+                    value={action.data}
+                    onChange={(value) => updateAction(index, "data", value)}
+                    error={errors[index]?.data}
+                    warning={warnings[index]?.data}
+                  />
+                  <FormInput
+                    label='Value (wei)'
+                    placeholder='0'
+                    value={action.value}
+                    onChange={(value) => updateAction(index, "value", value)}
+                    error={errors[index]?.value}
+                  />
+                </ItemFieldsSection>
+              </ItemSection>
+            ))}
+
+            {/* Info Row with ADD ACTION button */}
+            <AddItemRow
+              infoText='You can add multiple actions in one transaction.'
+              addButtonText='ADD ACTION'
+              onAdd={addAction}
+            />
+
+            {/* Action Buttons Row */}
+            <ActionButtonRow>
+              <ButtonsContainer>
+                <ActionButton variant='secondary' onClick={onBack}>
+                  BACK
+                </ActionButton>
+                <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
+                  CONTINUE
+                </ActionButton>
+              </ButtonsContainer>
+            </ActionButtonRow>
+          </ItemsCard>
         </FormSection>
       </ContentWrapper>
     </Container>
@@ -295,12 +339,4 @@ const NoteText = styled(Typography)({
 const LearnMoreLink = styled("span")({
   textDecoration: "underline",
   cursor: "pointer",
-});
-
-const ParametersCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
 });

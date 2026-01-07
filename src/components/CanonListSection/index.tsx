@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Typography, styled, CircularProgress } from "@mui/material";
 import {
   SearchIcon,
@@ -21,10 +21,17 @@ import { PreApproveDurationModal } from "./PreApproveDurationModal";
 import { RenameModal } from "./RenameModal";
 import type { Address } from "viem";
 
-interface CanonListSectionProps {
-  safeInfo: SafeInfo;
+// Extended entity type for grouped display
+interface DisplayEntity extends RegisteredEntity {
+  children?: RegisteredEntity[];
 }
 
+interface CanonListSectionProps {
+  safeInfo: SafeInfo;
+  onQueueCountChange?: () => void;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
   const { guardAddress, chainId } = useStateContext();
   const clientService = useClientService();
@@ -36,6 +43,10 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [removingAddress, setRemovingAddress] = useState<Address | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Hub expansion state - tracks which hubs are expanded
+  const [expandedHubs, setExpandedHubs] = useState<Set<Address>>(new Set());
 
   // Pre-approve modal state
   const [preApproveModalOpen, setPreApproveModalOpen] = useState(false);
@@ -51,7 +62,7 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
   const itemsPerPage = 25;
 
   const fetchEntities = useCallback(async () => {
-    if (!guardAddress || !safeInfo.guardAddress) {
+    if (!guardAddress) {
       setLoading(false);
       return;
     }
@@ -66,7 +77,7 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
       const [fetchedEntities, total] = await Promise.all([
         registryService.getRegisteredEntities(
           guardAddress,
-          safeInfo.guardAddress, // entrypoint address
+          guardAddress, // entrypoint address (same as guardAddress)
           offset,
           itemsPerPage,
         ),
@@ -81,13 +92,84 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
     } finally {
       setLoading(false);
     }
-  }, [guardAddress, safeInfo.guardAddress, clientService, currentPage]);
+  }, [guardAddress, clientService, currentPage]);
 
   useEffect(() => {
     fetchEntities();
   }, [fetchEntities]);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // Group entities: hubs with their children, standalone entities remain separate
+  // Children are entities whose parentHubAddress matches a hub's address
+  const groupedEntities = useMemo((): DisplayEntity[] => {
+    // First, separate hubs and children
+    const hubs = entities.filter((e) => e.isHub);
+    const children = entities.filter((e) => e.parentHubAddress && !e.isHub);
+    const standalone = entities.filter((e) => !e.isHub && !e.parentHubAddress);
+
+    // Create a map of hub address to children
+    const hubChildrenMap = new Map<Address, RegisteredEntity[]>();
+    for (const child of children) {
+      if (child.parentHubAddress) {
+        const existing = hubChildrenMap.get(child.parentHubAddress) || [];
+        hubChildrenMap.set(child.parentHubAddress, [...existing, child]);
+      }
+    }
+
+    // Build display entities: hubs with their children, then standalone
+    const result: DisplayEntity[] = [];
+
+    for (const hub of hubs) {
+      const hubChildren = hubChildrenMap.get(hub.address) || [];
+      result.push({
+        ...hub,
+        children: hubChildren,
+        childrenCount: hubChildren.length,
+      });
+    }
+
+    // Add standalone entities (not hubs, not children of hubs)
+    for (const entity of standalone) {
+      result.push(entity);
+    }
+
+    return result;
+  }, [entities]);
+
+  // Filter entities based on search query
+  const filteredEntities = useMemo((): DisplayEntity[] => {
+    if (!searchQuery) return groupedEntities;
+    const query = searchQuery.toLowerCase();
+
+    return groupedEntities.filter((entity) => {
+      const matchesLabel = entity.label?.toLowerCase().includes(query);
+      const matchesAddress = entity.address.toLowerCase().includes(query);
+
+      // For hubs, also check if any children match
+      if (entity.isHub && entity.children) {
+        const childMatches = entity.children.some(
+          (child) => child.label?.toLowerCase().includes(query) || child.address.toLowerCase().includes(query),
+        );
+        return matchesLabel || matchesAddress || childMatches;
+      }
+
+      return matchesLabel || matchesAddress;
+    });
+  }, [groupedEntities, searchQuery]);
+
+  // Toggle hub expansion
+  const handleToggleHubExpansion = useCallback((hubAddress: Address) => {
+    setExpandedHubs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(hubAddress)) {
+        newSet.delete(hubAddress);
+      } else {
+        newSet.add(hubAddress);
+      }
+      return newSet;
+    });
+  }, []);
 
   const handleQueue = useCallback(
     (entity: RegisteredEntity) => {
@@ -216,6 +298,18 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
     [guardAddress, isExecuting, executeRemoveFromRegistry],
   );
 
+  // Handle deploying a child from a hub
+  const handleDeployChild = useCallback(
+    (hubEntity: RegisteredEntity) => {
+      navigateWithParams(`/create/hub-child/${hubEntity.address}`, {
+        state: {
+          hubLabel: hubEntity.label,
+        },
+      });
+    },
+    [navigateWithParams],
+  );
+
   return (
     <Container>
       <ContentWrapper>
@@ -238,25 +332,29 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
                 New transactions are saved to your Canon List, making it easy to manage and reuse them over time.
               </InfoText>
             </InfoContent>
-            <ImportButton>
-              <ImportButtonText>IMPORT ACTION</ImportButtonText>
-            </ImportButton>
           </InfoBanner>
 
           {/* Search Bar */}
           <SearchBar>
             <SearchSection>
               <SearchIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-              <SearchPlaceholder>Search by name or 0x...</SearchPlaceholder>
+              <SearchInput
+                type='text'
+                placeholder='Search by name or 0x...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </SearchSection>
           </SearchBar>
         </HeaderSection>
 
         {/* Content Section */}
         <ListSection>
-          <SectionHeader>
-            <SectionLabel>SAVED TRANSACTIONS</SectionLabel>
-          </SectionHeader>
+          {filteredEntities.length > 0 && (
+            <SectionHeader>
+              <SectionLabel>SAVED TRANSACTIONS</SectionLabel>
+            </SectionHeader>
+          )}
 
           {loading ? (
             <LoadingState>
@@ -272,28 +370,69 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
               <EmptyText>No saved transactions yet</EmptyText>
               <EmptySubtext>Create your first action and it will appear here in your Canon List.</EmptySubtext>
             </EmptyState>
+          ) : filteredEntities.length === 0 ? (
+            <SearchEmptyState>No items match your search</SearchEmptyState>
           ) : (
             <ItemsList>
-              {entities.map((entity) => (
-                <ActionItem
-                  key={entity.address}
-                  title={entity.label}
-                  address={entity.address}
-                  factoryType={entity.factoryType}
-                  isFastPath={entity.isFastPath}
-                  onQueue={() => handleQueue(entity)}
-                  onAddToQueue={() => handleAddToQueue(entity)}
-                  onRename={() => handleRename(entity)}
-                  onProposePreApproval={() => handleProposePreApproval(entity)}
-                  onRemove={() => handleRemove(entity)}
-                  isRemoving={removingAddress === entity.address && isExecuting}
-                />
+              {filteredEntities.map((entity) => (
+                <Box key={entity.address}>
+                  <ActionItem
+                    title={entity.label}
+                    address={entity.address}
+                    factoryType={entity.factoryType}
+                    isFastPath={entity.isFastPath}
+                    isHub={entity.isHub}
+                    childrenCount={entity.childrenCount}
+                    isExpanded={expandedHubs.has(entity.address)}
+                    onToggleExpand={entity.isHub ? () => handleToggleHubExpansion(entity.address) : undefined}
+                    onQueue={entity.isHub ? undefined : () => handleQueue(entity)}
+                    onAddToQueue={entity.isHub ? undefined : () => handleAddToQueue(entity)}
+                    onRename={() => handleRename(entity)}
+                    onProposePreApproval={() => handleProposePreApproval(entity)}
+                    onDeployChild={entity.isHub ? () => handleDeployChild(entity) : undefined}
+                    onRemove={() => handleRemove(entity)}
+                    isRemoving={removingAddress === entity.address && isExecuting}
+                  />
+                  {/* Render children if hub is expanded and has children */}
+                  {entity.isHub &&
+                    entity.children &&
+                    entity.children.length > 0 &&
+                    expandedHubs.has(entity.address) && (
+                      <ChildrenContainer>
+                        {entity.children.map((child, index) => (
+                          <ChildWrapper key={child.address} style={{ zIndex: entity.children!.length - index }}>
+                            {/* Tree connector visual */}
+                            <TreeConnector $isLast={index === entity.children!.length - 1}>
+                              <TreeVerticalLine $isLast={index === entity.children!.length - 1} />
+                              <TreeHorizontalBranch />
+                              <TreeDot />
+                            </TreeConnector>
+                            <ChildItemWrapper>
+                              <ActionItem
+                                title={child.label}
+                                address={child.address}
+                                factoryType={child.factoryType}
+                                isFastPath={false} // Children don't show fast/slow path
+                                isHubChild={true}
+                                onQueue={undefined} // Children use Add to Queue menu instead
+                                onAddToQueue={() => handleAddToQueue(child)}
+                                onRename={() => handleRename(child)}
+                                onProposePreApproval={undefined} // Children don't have pre-approval
+                                onRemove={undefined} // Children can't be removed directly
+                                isRemoving={false}
+                              />
+                            </ChildItemWrapper>
+                          </ChildWrapper>
+                        ))}
+                      </ChildrenContainer>
+                    )}
+                </Box>
               ))}
             </ItemsList>
           )}
 
           {/* Pagination */}
-          {totalCount > 0 && (
+          {filteredEntities.length > 0 && (
             <PaginationRow>
               <PaginationInfo>
                 Showing {Math.min(itemsPerPage, entities.length)} out of {totalCount}
@@ -433,32 +572,6 @@ const InfoText = styled(Typography)({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent10,
-  maxWidth: "350px",
-});
-
-const ImportButton = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "36px",
-  padding: "8px 20px",
-  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  borderRadius: "100px",
-  backgroundColor: "transparent",
-  cursor: "pointer",
-  transition: "background-color 0.2s ease",
-  "&:hover": {
-    backgroundColor: canonHeaderTokens.background.layer1Variation,
-  },
-});
-
-const ImportButtonText = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 600,
-  lineHeight: "16px",
-  letterSpacing: "0.6px",
-  textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent10,
 });
 
 const SearchBar = styled(Box)({
@@ -477,11 +590,19 @@ const SearchSection = styled(Box)({
   padding: "16px",
 });
 
-const SearchPlaceholder = styled(Typography)({
+const SearchInput = styled("input")({
+  flex: 1,
+  background: "transparent",
+  border: "none",
+  outline: "none",
+  fontFamily: "Inter, sans-serif",
   fontSize: "14px",
   fontWeight: 400,
   lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent30,
+  color: canonHeaderTokens.foreground.accent0,
+  "&::placeholder": {
+    color: canonHeaderTokens.foreground.accent30,
+  },
 });
 
 const ListSection = styled(Box)({
@@ -507,6 +628,74 @@ const ItemsList = styled(Box)({
   display: "flex",
   flexDirection: "column",
   gap: "6px",
+});
+
+const ChildrenContainer = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "6px",
+  marginTop: "6px",
+  paddingBottom: "12px",
+});
+
+// Wrapper for each child item with tree connector
+const ChildWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  width: "100%",
+  position: "relative", // Required for z-index stacking of dropdown menus
+});
+
+// Tree connector container (left side visual)
+const TreeConnector = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isLast",
+})<{ $isLast: boolean }>({
+  position: "relative",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-end",
+  width: "24px",
+  height: "100%",
+  alignSelf: "stretch",
+  backgroundColor: canonHeaderTokens.foreground.accent50,
+});
+
+// Vertical line that runs down the left side
+const TreeVerticalLine = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isLast",
+})<{ $isLast: boolean }>(({ $isLast }) => ({
+  position: "absolute",
+  left: "9px",
+  top: "42px",
+  width: "11px",
+  height: "50px",
+  borderLeft: `0.5px solid ${canonHeaderTokens.foreground.accent40}`,
+  opacity: $isLast ? 0 : 1,
+}));
+
+// Horizontal branch connecting to the child
+const TreeHorizontalBranch = styled(Box)({
+  width: "15px",
+  height: "42px",
+  borderLeft: `0.5px solid ${canonHeaderTokens.foreground.accent40}`,
+  borderBottom: `0.5px solid ${canonHeaderTokens.foreground.accent40}`,
+});
+
+// Small dot at the connection point
+const TreeDot = styled(Box)({
+  position: "absolute",
+  left: "7px",
+  top: "40px",
+  width: "4px",
+  height: "4px",
+  backgroundColor: canonHeaderTokens.background.layer0,
+  border: `0.5px solid ${canonHeaderTokens.foreground.accent30}`,
+});
+
+// Wrapper for the actual child ActionItem
+const ChildItemWrapper = styled(Box)({
+  flex: 1,
+  minWidth: 0,
 });
 
 const LoadingState = styled(Box)({
@@ -559,6 +748,18 @@ const EmptySubtext = styled(Typography)({
   fontSize: "14px",
   color: canonHeaderTokens.foreground.accent20,
   textAlign: "center",
+});
+
+const SearchEmptyState = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "200px",
+  fontFamily: "Inter, sans-serif",
+  fontSize: "14px",
+  fontWeight: 400,
+  color: canonHeaderTokens.foreground.accent20,
+  fontStyle: "italic",
 });
 
 const PaginationRow = styled(Box)({

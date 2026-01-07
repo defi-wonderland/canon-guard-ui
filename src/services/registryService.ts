@@ -5,9 +5,14 @@
  */
 
 import { Address, PublicClient } from "viem";
-import { canonGuardRegistryAbi, actionBuilderParentAbi, approvalExpiriesAbi } from "../abis/canonGuard";
-import { CANON_GUARD_REGISTRY, KNOWN_FACTORY_MAPPINGS } from "../constants/canonGuard";
-import { ActionFactoryType } from "../types/canon-guard";
+import {
+  canonGuardRegistryAbi,
+  actionBuilderParentAbi,
+  approvalExpiriesAbi,
+  cappedTokenTransfersHubAbi,
+} from "../abis/canonGuard";
+import { CANON_GUARD_REGISTRY, KNOWN_FACTORY_MAPPINGS, isHubFactory, getHubFactoryType } from "../constants/canonGuard";
+import { ActionFactoryType, HubFactoryType, CappedTokenTransfersHubInfo, HubTokenConfig } from "../types/canon-guard";
 import { ClientService } from "./clientService";
 
 export interface RegisteredEntity {
@@ -17,6 +22,11 @@ export interface RegisteredEntity {
   factoryLabel: string;
   isFastPath: boolean;
   lastEditedAt: Date;
+  // Hub-related fields
+  isHub: boolean;
+  hubType?: HubFactoryType;
+  parentHubAddress?: Address; // For children: the hub address this child belongs to
+  childrenCount?: number; // For hubs: number of children
 }
 
 interface RegistryEntity {
@@ -131,16 +141,33 @@ export class RegistryService {
       const parentResult = results[i * 2];
       const approvalResult = results[i * 2 + 1];
 
-      // Determine factory type from PARENT() result
+      // Determine factory type and hub status from PARENT() result
       let factoryType = ActionFactoryType.UNKNOWN;
       let factoryLabel = "Unknown";
+      let isHub = false;
+      let hubType: HubFactoryType | undefined;
+      let parentHubAddress: Address | undefined;
 
       if (parentResult.status === "success" && parentResult.result) {
         const parentAddress = parentResult.result as Address;
-        const mapping = KNOWN_FACTORY_MAPPINGS[parentAddress];
-        if (mapping) {
-          factoryType = mapping.type;
-          factoryLabel = mapping.label;
+
+        // Check if this is a hub (parent is a hub factory)
+        if (isHubFactory(parentAddress)) {
+          isHub = true;
+          hubType = getHubFactoryType(parentAddress) ?? undefined;
+          factoryType = ActionFactoryType.CAPPED_TOKEN_TRANSFERS;
+          factoryLabel = "Capped Token Transfers Hub";
+        } else {
+          // Check if parent is a known factory
+          const mapping = KNOWN_FACTORY_MAPPINGS[parentAddress];
+          if (mapping) {
+            factoryType = mapping.type;
+            factoryLabel = mapping.label;
+          } else {
+            // Parent is not a known factory - could be a hub (this entity is a child)
+            // We'll check later if any hub contains this as a child
+            parentHubAddress = parentAddress;
+          }
         }
       }
 
@@ -159,7 +186,28 @@ export class RegistryService {
         factoryLabel,
         isFastPath,
         lastEditedAt: new Date(Number(entity.edition.lastEditedAt) * 1000),
+        isHub,
+        hubType,
+        parentHubAddress,
       });
+    }
+
+    // Second pass: identify hub children and count children for hubs
+    // Build a map of hub addresses to their entities
+    const hubAddresses = enrichedEntities.filter((e) => e.isHub).map((e) => e.address);
+
+    // For entities that have a parentHubAddress, check if it's a hub in our list
+    for (const entity of enrichedEntities) {
+      if (entity.parentHubAddress && hubAddresses.includes(entity.parentHubAddress)) {
+        // This is a child of a hub - update its factory type
+        entity.factoryType = ActionFactoryType.CAPPED_TOKEN_TRANSFERS;
+        entity.factoryLabel = "Capped Transfer";
+      }
+    }
+
+    // Count children for each hub
+    for (const hub of enrichedEntities.filter((e) => e.isHub)) {
+      hub.childrenCount = enrichedEntities.filter((e) => e.parentHubAddress === hub.address).length;
     }
 
     return enrichedEntities;
@@ -181,6 +229,103 @@ export class RegistryService {
     } catch (error) {
       console.error("Failed to get total entities:", error);
       return 0;
+    }
+  }
+
+  /**
+   * Fetch hub configuration for a CappedTokenTransfersHub
+   * Includes tokens, caps, cap remaining, recipient, and epoch length
+   */
+  async getHubConfiguration(hubAddress: Address): Promise<CappedTokenTransfersHubInfo | null> {
+    try {
+      // First, fetch basic hub info and token list
+      const [recipient, epochLength, tokens] = await Promise.all([
+        this.client.readContract({
+          address: hubAddress,
+          abi: cappedTokenTransfersHubAbi,
+          functionName: "RECIPIENT",
+        }) as Promise<Address>,
+        this.client.readContract({
+          address: hubAddress,
+          abi: cappedTokenTransfersHubAbi,
+          functionName: "EPOCH_LENGTH",
+        }) as Promise<bigint>,
+        this.client.readContract({
+          address: hubAddress,
+          abi: cappedTokenTransfersHubAbi,
+          functionName: "tokens",
+        }) as Promise<Address[]>,
+      ]);
+
+      if (!tokens || tokens.length === 0) {
+        return {
+          address: hubAddress,
+          recipient,
+          epochLength,
+          tokens: [],
+        };
+      }
+
+      // Fetch cap and capLeft for each token using multicall
+      const capContracts = tokens.flatMap((token) => [
+        {
+          address: hubAddress,
+          abi: cappedTokenTransfersHubAbi,
+          functionName: "cap" as const,
+          args: [token],
+        },
+        {
+          address: hubAddress,
+          abi: cappedTokenTransfersHubAbi,
+          functionName: "capLeft" as const,
+          args: [token],
+        },
+      ]);
+
+      const capResults = await this.client.multicall({
+        contracts: capContracts,
+        allowFailure: true,
+      });
+
+      const tokenConfigs: HubTokenConfig[] = tokens.map((tokenAddress, index) => {
+        const capResult = capResults[index * 2];
+        const capLeftResult = capResults[index * 2 + 1];
+
+        return {
+          address: tokenAddress,
+          cap: capResult.status === "success" ? (capResult.result as bigint) : 0n,
+          capLeft: capLeftResult.status === "success" ? (capLeftResult.result as bigint) : 0n,
+        };
+      });
+
+      return {
+        address: hubAddress,
+        recipient,
+        epochLength,
+        tokens: tokenConfigs,
+      };
+    } catch (error) {
+      console.error("Failed to fetch hub configuration:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if an address is a child of a specific hub
+   */
+  async isHubChild(hubAddress: Address, childAddress: Address): Promise<boolean> {
+    try {
+      const result = await this.client.readContract({
+        address: hubAddress,
+        abi: cappedTokenTransfersHubAbi,
+        functionName: "isHubChild",
+        args: [childAddress],
+      });
+
+      return result as boolean;
+    } catch (error) {
+      console.error("Failed to check if address is hub child:", error);
+      return false;
     }
   }
 }

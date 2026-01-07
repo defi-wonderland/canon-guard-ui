@@ -3,7 +3,8 @@ import { KeyboardArrowDown } from "@mui/icons-material";
 import { Box, styled } from "@mui/material";
 import { Chain } from "viem/chains";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
-import { ChevronRightIcon, CopyIcon, GripIcon, ShieldCheckIcon } from "~/components/icons";
+import { ChevronRightIcon, GripIcon, ShieldCheckIcon } from "~/components/icons";
+import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams, useCanonGuardConfig } from "~/hooks";
 import { truncateAddress } from "~/utils";
@@ -45,11 +46,6 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
 
   const handleCloseMenu = () => {
     setMenuOpen(false);
-  };
-
-  const handleCopyAddress = () => {
-    navigator.clipboard.writeText(safeAddress);
-    // Don't close menu after copy
   };
 
   const handleSettingsClick = () => {
@@ -94,10 +90,9 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
             <SafeProfileInfo>
               <SafeAddressRow>
                 <SafeLabel>Safe</SafeLabel>
-                <AddressWithCopy onClick={handleCopyAddress}>
+                <CopyableText text={safeAddress} iconSize={10} iconColor={canonHeaderTokens.foreground.accent30}>
                   <AddressText>{truncateAddress(safeAddress)}</AddressText>
-                  <CopyIcon size={10} color={canonHeaderTokens.foreground.accent30} />
-                </AddressWithCopy>
+                </CopyableText>
               </SafeAddressRow>
               <ChainRow>
                 <ChainName>{chain.name}</ChainName>
@@ -280,19 +275,6 @@ const SafeLabel = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent0,
-});
-
-const AddressWithCopy = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  padding: 0,
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  "&:hover": {
-    opacity: 0.8,
-  },
 });
 
 const AddressText = styled("span")({

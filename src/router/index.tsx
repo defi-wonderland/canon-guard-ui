@@ -17,6 +17,8 @@ export const router = createBrowserRouter([
       { path: "queue-action", element: <SafeVault /> },
       { path: "canon-list", element: <SafeVault /> },
       { path: "settings", element: <SafeVault /> },
+      { path: "settings/attach", element: <SafeVault /> },
+      { path: "settings/detach", element: <SafeVault /> },
       {
         path: "create",
         element: <SafeVault />,
@@ -32,6 +34,18 @@ export const router = createBrowserRouter([
               { path: "claim-allowance", element: null }, // Claim allowance form
               { path: "turn-off-emergency", element: null }, // Turn off emergency mode signing flow
             ],
+          },
+          {
+            path: "hub",
+            element: null,
+            children: [
+              { index: true, element: null }, // Select hub type
+              { path: "capped-transfer", element: null }, // Capped transfer hub form
+            ],
+          },
+          {
+            path: "hub-child/:hubAddress",
+            element: null, // Deploy child from hub
           },
         ],
       },

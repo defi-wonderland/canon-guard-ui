@@ -8,22 +8,22 @@ import {
   BoxIcon,
   PlusIcon,
   MinusIcon,
-  CopyIcon,
   CircleDashedIcon,
   ListIcon,
   XIcon,
 } from "~/components/icons";
+import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useWallet, useStateContext, useNavigateWithParams } from "~/hooks";
 import type { QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
-import { Breadcrumb } from "../shared";
-import type { TransferFormData } from "./index";
+import { Breadcrumb, ParametersDisplay } from "../shared";
+import type { TransferFormData, SimpleActionFormData, CappedTransferHubFormData } from "./index";
 
 interface SigningFlowStepProps {
   steps: TransactionStep[];
   currentStepIndex: number;
-  formData?: TransferFormData;
+  formData?: TransferFormData | SimpleActionFormData | CappedTransferHubFormData;
   onBack: () => void;
   onNavigateToCreate: () => void;
   onSimulateSign: (nonce?: number) => void;
@@ -99,10 +99,6 @@ export const SigningFlowStep = ({
   const progress = totalCount > 0 ? (signedCount / totalCount) * 100 : 0;
 
   const currentStep = steps[currentStepIndex];
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
 
   /**
    * Handle sign button click with wallet and chain verification
@@ -207,7 +203,11 @@ export const SigningFlowStep = ({
         <Container>
           <ContentWrapper>
             {/* Breadcrumb */}
-            <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action' />
+            <Breadcrumb
+              onNavigateToCreate={onNavigateToCreate}
+              currentPage={breadcrumbPage}
+              standalone={breadcrumbStandalone}
+            />
 
             {/* Action Preview Card */}
             <ActionPreviewCard>
@@ -375,52 +375,7 @@ export const SigningFlowStep = ({
                     </ToggleContent>
                   </ParametersToggle>
 
-                  {parametersExpanded && (
-                    <ParametersContent>
-                      <ParameterRow>
-                        <ParameterLabel>Token Address</ParameterLabel>
-                        <ParameterValueRow
-                          $clickable={!!formData.tokenAddress}
-                          onClick={() => formData.tokenAddress && handleCopy(formData.tokenAddress)}
-                        >
-                          <ParameterValue>{formData.tokenAddress || "-"}</ParameterValue>
-                          {formData.tokenAddress && (
-                            <CopyIconWrapper className='copy-icon'>
-                              <CopyIcon size={10} color={canonHeaderTokens.foreground.accent10} />
-                            </CopyIconWrapper>
-                          )}
-                        </ParameterValueRow>
-                      </ParameterRow>
-                      <ParameterRow>
-                        <ParameterLabel>Recipient Address</ParameterLabel>
-                        <ParameterValueRow
-                          $clickable={!!formData.recipientAddress}
-                          onClick={() => formData.recipientAddress && handleCopy(formData.recipientAddress)}
-                        >
-                          <ParameterValue>{formData.recipientAddress || "-"}</ParameterValue>
-                          {formData.recipientAddress && (
-                            <CopyIconWrapper className='copy-icon'>
-                              <CopyIcon size={10} color={canonHeaderTokens.foreground.accent10} />
-                            </CopyIconWrapper>
-                          )}
-                        </ParameterValueRow>
-                      </ParameterRow>
-                      <ParameterRow $noBorder>
-                        <ParameterLabel>Amount</ParameterLabel>
-                        <ParameterValueRow
-                          $clickable={!!formData.amount}
-                          onClick={() => formData.amount && handleCopy(formData.amount)}
-                        >
-                          <ParameterValue>{formData.amount || "-"}</ParameterValue>
-                          {formData.amount && (
-                            <CopyIconWrapper className='copy-icon'>
-                              <CopyIcon size={10} color={canonHeaderTokens.foreground.accent10} />
-                            </CopyIconWrapper>
-                          )}
-                        </ParameterValueRow>
-                      </ParameterRow>
-                    </ParametersContent>
-                  )}
+                  {parametersExpanded && <ParametersDisplay formData={formData} onCopy={handleCopy} />}
                 </>
               ) : (
                 <ParametersToggle>
@@ -497,32 +452,32 @@ export const SigningFlowStep = ({
                   <SignItemDetails>
                     <DetailRow>
                       <DetailLabel>Address</DetailLabel>
-                      <DetailValueContainer
-                        $clickable={!!currentStep?.to}
-                        onClick={() => currentStep?.to && handleCopy(currentStep.to)}
-                      >
-                        <DetailValue>{currentStep?.to || ""}</DetailValue>
-                        {currentStep?.to && (
-                          <CopyIconWrapper className='copy-icon'>
-                            <CopyIcon size={10} color={canonHeaderTokens.foreground.accent30} />
-                          </CopyIconWrapper>
-                        )}
-                      </DetailValueContainer>
+                      {currentStep?.to ? (
+                        <CopyableText
+                          text={currentStep.to}
+                          iconSize={10}
+                          iconColor={canonHeaderTokens.foreground.accent30}
+                        >
+                          <DetailValue>{currentStep.to}</DetailValue>
+                        </CopyableText>
+                      ) : (
+                        <DetailValue></DetailValue>
+                      )}
                     </DetailRow>
                     <DetailDivider />
                     <DetailRow>
                       <DetailLabel>Hash</DetailLabel>
-                      <HashValueContainer
-                        $clickable={!!currentStep?.data}
-                        onClick={() => currentStep?.data && handleCopy(currentStep.data)}
-                      >
-                        <HashValue>{currentStep?.data || ""}</HashValue>
-                        {currentStep?.data && (
-                          <CopyIconWrapper className='copy-icon'>
-                            <CopyIcon size={10} color={canonHeaderTokens.foreground.accent30} />
-                          </CopyIconWrapper>
-                        )}
-                      </HashValueContainer>
+                      {currentStep?.data ? (
+                        <CopyableText
+                          text={currentStep.data}
+                          iconSize={10}
+                          iconColor={canonHeaderTokens.foreground.accent30}
+                        >
+                          <HashValue>{currentStep.data}</HashValue>
+                        </CopyableText>
+                      ) : (
+                        <HashValue></HashValue>
+                      )}
                     </DetailRow>
                   </SignItemDetails>
 
@@ -779,6 +734,7 @@ const FactoryValue = styled(Typography)({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
+  textTransform: "uppercase",
 });
 
 const ParametersToggle = styled(Box)({
@@ -806,61 +762,6 @@ const ToggleLabel = styled(Typography)({
   lineHeight: "12px",
   color: canonHeaderTokens.foreground.accent30,
   textTransform: "uppercase",
-});
-
-const ParametersContent = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-});
-
-const ParameterRow = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$noBorder",
-})<{ $noBorder?: boolean }>(({ $noBorder }) => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-  padding: "16px 16px 16px 36px",
-  borderTop: $noBorder ? "none" : `0.5px solid ${canonHeaderTokens.foreground.accent50}`,
-}));
-
-const ParameterLabel = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const ParameterValueRow = styled("div", {
-  shouldForwardProp: (prop) => prop !== "$clickable",
-})<{ $clickable?: boolean }>(({ $clickable }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  cursor: $clickable ? "pointer" : "default",
-  "&:hover": {
-    "& .copy-icon": {
-      opacity: 1,
-    },
-  },
-}));
-
-const ParameterValue = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent0,
-  fontFamily: "monospace",
-  wordBreak: "break-all",
-});
-
-const CopyIconWrapper = styled("span")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  opacity: 0.3,
-  transition: "opacity 0.15s ease",
-  flexShrink: 0,
 });
 
 // Status Bar Styles
@@ -1117,43 +1018,12 @@ const DetailLabel = styled(Typography)({
   whiteSpace: "pre-wrap",
 });
 
-const DetailValueContainer = styled("div", {
-  shouldForwardProp: (prop) => prop !== "$clickable",
-})<{ $clickable?: boolean }>(({ $clickable }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  flex: 1,
-  cursor: $clickable ? "pointer" : "default",
-  "&:hover": {
-    "& .copy-icon": {
-      opacity: 1,
-    },
-  },
-}));
-
 const DetailValue = styled(Typography)({
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent10,
 });
-
-const HashValueContainer = styled("div", {
-  shouldForwardProp: (prop) => prop !== "$clickable",
-})<{ $clickable?: boolean }>(({ $clickable }) => ({
-  display: "flex",
-  alignItems: "flex-start",
-  gap: "6px",
-  flex: 1,
-  minWidth: 0,
-  cursor: $clickable ? "pointer" : "default",
-  "&:hover": {
-    "& .copy-icon": {
-      opacity: 1,
-    },
-  },
-}));
 
 const HashValue = styled(Typography)({
   fontSize: "13px",

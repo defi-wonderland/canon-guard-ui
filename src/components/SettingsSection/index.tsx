@@ -1,30 +1,30 @@
 import { useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
+import { DeploymentModesPanel } from "~/components/DeploymentModesPanel";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
-import {
-  HelpCircleIcon,
-  ShieldCheckIcon,
-  AsteriskIcon,
-  ShieldAlertIcon,
-  Link2Icon,
-  CopyIcon,
-} from "~/components/icons";
+import { HelpCircleIcon, ShieldCheckIcon, AsteriskIcon, ShieldAlertIcon, Link2Icon } from "~/components/icons";
+import { CopyableText } from "~/components/shared/CopyButton";
 import { getChainConfig } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useStateContext, useCanonGuardConfig, humanizeDuration } from "~/hooks";
-import { truncateAddress } from "~/utils";
+import { useStateContext, useCanonGuardConfig, humanizeDuration, useNavigateWithParams } from "~/hooks";
 
 export const SettingsSection = () => {
-  const { safeAddress, guardAddress, chainId } = useStateContext();
+  const { safeAddress, guardAddress, chainId, isDetached } = useStateContext();
   const { shortTxExecutionDelay, longTxExecutionDelay, txExpiryDelay, maxApprovalDuration, emergencyMode, isLoading } =
     useCanonGuardConfig();
+  const navigateWithParams = useNavigateWithParams();
 
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
+  const [deploymentModesPanelOpen, setDeploymentModesPanelOpen] = useState(false);
 
   const chainConfig = getChainConfig(chainId);
 
-  const handleCopyAddress = (address: string) => {
-    navigator.clipboard.writeText(address);
+  const handleDetachGuard = () => {
+    navigateWithParams("/settings/detach");
+  };
+
+  const handleAttachGuard = () => {
+    navigateWithParams("/settings/attach");
   };
 
   if (isLoading) {
@@ -58,10 +58,13 @@ export const SettingsSection = () => {
               <SafeInfo>
                 <SafeAddressRow>
                   <SafeLabel>Safe</SafeLabel>
-                  <AddressWithCopy onClick={() => handleCopyAddress(safeAddress || "")}>
-                    <AddressText>{truncateAddress(safeAddress || "")}</AddressText>
-                    <CopyIcon size={10} color={canonHeaderTokens.foreground.accent30} />
-                  </AddressWithCopy>
+                  <CopyableText
+                    text={safeAddress || ""}
+                    iconSize={10}
+                    iconColor={canonHeaderTokens.foreground.accent30}
+                  >
+                    <AddressText>{safeAddress || ""}</AddressText>
+                  </CopyableText>
                 </SafeAddressRow>
                 <ChainName>{chainConfig?.chain.name || "Unknown Chain"}</ChainName>
               </SafeInfo>
@@ -175,28 +178,40 @@ export const SettingsSection = () => {
                 <SettingTitleRow>
                   <SettingTitle>Canon Guard:</SettingTitle>
                   <StatusIndicator>
-                    <StatusDot $color={canonHeaderTokens.brand.green} />
-                    <StatusLabel>Attached</StatusLabel>
+                    <StatusDot $color={isDetached ? canonHeaderTokens.status.amber : canonHeaderTokens.brand.green} />
+                    <StatusLabel>{isDetached ? "Detached" : "Attached"}</StatusLabel>
                   </StatusIndicator>
                 </SettingTitleRow>
-                <DescriptionWithLink>
-                  <SettingDescription>
-                    You can adopt Canon Guard in two modes: Attached and Detached.
-                  </SettingDescription>
-                  <LearnMoreLink>Learn more</LearnMoreLink>
-                </DescriptionWithLink>
+                <SettingDescription>
+                  {isDetached
+                    ? "Transactions are routed through the guard but it's not attached to your Safe. "
+                    : "You can adopt Canon Guard in two modes: Attached and Detached. "}
+                  <LearnMoreLink onClick={() => setDeploymentModesPanelOpen(true)}>Learn more</LearnMoreLink>
+                </SettingDescription>
               </SettingInfo>
             </SettingCardLeft>
-            <OutlineButton $width='108px'>DETACH</OutlineButton>
+            {isDetached ? (
+              <OutlineButton $width='108px' onClick={handleAttachGuard}>
+                ATTACH
+              </OutlineButton>
+            ) : (
+              <OutlineButton $width='108px' onClick={handleDetachGuard}>
+                DETACH
+              </OutlineButton>
+            )}
           </CanonGuardTop>
           <CardDivider />
-          <GuardAddressRow>
+          <CopyableText text={guardAddress || ""} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
             <GuardAddressText>{guardAddress || ""}</GuardAddressText>
-            <CopyButtonSmall onClick={() => handleCopyAddress(guardAddress || "")}>
-              <CopyIcon size={10} color={canonHeaderTokens.foreground.accent10} />
-            </CopyButtonSmall>
-          </GuardAddressRow>
+          </CopyableText>
         </CanonGuardCard>
+
+        {/* Deployment Modes Panel */}
+        <DeploymentModesPanel
+          isOpen={deploymentModesPanelOpen}
+          onClose={() => setDeploymentModesPanelOpen(false)}
+          isDetached={isDetached}
+        />
       </ContentContainer>
     </PageContainer>
   );
@@ -308,19 +323,6 @@ const SafeLabel = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent0,
-});
-
-const AddressWithCopy = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  padding: 0,
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  "&:hover": {
-    opacity: 0.8,
-  },
 });
 
 const AddressText = styled("span")({
@@ -514,13 +516,8 @@ const CanonGuardTop = styled(Box)({
   justifyContent: "space-between",
 });
 
-const DescriptionWithLink = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
 const LearnMoreLink = styled("button")({
+  display: "inline",
   fontFamily: "Inter, sans-serif",
   fontSize: "13px",
   fontWeight: 400,
@@ -542,30 +539,10 @@ const CardDivider = styled(Box)({
   backgroundColor: canonHeaderTokens.foreground.accent40,
 });
 
-const GuardAddressRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-});
-
 const GuardAddressText = styled("span")({
   fontFamily: "Inter, sans-serif",
   fontSize: "12px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
-});
-
-const CopyButtonSmall = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  opacity: 0.3,
-  "&:hover": {
-    opacity: 0.6,
-  },
 });

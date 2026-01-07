@@ -4,19 +4,16 @@ import { Address } from "viem";
 import { useConfig } from "wagmi";
 import { readContract } from "wagmi/actions";
 import { canonGuardAbi } from "~/abis/canonGuard";
-import { BoxIcon, PlusIcon, MinusIcon, CheckIcon, InfoIcon, ZapOffIcon, LockIcon } from "~/components/icons";
+import { Layers2Icon, PlusIcon, MinusIcon, CheckIcon, InfoIcon, ZapOffIcon, LockIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { DurationInput } from "~/components/shared/DurationInput";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { ActionFactoryType } from "~/types/canon-guard";
+import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
 import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
 import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
-import type { TransferFormData, SimpleActionFormData } from "./index";
-
-// Type guard to detect transfer form data
-const isTransferFormData = (data: TransferFormData | SimpleActionFormData): data is TransferFormData => {
-  return "transfers" in data;
-};
+import type { CappedTransferHubFormData } from "./index";
 
 /**
  * Convert seconds to a human-readable duration string
@@ -37,22 +34,20 @@ const humanizeDuration = (seconds: number): string => {
 // Tooltip content
 const TOOLTIP_DEPLOY_SAVE =
   "Deploy and save for future use. Once deployed, you can propose or pre-approve it later. Deploying and saving doesn't require multisig.";
-const TOOLTIP_PROPOSE_TRANSACTION =
-  "Request signatures from Safe signers. This transaction will follow the slow path with a 7-day delay.";
 const TOOLTIP_PROPOSE_PREAPPROVAL =
   "Request signatures from Safe signers. This transaction will follow the fast-path with a 1 hour delay.";
 
-interface ReviewDeployStepProps {
-  formData: TransferFormData | SimpleActionFormData;
+interface HubReviewStepProps {
+  formData: CappedTransferHubFormData;
   guardAddress: Address;
   chainId: number;
   onBack: () => void;
-  onInitiate: (proposeTransaction: boolean, proposePreApproval: boolean, approvalDurationSeconds?: bigint) => void;
+  onInitiate: (proposePreApproval: boolean, approvalDurationSeconds?: bigint) => void;
   onNavigateToCreate: () => void;
   onEdit: () => void;
 }
 
-export const ReviewDeployStep = ({
+export const HubReviewStep = ({
   formData,
   guardAddress,
   chainId,
@@ -60,11 +55,11 @@ export const ReviewDeployStep = ({
   onInitiate,
   onNavigateToCreate,
   onEdit,
-}: ReviewDeployStepProps) => {
+}: HubReviewStepProps) => {
   const config = useConfig();
 
   const [parametersExpanded, setParametersExpanded] = useState(false);
-  const [proposeTransaction, setProposeTransaction] = useState(true);
+  const [expandedTokens, setExpandedTokens] = useState<Record<number, boolean>>({});
   const [proposePreApproval, setProposePreApproval] = useState(false);
 
   // Pre-approval duration state
@@ -86,7 +81,7 @@ export const ReviewDeployStep = ({
         });
         setMaxApprovalDuration(maxDuration as bigint);
       } catch (error) {
-        console.error("[ReviewDeployStep] Failed to fetch MAX_APPROVAL_DURATION:", error);
+        console.error("[HubReviewStep] Failed to fetch MAX_APPROVAL_DURATION:", error);
       }
     };
 
@@ -118,25 +113,32 @@ export const ReviewDeployStep = ({
   // Handle initiate with duration
   const handleInitiate = () => {
     if (proposePreApproval && !isValid) return;
-    onInitiate(proposeTransaction, proposePreApproval, proposePreApproval ? totalDurationSeconds : undefined);
+    onInitiate(proposePreApproval, proposePreApproval ? totalDurationSeconds : undefined);
   };
+
+  const toggleToken = (index: number) => {
+    setExpandedTokens((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  // Format epoch display
+  const epochDisplay = `${formData.epochLength} ${formData.epochUnit}`;
 
   return (
     <Container>
       <ContentWrapper>
-        <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action' />
+        <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action from Hub' />
 
-        {/* Preview Action Section */}
-        <FormSection label='PREVIEW ACTION'>
-          <ActionPreviewCard>
+        {/* Preview Hub Section */}
+        <FormSection label='PREVIEW HUB'>
+          <HubPreviewCard>
             <PreviewHeader>
-              <ActionTitle>{formData.title || "Untitled Transaction"}</ActionTitle>
+              <HubTitle>{formData.title || "Untitled Hub"}</HubTitle>
               <PreviewRow>
-                <FactoryInfo>
-                  <FactoryLabel>CANON FACTORY</FactoryLabel>
-                  <BoxIcon size={16} color={canonHeaderTokens.foreground.accent20} />
-                  <FactoryValue>{isTransferFormData(formData) ? "TRANSFER" : "ARBITRARY ACTION"}</FactoryValue>
-                </FactoryInfo>
+                <HubInfo>
+                  <HubLabel>HUB FACTORY</HubLabel>
+                  <Layers2Icon size={16} color={canonHeaderTokens.foreground.accent20} />
+                  <HubValue>HUB: {HUB_DISPLAY_NAMES[ActionFactoryType.CAPPED_TOKEN_TRANSFERS]}</HubValue>
+                </HubInfo>
                 <EditButton onClick={onEdit}>EDIT</EditButton>
               </PreviewRow>
             </PreviewHeader>
@@ -155,130 +157,82 @@ export const ReviewDeployStep = ({
 
             {parametersExpanded && (
               <ParametersContent>
-                {isTransferFormData(formData)
-                  ? // Render Transfer parameters
-                    formData.transfers.map((transfer, index) => {
-                      const prefix = formData.transfers.length > 1 ? `Token ${index + 1} - ` : "";
-                      const isLast = index === formData.transfers.length - 1;
-                      return (
-                        <ItemGroup key={transfer.id}>
-                          <ParameterRow>
-                            <ParameterLabel>{prefix}Token Address</ParameterLabel>
-                            {transfer.tokenAddress ? (
-                              <CopyableText
-                                text={transfer.tokenAddress}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{transfer.tokenAddress}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                          <ParameterRow>
-                            <ParameterLabel>{prefix}Recipient Address</ParameterLabel>
-                            {transfer.recipientAddress ? (
-                              <CopyableText
-                                text={transfer.recipientAddress}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{transfer.recipientAddress}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                          <ParameterRow $noBorder={isLast}>
-                            <ParameterLabel>{prefix}Amount</ParameterLabel>
-                            {transfer.amount ? (
-                              <CopyableText
-                                text={transfer.amount}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{transfer.amount}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                        </ItemGroup>
-                      );
-                    })
-                  : // Render Simple Action parameters
-                    formData.actions.map((action, index) => {
-                      const prefix = formData.actions.length > 1 ? `Action ${index + 1} - ` : "";
-                      const isLast = index === formData.actions.length - 1;
-                      return (
-                        <ItemGroup key={action.id}>
-                          <ParameterRow>
-                            <ParameterLabel>{prefix}Target Address</ParameterLabel>
-                            {action.target ? (
-                              <CopyableText
-                                text={action.target}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{action.target}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                          <ParameterRow>
-                            <ParameterLabel>{prefix}Function Signature</ParameterLabel>
-                            {action.signature ? (
-                              <CopyableText
-                                text={action.signature}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{action.signature}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                          <ParameterRow>
-                            <ParameterLabel>{prefix}Encoded Parameters</ParameterLabel>
-                            {action.data ? (
-                              <CopyableText
-                                text={action.data}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{action.data}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                          <ParameterRow $noBorder={isLast}>
-                            <ParameterLabel>{prefix}Value (wei)</ParameterLabel>
-                            {action.value ? (
-                              <CopyableText
-                                text={action.value}
-                                iconSize={10}
-                                iconColor={canonHeaderTokens.foreground.accent10}
-                              >
-                                <ParameterValue>{action.value}</ParameterValue>
-                              </CopyableText>
-                            ) : (
-                              <ParameterValue>-</ParameterValue>
-                            )}
-                          </ParameterRow>
-                        </ItemGroup>
-                      );
-                    })}
+                <ParameterRow>
+                  <ParameterLabel>Recipient</ParameterLabel>
+                  {formData.recipientAddress ? (
+                    <CopyableText
+                      text={formData.recipientAddress}
+                      iconSize={10}
+                      iconColor={canonHeaderTokens.foreground.accent10}
+                    >
+                      <ParameterValue>{formData.recipientAddress}</ParameterValue>
+                    </CopyableText>
+                  ) : (
+                    <ParameterValue>-</ParameterValue>
+                  )}
+                </ParameterRow>
+                <ParameterRow $noBorder>
+                  <ParameterLabel>Epoch</ParameterLabel>
+                  <CopyableText text={epochDisplay} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
+                    <ParameterValue>{epochDisplay}</ParameterValue>
+                  </CopyableText>
+                </ParameterRow>
               </ParametersContent>
             )}
-          </ActionPreviewCard>
+
+            {/* Token Expandable Sections */}
+            {formData.tokens.map((token, index) => (
+              <Box key={index}>
+                <TokenToggle onClick={() => toggleToken(index)}>
+                  <ToggleContent>
+                    {expandedTokens[index] ? (
+                      <MinusIcon size={12} color={canonHeaderTokens.foreground.accent20} />
+                    ) : (
+                      <PlusIcon size={12} color={canonHeaderTokens.foreground.accent20} />
+                    )}
+                    <ToggleLabel>TOKEN {index + 1}</ToggleLabel>
+                  </ToggleContent>
+                </TokenToggle>
+
+                {expandedTokens[index] && (
+                  <ParametersContent>
+                    <ParameterRow>
+                      <ParameterLabel>Address</ParameterLabel>
+                      {token.address ? (
+                        <CopyableText
+                          text={token.address}
+                          iconSize={10}
+                          iconColor={canonHeaderTokens.foreground.accent10}
+                        >
+                          <ParameterValue>{token.address}</ParameterValue>
+                        </CopyableText>
+                      ) : (
+                        <ParameterValue>-</ParameterValue>
+                      )}
+                    </ParameterRow>
+                    <ParameterRow $noBorder>
+                      <ParameterLabel>Amount</ParameterLabel>
+                      {token.amount ? (
+                        <CopyableText
+                          text={token.amount}
+                          iconSize={10}
+                          iconColor={canonHeaderTokens.foreground.accent10}
+                        >
+                          <ParameterValue>{token.amount}</ParameterValue>
+                        </CopyableText>
+                      ) : (
+                        <ParameterValue>-</ParameterValue>
+                      )}
+                    </ParameterRow>
+                  </ParametersContent>
+                )}
+              </Box>
+            ))}
+          </HubPreviewCard>
         </FormSection>
 
-        {/* Setup Action Deploy Section */}
-        <FormSection label='SETUP ACTION DEPLOY'>
+        {/* Setup Hub Deploy Section */}
+        <FormSection label='SETUP HUB DEPLOY'>
           <DeployOptionsCard>
             {/* Deploy & Save Transaction - Locked */}
             <CheckboxRow>
@@ -291,34 +245,13 @@ export const ReviewDeployStep = ({
                     <LockIcon size={12} color={canonHeaderTokens.background.layer0} />
                   </LockIconWrapper>
                 </LockedCheckbox>
-                <CheckboxLabel>Deploy & Save Transaction</CheckboxLabel>
+                <CheckboxLabel>Deploy & Save Hub</CheckboxLabel>
               </CheckboxLeft>
               <StyledTooltip title={TOOLTIP_DEPLOY_SAVE} placement='top-end'>
                 <InfoIconWrapper>
                   <InfoIcon size={14} color={canonHeaderTokens.foreground.accent30} />
                 </InfoIconWrapper>
               </StyledTooltip>
-            </CheckboxRow>
-
-            {/* Propose Transaction */}
-            <CheckboxRow>
-              <CheckboxLeft>
-                <Checkbox checked={proposeTransaction} onClick={() => setProposeTransaction(!proposeTransaction)}>
-                  {proposeTransaction && <CheckIcon size={12} color={canonHeaderTokens.background.layer0} />}
-                </Checkbox>
-                <CheckboxLabel>Propose Transaction</CheckboxLabel>
-              </CheckboxLeft>
-              <RightContent>
-                <SlowPathTag>
-                  <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
-                  <SlowPathLabel>SLOW-PATH</SlowPathLabel>
-                </SlowPathTag>
-                <StyledTooltip title={TOOLTIP_PROPOSE_TRANSACTION} placement='top-end'>
-                  <InfoIconWrapper>
-                    <InfoIcon size={14} color={canonHeaderTokens.foreground.accent30} />
-                  </InfoIconWrapper>
-                </StyledTooltip>
-              </RightContent>
             </CheckboxRow>
 
             {/* Propose Pre-Approval */}
@@ -394,7 +327,7 @@ const ContentWrapper = styled(Box)({
   maxWidth: "576px",
 });
 
-const ActionPreviewCard = styled(Box)({
+const HubPreviewCard = styled(Box)({
   display: "flex",
   flexDirection: "column",
   backgroundColor: canonHeaderTokens.background.layer1,
@@ -409,7 +342,7 @@ const PreviewHeader = styled(Box)({
   padding: "16px",
 });
 
-const ActionTitle = styled(Typography)({
+const HubTitle = styled(Typography)({
   fontSize: "18px",
   fontWeight: 600,
   lineHeight: "28px",
@@ -423,24 +356,25 @@ const PreviewRow = styled(Box)({
   width: "100%",
 });
 
-const FactoryInfo = styled(Box)({
+const HubInfo = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "8px",
 });
 
-const FactoryLabel = styled(Typography)({
+const HubLabel = styled(Typography)({
   fontSize: "12px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
 });
 
-const FactoryValue = styled(Typography)({
+const HubValue = styled(Typography)({
   fontSize: "12px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
+  textTransform: "uppercase",
 });
 
 const EditButton = styled(Typography)({
@@ -455,6 +389,18 @@ const EditButton = styled(Typography)({
 });
 
 const ParametersToggle = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  height: "36px",
+  backgroundColor: canonHeaderTokens.background.layer1Variation,
+  borderTop: `0.5px solid ${canonHeaderTokens.foreground.accent50}`,
+  cursor: "pointer",
+  "&:hover": {
+    opacity: 0.9,
+  },
+});
+
+const TokenToggle = styled(Box)({
   display: "flex",
   flexDirection: "column",
   height: "36px",
@@ -485,11 +431,6 @@ const ParametersContent = styled(Box)({
   display: "flex",
   flexDirection: "column",
   backgroundColor: canonHeaderTokens.background.layer1,
-});
-
-const ItemGroup = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
 });
 
 const ParameterRow = styled(Box, {
@@ -629,7 +570,7 @@ const DurationInputSection = styled(Box)({
   flexDirection: "column",
   gap: "8px",
   padding: "16px",
-  paddingLeft: "64px", // Align with checkbox labels
+  paddingLeft: "64px",
   backgroundColor: canonHeaderTokens.background.layer1Variation,
   borderTop: `1px dashed ${canonHeaderTokens.foreground.accent50}`,
 });

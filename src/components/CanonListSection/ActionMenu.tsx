@@ -1,14 +1,18 @@
 import { useRef, useEffect } from "react";
 import { Box, styled } from "@mui/material";
-import { CircleFadingPlusIcon, SquarePenIcon, ZapIcon, TrashIcon } from "~/components/icons";
+import { CircleFadingPlusIcon, SquarePenIcon, ZapIcon, TrashIcon, PlusIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 
 interface ActionMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  isHub?: boolean;
+  isHubChild?: boolean;
+  triggerRef?: React.RefObject<HTMLButtonElement | null>;
   onAddToQueue?: () => void;
   onRename?: () => void;
   onProposePreApproval?: () => void;
+  onDeployChild?: () => void;
   onRemove?: () => void;
   isRemoving?: boolean;
 }
@@ -16,20 +20,31 @@ interface ActionMenuProps {
 export const ActionMenu = ({
   isOpen,
   onClose,
+  isHub = false,
+  isHubChild = false,
+  triggerRef,
   onAddToQueue,
   onRename,
   onProposePreApproval,
+  onDeployChild,
   onRemove,
   isRemoving,
 }: ActionMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside (but not on the trigger button)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
+      const target = event.target as Node;
+      // Ignore clicks on the menu itself
+      if (menuRef.current && menuRef.current.contains(target)) {
+        return;
       }
+      // Ignore clicks on the trigger button (let the toggle handler handle it)
+      if (triggerRef?.current && triggerRef.current.contains(target)) {
+        return;
+      }
+      onClose();
     };
 
     if (isOpen) {
@@ -42,10 +57,55 @@ export const ActionMenu = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, triggerRef]);
 
   if (!isOpen) return null;
 
+  // Hub menu: Rename, Propose Pre-Approval, Deploy Child, Remove Hub
+  if (isHub) {
+    return (
+      <MenuContainer ref={menuRef}>
+        <MenuItem onClick={onRename}>
+          <SquarePenIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          <MenuItemText>Rename</MenuItemText>
+        </MenuItem>
+        <MenuDivider />
+        <MenuItem onClick={onProposePreApproval}>
+          <ZapIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          <MenuItemText>Pre-Approve</MenuItemText>
+        </MenuItem>
+        <MenuDivider />
+        <MenuItem onClick={onDeployChild}>
+          <PlusIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          <MenuItemText>Deploy Child</MenuItemText>
+        </MenuItem>
+        <MenuDivider />
+        <MenuItem onClick={onRemove} disabled={isRemoving}>
+          <TrashIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          <MenuItemText>{isRemoving ? "Removing..." : "Remove Hub"}</MenuItemText>
+        </MenuItem>
+      </MenuContainer>
+    );
+  }
+
+  // Hub child menu: Add to Queue, Rename (no remove, no pre-approval)
+  if (isHubChild) {
+    return (
+      <MenuContainer ref={menuRef}>
+        <MenuItem onClick={onAddToQueue}>
+          <CircleFadingPlusIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          <MenuItemText>Add to Queue</MenuItemText>
+        </MenuItem>
+        <MenuDivider />
+        <MenuItem onClick={onRename}>
+          <SquarePenIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          <MenuItemText>Rename</MenuItemText>
+        </MenuItem>
+      </MenuContainer>
+    );
+  }
+
+  // Regular action menu: Add to Queue, Rename, Pre-Approve, Remove
   return (
     <MenuContainer ref={menuRef}>
       <MenuItem onClick={onAddToQueue}>

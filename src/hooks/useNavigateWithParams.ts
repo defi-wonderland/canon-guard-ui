@@ -7,8 +7,8 @@ interface NavigateWithParamsOptions extends NavigateOptions {
 }
 
 /**
- * Hook that provides navigation while preserving safeAddress and chainId query params.
- * This allows users to share URLs that include the Safe context.
+ * Hook that provides navigation while preserving safeAddress, chainId, and guardAddress query params.
+ * This allows users to share URLs that include the Safe context (including detached mode).
  */
 export const useNavigateWithParams = () => {
   const navigate = useNavigate();
@@ -18,11 +18,13 @@ export const useNavigateWithParams = () => {
     (to: string, options?: NavigateWithParamsOptions) => {
       const safeAddress = searchParams.get("safeAddress");
       const chainId = searchParams.get("chainId");
+      const guardAddress = searchParams.get("guardAddress");
 
       // Build the search params string
       const params = new URLSearchParams();
       if (safeAddress) params.set("safeAddress", safeAddress);
       if (chainId) params.set("chainId", chainId);
+      if (guardAddress) params.set("guardAddress", guardAddress);
 
       // Add any additional params
       if (options?.additionalParams) {

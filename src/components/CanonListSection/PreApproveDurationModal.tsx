@@ -1,22 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Box, styled, CircularProgress } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import { useConfig } from "wagmi";
 import { readContract } from "wagmi/actions";
 import { canonGuardAbi } from "~/abis/canonGuard";
 import { XIcon, ZapIcon } from "~/components/icons";
+import { DurationInput } from "~/components/shared/DurationInput";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
 import type { Address } from "viem";
-
-// Time unit multipliers in seconds
-type TimeUnit = "seconds" | "hours" | "days" | "weeks" | "months";
-
-const TIME_UNIT_MULTIPLIERS: Record<TimeUnit, number> = {
-  seconds: 1,
-  hours: 3600,
-  days: 86400,
-  weeks: 604800,
-  months: 2592000, // 30 days
-};
 
 /**
  * Convert seconds to a human-readable duration string
@@ -56,7 +47,7 @@ export const PreApproveDurationModal = ({
 
   // Duration state
   const [durationAmount, setDurationAmount] = useState<string>("1");
-  const [durationUnit, setDurationUnit] = useState<TimeUnit>("hours");
+  const [durationUnit, setDurationUnit] = useState<DurationTimeUnit>("hours");
   const [maxApprovalDuration, setMaxApprovalDuration] = useState<bigint | null>(null);
   const [isLoadingMax, setIsLoadingMax] = useState(false);
 
@@ -93,7 +84,7 @@ export const PreApproveDurationModal = ({
       return { totalDurationSeconds: 0n, isValid: false, errorMessage: "Duration must be greater than 0" };
     }
 
-    const multiplier = TIME_UNIT_MULTIPLIERS[durationUnit];
+    const multiplier = DURATION_TIME_MULTIPLIERS[durationUnit];
     const totalSeconds = BigInt(Math.floor(amount * multiplier));
 
     if (maxApprovalDuration !== null && totalSeconds > maxApprovalDuration) {
@@ -187,33 +178,18 @@ export const PreApproveDurationModal = ({
 
         <DurationInputSection>
           <DurationLabel>Duration</DurationLabel>
-          <DurationInputRow>
-            <DurationInput
-              type='number'
-              min='1'
-              value={durationAmount}
-              onChange={(e) => setDurationAmount(e.target.value)}
-              placeholder='Enter duration'
-              $hasError={!isValid && durationAmount !== ""}
-            />
-            <DurationUnitSelect value={durationUnit} onChange={(e) => setDurationUnit(e.target.value as TimeUnit)}>
-              <option value='seconds'>seconds</option>
-              <option value='hours'>hours</option>
-              <option value='days'>days</option>
-              <option value='weeks'>weeks</option>
-              <option value='months'>months</option>
-            </DurationUnitSelect>
-          </DurationInputRow>
+          <DurationInput
+            value={durationAmount}
+            unit={durationUnit}
+            onValueChange={setDurationAmount}
+            onUnitChange={setDurationUnit}
+            hasError={!isValid && durationAmount !== ""}
+            placeholder='Enter duration'
+          />
           {!isValid && errorMessage && (
             <DurationError>
               <ErrorText>{errorMessage}</ErrorText>
             </DurationError>
-          )}
-          {isLoadingMax && (
-            <LoadingHint>
-              <CircularProgress size={12} sx={{ color: canonHeaderTokens.foreground.accent20 }} />
-              <span>Loading max duration...</span>
-            </LoadingHint>
           )}
         </DurationInputSection>
 
@@ -328,67 +304,6 @@ const DurationLabel = styled("span")({
   color: canonHeaderTokens.foreground.accent10,
 });
 
-const DurationInputRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-});
-
-const DurationInput = styled("input")<{ $hasError?: boolean }>(({ $hasError }) => ({
-  flex: 1,
-  height: "40px",
-  padding: "0 12px",
-  fontSize: "14px",
-  fontWeight: 400,
-  lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent0,
-  backgroundColor: canonHeaderTokens.background.layer0,
-  border: `1px solid ${$hasError ? canonHeaderTokens.status.red : canonHeaderTokens.foreground.accent40}`,
-  borderRadius: "6px",
-  outline: "none",
-  transition: "border-color 0.2s ease",
-  "&:focus": {
-    borderColor: $hasError ? canonHeaderTokens.status.red : canonHeaderTokens.foreground.accent20,
-  },
-  "&::placeholder": {
-    color: canonHeaderTokens.foreground.accent30,
-  },
-  // Remove number input spinners
-  "&::-webkit-outer-spin-button, &::-webkit-inner-spin-button": {
-    WebkitAppearance: "none",
-    margin: 0,
-  },
-  "&[type=number]": {
-    MozAppearance: "textfield",
-  },
-}));
-
-const DurationUnitSelect = styled("select")({
-  height: "40px",
-  padding: "0 32px 0 12px",
-  fontSize: "14px",
-  fontWeight: 400,
-  lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent0,
-  backgroundColor: canonHeaderTokens.background.layer0,
-  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  borderRadius: "6px",
-  outline: "none",
-  cursor: "pointer",
-  appearance: "none",
-  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 10px center",
-  transition: "border-color 0.2s ease",
-  "&:focus": {
-    borderColor: canonHeaderTokens.foreground.accent20,
-  },
-  "& option": {
-    backgroundColor: canonHeaderTokens.background.layer0,
-    color: canonHeaderTokens.foreground.accent0,
-  },
-});
-
 const DurationError = styled(Box)({
   display: "flex",
   alignItems: "center",
@@ -400,17 +315,6 @@ const ErrorText = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.status.red,
-});
-
-const LoadingHint = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  fontFamily: "Inter, sans-serif",
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
 });
 
 const ButtonRow = styled(Box)({

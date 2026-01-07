@@ -256,3 +256,43 @@ export interface BatchedTransactionDetails {
   approvalExpiry: bigint;
   approvers: Address[];
 }
+
+// ================================================================
+// HUB TYPES
+// ================================================================
+
+/**
+ * Types of hub factories available in the Canon Guard system
+ */
+export enum HubFactoryType {
+  CAPPED_TOKEN_TRANSFERS_HUB = "capped_token_transfers_hub",
+}
+
+/**
+ * Token configuration for a CappedTokenTransfersHub
+ */
+export interface HubTokenConfig {
+  address: Address;
+  cap: bigint;
+  capLeft: bigint;
+}
+
+/**
+ * Hub information for CappedTokenTransfersHub
+ */
+export interface CappedTokenTransfersHubInfo {
+  address: Address;
+  recipient: Address;
+  epochLength: bigint;
+  tokens: HubTokenConfig[];
+}
+
+/**
+ * Information about a hub child entity in the Canon List
+ */
+export interface HubChildInfo {
+  parentHubAddress: Address;
+  token: Address;
+  amount: bigint;
+  recipient: Address;
+}

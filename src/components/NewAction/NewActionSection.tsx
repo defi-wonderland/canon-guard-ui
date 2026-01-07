@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Box, Typography, styled } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { Address, Hex, encodeFunctionData } from "viem";
 import { canonGuardAbi, safeAbi } from "~/abis/canonGuard";
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
@@ -9,14 +9,18 @@ import { useNavigateWithParams, useTransactionExecutor } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
+import { RegistryService } from "~/services/registryService";
 import {
   buildTransactionSteps,
   buildSimpleActionSteps,
   buildClaimAllowanceSteps,
+  buildCappedTransferHubSteps,
+  buildDeployHubChildSteps,
   type TransactionStep,
 } from "~/services/transactionBuilderService";
+import { CappedTokenTransfersHubInfo } from "~/types/canon-guard";
 import { ActionFactoryType } from "~/types/canon-guard";
-import { FACTORY_DISPLAY_NAMES } from "~/utils/factoryDisplay";
+import { FACTORY_DISPLAY_NAMES, HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
 import {
   SelectFactoryStep,
   TransferFormStep,
@@ -24,25 +28,33 @@ import {
   ClaimAllowanceFormStep,
   ReviewDeployStep,
   SigningFlowStep,
+  SelectHubTypeStep,
+  CappedTransferHubFormStep,
+  HubReviewStep,
+  DeployHubChildFormStep,
+  DeployHubChildReviewStep,
 } from "./steps";
-import type { TransferFormData, SimpleActionFormData, ClaimAllowanceFormData, FactoryType } from "./steps";
+import type {
+  TransferFormData,
+  SimpleActionFormData,
+  ClaimAllowanceFormData,
+  FactoryType,
+  HubType,
+  CappedTransferHubFormData,
+  HubChildFormData,
+} from "./steps";
 
 // Pre-deployed UnsetEmergencyModeAction contract
 const UNSET_EMERGENCY_MODE_ACTION: Address = "0x68e54338e31C7A8B7c46a2BB8Fd73f3a0606A506";
 
 const INITIAL_TRANSFER_FORM_DATA: TransferFormData = {
   title: "",
-  tokenAddress: "",
-  recipientAddress: "",
-  amount: "",
+  transfers: [{ tokenAddress: "", recipientAddress: "", amount: "" }],
 };
 
 const INITIAL_SIMPLE_ACTION_FORM_DATA: SimpleActionFormData = {
   title: "",
-  target: "",
-  signature: "",
-  data: "",
-  value: "",
+  actions: [{ target: "", signature: "", data: "", value: "" }],
 };
 
 const INITIAL_CLAIM_ALLOWANCE_FORM_DATA: ClaimAllowanceFormData = {
@@ -52,8 +64,27 @@ const INITIAL_CLAIM_ALLOWANCE_FORM_DATA: ClaimAllowanceFormData = {
   tokenRecipient: "",
 };
 
-export const NewActionSection = () => {
+const INITIAL_CAPPED_TRANSFER_HUB_FORM_DATA: CappedTransferHubFormData = {
+  title: "",
+  recipientAddress: "",
+  epochLength: "",
+  epochUnit: "months",
+  tokens: [{ address: "", amount: "" }],
+};
+
+const INITIAL_HUB_CHILD_FORM_DATA: HubChildFormData = {
+  title: "",
+  token: "",
+  amount: "",
+};
+
+interface NewActionSectionProps {
+  onQueueCountChange?: () => void;
+}
+
+export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) => {
   const location = useLocation();
+  const { hubAddress: hubAddressParam } = useParams<{ hubAddress: string }>();
   const navigateWithParams = useNavigateWithParams();
   const { safeAddress, guardAddress, chainId } = useStateContext();
 
@@ -62,6 +93,8 @@ export const NewActionSection = () => {
     executeDeployTransfer,
     executeDeploySimpleAction,
     executeDeployClaimAllowance,
+    executeDeployHubChild,
+    executeDeployCappedTransferHub,
     executeRecordToRegistry,
     executeQueueTransaction,
     executeSignTransaction,
@@ -79,6 +112,20 @@ export const NewActionSection = () => {
     INITIAL_CLAIM_ALLOWANCE_FORM_DATA,
   );
   const [isReviewMode, setIsReviewMode] = useState(false);
+
+  // Hub-specific state
+  const [selectedHub, setSelectedHub] = useState<HubType>(null);
+  const [cappedTransferHubFormData, setCappedTransferHubFormData] = useState<CappedTransferHubFormData>(
+    INITIAL_CAPPED_TRANSFER_HUB_FORM_DATA,
+  );
+  const [isHubReviewMode, setIsHubReviewMode] = useState(false);
+
+  // Hub child deployment state
+  const [hubChildFormData, setHubChildFormData] = useState<HubChildFormData>(INITIAL_HUB_CHILD_FORM_DATA);
+  const [isHubChildReviewMode, setIsHubChildReviewMode] = useState(false);
+  const [hubInfo, setHubInfo] = useState<CappedTokenTransfersHubInfo | null>(null);
+  const [isLoadingHubInfo, setIsLoadingHubInfo] = useState(false);
+  const [hubLabel, setHubLabel] = useState<string>("");
 
   // Signing flow state
   const [isSigningMode, setIsSigningMode] = useState(false);
@@ -135,6 +182,16 @@ export const NewActionSection = () => {
     setNonceDataLoaded(false);
     setCurrentSafeNonce(0);
     setQueueItems([]);
+    // Reset hub state
+    setSelectedHub(null);
+    setCappedTransferHubFormData(INITIAL_CAPPED_TRANSFER_HUB_FORM_DATA);
+    setIsHubReviewMode(false);
+    // Reset hub child state
+    setHubChildFormData(INITIAL_HUB_CHILD_FORM_DATA);
+    setIsHubChildReviewMode(false);
+    setHubInfo(null);
+    setIsLoadingHubInfo(false);
+    setHubLabel("");
     resetExecutor();
   };
 
@@ -208,6 +265,31 @@ export const NewActionSection = () => {
 
     return steps;
   }, [guardAddress, safeAddress]);
+
+  // Fetch hub info when on hub-child path
+  useEffect(() => {
+    const isHubChildPath = path.startsWith("/create/hub-child/");
+    if (isHubChildPath && hubAddressParam && !hubInfo && !isLoadingHubInfo) {
+      const fetchHubInfo = async () => {
+        setIsLoadingHubInfo(true);
+        try {
+          const registryService = new RegistryService(clientService);
+          const info = await registryService.getHubConfiguration(hubAddressParam as Address);
+          setHubInfo(info);
+          // Get hub label from location state if available
+          const stateLabel = (location.state as { hubLabel?: string })?.hubLabel;
+          if (stateLabel) {
+            setHubLabel(stateLabel);
+          }
+        } catch (error) {
+          console.error("[NewActionSection] Failed to fetch hub info:", error);
+        } finally {
+          setIsLoadingHubInfo(false);
+        }
+      };
+      fetchHubInfo();
+    }
+  }, [path, hubAddressParam, hubInfo, isLoadingHubInfo, clientService, location.state]);
 
   // Initialize turn-off-emergency flow when navigating directly to the path
   useEffect(() => {
@@ -369,6 +451,113 @@ export const NewActionSection = () => {
     setIsReviewMode(false);
   };
 
+  // =====================================================
+  // Hub-specific handlers
+  // =====================================================
+
+  // Handle hub selection
+  const handleSelectHub = (hub: HubType) => {
+    setSelectedHub(hub);
+    if (hub === "capped-transfer-hub") {
+      navigateWithParams("/create/hub/capped-transfer");
+    }
+  };
+
+  // Navigate back to hub selection
+  const handleBackToHubSelection = () => {
+    setSelectedHub(null);
+    setIsHubReviewMode(false);
+    navigateWithParams("/create/hub");
+  };
+
+  // Navigate back to hub form from review
+  const handleBackToHubForm = () => {
+    setIsHubReviewMode(false);
+  };
+
+  // Go to review step (Capped Transfer Hub)
+  const handleCappedTransferHubFormContinue = () => {
+    setSelectedHub("capped-transfer-hub");
+    setIsHubReviewMode(true);
+  };
+
+  // Change hub type
+  const handleChangeHub = () => {
+    setIsHubReviewMode(false);
+    navigateWithParams("/create/hub");
+  };
+
+  // Handle edit from hub review
+  const handleHubEdit = () => {
+    setIsHubReviewMode(false);
+  };
+
+  // Handle initiate Capped Transfer Hub - starts signing flow
+  const handleInitiateCappedTransferHub = (proposePreApproval: boolean, approvalDurationSeconds?: bigint) => {
+    if (!safeAddress || !guardAddress) {
+      console.error("Missing safeAddress or guardAddress");
+      return;
+    }
+
+    const { steps } = buildCappedTransferHubSteps({
+      formData: cappedTransferHubFormData,
+      safeAddress: safeAddress as Address,
+      guardAddress: guardAddress as Address,
+      proposePreApproval,
+      approvalDurationSeconds,
+    });
+
+    setReviewCheckboxState({ proposeTransaction: false, proposePreApproval, approvalDurationSeconds });
+    setTransactionSteps(steps);
+    setCurrentStepIndex(0);
+    setIsSigningMode(true);
+  };
+
+  // =====================================================
+  // Hub Child handlers
+  // =====================================================
+
+  // Navigate back to Canon List from hub child form
+  const handleBackFromHubChild = () => {
+    navigateWithParams("/canon-list");
+  };
+
+  // Navigate back to hub child form from review
+  const handleBackToHubChildForm = () => {
+    setIsHubChildReviewMode(false);
+  };
+
+  // Go to review step (Hub Child)
+  const handleHubChildFormContinue = () => {
+    setIsHubChildReviewMode(true);
+  };
+
+  // Handle edit from hub child review
+  const handleHubChildEdit = () => {
+    setIsHubChildReviewMode(false);
+  };
+
+  // Handle initiate Hub Child deployment - starts signing flow
+  const handleInitiateHubChild = (proposeTransaction: boolean) => {
+    if (!safeAddress || !guardAddress || !hubAddressParam) {
+      console.error("Missing safeAddress, guardAddress, or hubAddress");
+      return;
+    }
+
+    const { steps } = buildDeployHubChildSteps({
+      formData: hubChildFormData,
+      hubAddress: hubAddressParam as Address,
+      safeAddress: safeAddress as Address,
+      guardAddress: guardAddress as Address,
+      proposeTransaction,
+    });
+
+    setReviewCheckboxState({ proposeTransaction, proposePreApproval: false, approvalDurationSeconds: undefined });
+    setTransactionSteps(steps);
+    setCurrentStepIndex(0);
+    setIsSigningMode(true);
+  };
+
   // Handle back from signing flow
   const handleBackFromSigning = () => {
     setIsSigningMode(false);
@@ -501,6 +690,76 @@ export const NewActionSection = () => {
         return;
       }
 
+      // Handle the Deploy Hub step for Capped Token Transfers Hub
+      if (currentStep.id === "deploy-capped-transfer-hub") {
+        console.log("[handleExecuteStep] Executing deploy-capped-transfer-hub step");
+        const result = await executeDeployCappedTransferHub(cappedTransferHubFormData, safeAddress as Address);
+        console.log("[handleExecuteStep] Deploy CappedTransferHub result:", result);
+
+        if (result) {
+          setDeployedActionAddress(result.deployedAddress);
+          console.log("[handleExecuteStep] CappedTransferHub deployed at:", result.deployedAddress);
+
+          setTransactionSteps((prev) => {
+            const updated = [...prev];
+            updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
+            if (stepIndex + 1 < updated.length) {
+              updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
+            }
+            return updated;
+          });
+          setCurrentStepIndex(stepIndex + 1);
+        } else {
+          console.log("[handleExecuteStep] Deploy CappedTransferHub failed, setting error status");
+          setTransactionSteps((prev) => {
+            const updated = [...prev];
+            updated[stepIndex] = { ...updated[stepIndex], status: "error" };
+            return updated;
+          });
+        }
+        return;
+      }
+
+      // Handle the Deploy Hub Child step
+      if (currentStep.id === "deploy-hub-child") {
+        console.log("[handleExecuteStep] Executing deploy-hub-child step");
+        if (!hubAddressParam) {
+          console.error("[handleExecuteStep] Missing hubAddress for hub child deploy");
+          setTransactionSteps((prev) => {
+            const updated = [...prev];
+            updated[stepIndex] = { ...updated[stepIndex], status: "error" };
+            return updated;
+          });
+          return;
+        }
+
+        const result = await executeDeployHubChild(hubAddressParam as Address, hubChildFormData);
+        console.log("[handleExecuteStep] Deploy Hub Child result:", result);
+
+        if (result) {
+          setDeployedActionAddress(result.deployedAddress);
+          console.log("[handleExecuteStep] Hub Child deployed at:", result.deployedAddress);
+
+          setTransactionSteps((prev) => {
+            const updated = [...prev];
+            updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
+            if (stepIndex + 1 < updated.length) {
+              updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
+            }
+            return updated;
+          });
+          setCurrentStepIndex(stepIndex + 1);
+        } else {
+          console.log("[handleExecuteStep] Deploy Hub Child failed, setting error status");
+          setTransactionSteps((prev) => {
+            const updated = [...prev];
+            updated[stepIndex] = { ...updated[stepIndex], status: "error" };
+            return updated;
+          });
+        }
+        return;
+      }
+
       // Handle the Save to Registry step (second step)
       if (currentStep.id === "record-registry") {
         console.log("[handleExecuteStep] Executing record-registry step");
@@ -515,9 +774,13 @@ export const NewActionSection = () => {
           return;
         }
 
-        // Get label from the appropriate form data based on selected factory
+        // Get label from the appropriate form data based on selected factory or hub
         let label: string;
-        if (selectedFactory === "simple-action") {
+        if (path.startsWith("/create/hub-child/")) {
+          label = hubChildFormData.title || "Untitled Transfer";
+        } else if (selectedHub === "capped-transfer-hub") {
+          label = cappedTransferHubFormData.title || "Untitled Hub";
+        } else if (selectedFactory === "simple-action") {
           label = simpleActionFormData.title || "Untitled Simple Action";
         } else if (selectedFactory === "claim-allowance") {
           label = claimAllowanceFormData.title || "Untitled Claim Allowance";
@@ -628,6 +891,8 @@ export const NewActionSection = () => {
             return updated;
           });
           setCurrentStepIndex(stepIndex + 1);
+          // Notify that queue count may have changed
+          onQueueCountChange?.();
         } else {
           console.log("[handleExecuteStep] Sign failed, setting error status");
           setTransactionSteps((prev) => {
@@ -758,6 +1023,8 @@ export const NewActionSection = () => {
             return updated;
           });
           setCurrentStepIndex(stepIndex + 1);
+          // Notify that queue count may have changed
+          onQueueCountChange?.();
         } else {
           console.log("[handleExecuteStep] Sign pre-approval failed, setting error status");
           setTransactionSteps((prev) => {
@@ -841,6 +1108,8 @@ export const NewActionSection = () => {
             return updated;
           });
           setCurrentStepIndex(stepIndex + 1);
+          // Notify that queue count may have changed
+          onQueueCountChange?.();
         } else {
           console.log("[handleExecuteStep] Sign emergency off failed, setting error status");
           setTransactionSteps((prev) => {
@@ -864,12 +1133,18 @@ export const NewActionSection = () => {
       currentStepIndex,
       transactionSteps,
       selectedFactory,
+      selectedHub,
       transferFormData,
       simpleActionFormData,
       claimAllowanceFormData,
+      cappedTransferHubFormData,
+      hubChildFormData,
+      hubAddressParam,
       executeDeployTransfer,
       executeDeploySimpleAction,
       executeDeployClaimAllowance,
+      executeDeployHubChild,
+      executeDeployCappedTransferHub,
       executeRecordToRegistry,
       executeQueueTransaction,
       executeSignTransaction,
@@ -879,6 +1154,7 @@ export const NewActionSection = () => {
       deployedActionAddress,
       preApprovalAddress,
       reviewCheckboxState.approvalDurationSeconds,
+      onQueueCountChange,
     ],
   );
 
@@ -1069,6 +1345,119 @@ export const NewActionSection = () => {
         nonceSelectionEnabled={nonceDataLoaded}
         currentSafeNonce={currentSafeNonce}
         queueItems={queueItems}
+      />
+    );
+  }
+
+  // =====================================================
+  // Hub Routes
+  // =====================================================
+
+  // /create/hub -> Select Hub Type
+  if (path === "/create/hub") {
+    return <SelectHubTypeStep onSelectHub={handleSelectHub} onNavigateToCreate={handleNavigateToCreate} />;
+  }
+
+  // /create/hub/capped-transfer -> Capped Transfer Hub Form, Review, or Signing
+  if (path === "/create/hub/capped-transfer") {
+    // Show signing flow if in signing mode
+    if (isSigningMode) {
+      return (
+        <SigningFlowStep
+          steps={transactionSteps}
+          currentStepIndex={currentStepIndex}
+          formData={cappedTransferHubFormData}
+          onBack={handleBackFromSigning}
+          onNavigateToCreate={handleNavigateToCreate}
+          onSimulateSign={handleExecuteStep}
+          isComplete={isSigningComplete}
+          actionTitle={cappedTransferHubFormData.title || "Capped Transfer Hub"}
+          factoryType={`HUB: ${HUB_DISPLAY_NAMES[ActionFactoryType.CAPPED_TOKEN_TRANSFERS]}`}
+          nonceSelectionEnabled={nonceDataLoaded}
+          currentSafeNonce={currentSafeNonce}
+          queueItems={queueItems}
+        />
+      );
+    }
+
+    // Show review step
+    if (isHubReviewMode) {
+      return (
+        <HubReviewStep
+          formData={cappedTransferHubFormData}
+          guardAddress={guardAddress as Address}
+          chainId={chainId as number}
+          onBack={handleBackToHubForm}
+          onInitiate={handleInitiateCappedTransferHub}
+          onNavigateToCreate={handleNavigateToCreate}
+          onEdit={handleHubEdit}
+        />
+      );
+    }
+
+    // Show capped transfer hub form
+    return (
+      <CappedTransferHubFormStep
+        formData={cappedTransferHubFormData}
+        onFormDataChange={setCappedTransferHubFormData}
+        onContinue={handleCappedTransferHubFormContinue}
+        onBack={handleBackToHubSelection}
+        onNavigateToCreate={handleNavigateToCreate}
+        onChangeHub={handleChangeHub}
+      />
+    );
+  }
+
+  // /create/hub-child/:hubAddress -> Deploy Hub Child Form, Review, or Signing
+  if (path.startsWith("/create/hub-child/") && hubAddressParam) {
+    // Show signing flow if in signing mode
+    if (isSigningMode) {
+      return (
+        <SigningFlowStep
+          steps={transactionSteps}
+          currentStepIndex={currentStepIndex}
+          formData={hubChildFormData}
+          onBack={handleBackFromSigning}
+          onNavigateToCreate={handleNavigateToCreate}
+          onSimulateSign={handleExecuteStep}
+          isComplete={isSigningComplete}
+          actionTitle={hubChildFormData.title || "Hub Child Transfer"}
+          factoryType='HUB: CAPPED TRANSFER'
+          nonceSelectionEnabled={nonceDataLoaded}
+          currentSafeNonce={currentSafeNonce}
+          queueItems={queueItems}
+        />
+      );
+    }
+
+    // Show review step
+    if (isHubChildReviewMode) {
+      return (
+        <DeployHubChildReviewStep
+          hubAddress={hubAddressParam as Address}
+          hubLabel={hubLabel || "Capped Transfer Hub"}
+          hubInfo={hubInfo}
+          formData={hubChildFormData}
+          onBack={handleBackToHubChildForm}
+          onInitiate={handleInitiateHubChild}
+          onNavigateToCreate={handleNavigateToCreate}
+          onEdit={handleHubChildEdit}
+        />
+      );
+    }
+
+    // Show hub child form
+    return (
+      <DeployHubChildFormStep
+        hubAddress={hubAddressParam as Address}
+        hubLabel={hubLabel || "Capped Transfer Hub"}
+        hubInfo={hubInfo}
+        isLoadingHubInfo={isLoadingHubInfo}
+        formData={hubChildFormData}
+        onFormDataChange={setHubChildFormData}
+        onContinue={handleHubChildFormContinue}
+        onBack={handleBackFromHubChild}
+        onNavigateToCreate={handleNavigateToCreate}
       />
     );
   }

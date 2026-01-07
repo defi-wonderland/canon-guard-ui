@@ -10,6 +10,7 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { useTransactionExecutor } from "~/hooks/useTransactionExecutor";
 import { useWallet } from "~/hooks/useWallet";
 import { QueueItem as QueueItemType } from "~/services";
+import { ActionFactoryType } from "~/types";
 import { QueueItem } from "./QueueItem";
 
 const ITEMS_PER_PAGE = 25;
@@ -153,19 +154,36 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
 
         if (result) {
           console.log("Transaction executed successfully:", result);
+
+          // If this was a CHANGE_SAFE_GUARD action, do a full page refresh to landing
+          // (the guard is now detached/changed, so the current context is invalid)
+          if (item.factoryType === ActionFactoryType.CHANGE_SAFE_GUARD) {
+            window.location.href = "/";
+            return;
+          }
+
           // Optimistically update local state:
           // 1. Remove the executed item
           // 2. Increment currentNonce for remaining items (Safe nonce has increased)
           // 3. Recalculate isAtCurrentNonce for remaining items
+          // 4. Reset signature fields for stale nonce items (signatures are now invalid)
           setQueueItems((prev) => {
             const newCurrentNonce = item.currentNonce + 1;
             const updated = prev
               .filter((i) => i.actionBuilderAddress !== item.actionBuilderAddress)
-              .map((i) => ({
-                ...i,
-                currentNonce: newCurrentNonce,
-                isAtCurrentNonce: i.nonce === newCurrentNonce,
-              }));
+              .map((i) => {
+                const isStale = i.nonce < newCurrentNonce;
+                return {
+                  ...i,
+                  currentNonce: newCurrentNonce,
+                  isAtCurrentNonce: i.nonce === newCurrentNonce,
+                  // Reset signature fields for stale items (signatures are invalid)
+                  ...(isStale && {
+                    approversCount: 0,
+                    isFullySigned: false,
+                  }),
+                };
+              });
             onQueueCountChange?.(updated.length);
             return updated;
           });

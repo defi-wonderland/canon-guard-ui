@@ -12,19 +12,29 @@ import {
   simpleTransfersFactoryAbi,
   simpleActionFactoryAbi,
   allowanceClaimorFactoryAbi,
+  cappedTokenTransfersHubFactoryAbi,
   canonGuardRegistryAbi,
   canonGuardEntrypointAbi,
   preApproveActionFactoryAbi,
   safeAbi,
 } from "../abis/canonGuard";
+import { cappedTokenTransfersHubAbi } from "../abis/canonGuard";
 import {
   CANON_GUARD_REGISTRY,
   PRE_APPROVE_ACTION_FACTORY,
   SIMPLE_TRANSFERS_FACTORY,
   SIMPLE_ACTIONS_FACTORY,
   ALLOWANCE_CLAIMOR_FACTORY,
+  CAPPED_TOKEN_TRANSFERS_HUB_FACTORY,
 } from "../constants/canonGuard";
-import type { TransferFormData, SimpleActionFormData, ClaimAllowanceFormData } from "../components/NewAction/steps";
+import { EPOCH_TIME_MULTIPLIERS } from "../utils/timeUnits";
+import type {
+  TransferFormData,
+  SimpleActionFormData,
+  ClaimAllowanceFormData,
+  CappedTransferHubFormData,
+  HubChildFormData,
+} from "../components/NewAction/steps";
 
 // Transaction step status
 export type TransactionStepStatus = "pending" | "waiting" | "signed" | "error";
@@ -71,24 +81,20 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
 
   const steps: TransactionStep[] = [];
 
-  // Parse the amount - assuming 18 decimals for now (will be enhanced later to detect token decimals)
-  const amount = parseUnits(formData.amount || "0", 18);
+  // Build array of transfer actions from form data
+  const transferActions = formData.transfers.map((transfer) => ({
+    token: transfer.tokenAddress as Address,
+    to: transfer.recipientAddress as Address,
+    amount: parseUnits(transfer.amount || "0", 18),
+  }));
 
   // 1. MANDATORY: Deploy Action Builder
-  // This deploys a SimpleTransfer action via the factory
+  // This deploys a SimpleTransfers action via the factory
   // The factory takes an array of TransferAction tuples: [{token, to, amount}]
   const deployData = encodeFunctionData({
     abi: simpleTransfersFactoryAbi,
     functionName: "createSimpleTransfers",
-    args: [
-      [
-        {
-          token: formData.tokenAddress as Address,
-          to: formData.recipientAddress as Address,
-          amount: amount,
-        },
-      ],
-    ],
+    args: [transferActions],
   });
 
   steps.push({
@@ -247,26 +253,19 @@ export function buildSimpleActionSteps(options: BuildSimpleActionStepsOptions): 
   const preApprovalDuration = approvalDurationSeconds ?? DEFAULT_PRE_APPROVAL_DURATION;
   const steps: TransactionStep[] = [];
 
-  // Parse value - treat empty as 0
-  let valueWei: bigint;
-  if (!formData.value || formData.value.trim() === "") {
-    valueWei = 0n;
-  } else {
-    valueWei = BigInt(formData.value);
-  }
+  // Build array of simple actions from form data
+  const simpleActions = formData.actions.map((action) => ({
+    target: action.target as Address,
+    signature: action.signature,
+    data: (action.data || "0x") as Hex,
+    value: action.value && action.value.trim() !== "" ? BigInt(action.value) : 0n,
+  }));
 
-  // 1. MANDATORY: Deploy Simple Action
+  // 1. MANDATORY: Deploy Simple Actions
   const deployData = encodeFunctionData({
     abi: simpleActionFactoryAbi,
-    functionName: "createSimpleAction",
-    args: [
-      {
-        target: formData.target as Address,
-        signature: formData.signature,
-        data: (formData.data || "0x") as Hex,
-        value: valueWei,
-      },
-    ],
+    functionName: "createSimpleActions",
+    args: [simpleActions],
   });
 
   steps.push({
@@ -516,6 +515,214 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
       status: "pending",
       to: safeAddress,
       data: signPreApproveData,
+    });
+  }
+
+  return { steps };
+}
+
+// Options for building Capped Transfer Hub transaction steps
+export interface BuildCappedTransferHubStepsOptions {
+  formData: CappedTransferHubFormData;
+  safeAddress: Address;
+  guardAddress: Address;
+  proposePreApproval: boolean;
+  approvalDurationSeconds?: bigint;
+}
+
+/**
+ * Builds the list of transaction steps for Capped Token Transfers Hub
+ */
+export function buildCappedTransferHubSteps(options: BuildCappedTransferHubStepsOptions): TransactionStepsResult {
+  const { formData, safeAddress, guardAddress, proposePreApproval, approvalDurationSeconds } = options;
+
+  const preApprovalDuration = approvalDurationSeconds ?? DEFAULT_PRE_APPROVAL_DURATION;
+  const steps: TransactionStep[] = [];
+
+  // Calculate epoch length in seconds
+  const epochLengthValue = parseFloat(formData.epochLength) || 0;
+  const epochLengthSeconds = BigInt(Math.floor(epochLengthValue * EPOCH_TIME_MULTIPLIERS[formData.epochUnit]));
+
+  // Prepare tokens and caps arrays
+  // Note: Caps are parsed with 18 decimals - this should be enhanced to detect token decimals
+  const tokens: Address[] = formData.tokens.map((t) => t.address as Address);
+  const caps: bigint[] = formData.tokens.map((t) => parseUnits(t.amount || "0", 18));
+
+  // 1. MANDATORY: Deploy Capped Token Transfers Hub
+  const deployData = encodeFunctionData({
+    abi: cappedTokenTransfersHubFactoryAbi,
+    functionName: "createCappedTokenTransfersHub",
+    args: [
+      safeAddress, // _safe
+      formData.recipientAddress as Address, // _recipient
+      tokens, // _tokens
+      caps, // _caps
+      epochLengthSeconds, // _epochLength
+    ],
+  });
+
+  steps.push({
+    id: "deploy-capped-transfer-hub",
+    title: "Deploy Hub",
+    description: "Deploy the Capped Token Transfers Hub contract",
+    status: "pending",
+    to: CAPPED_TOKEN_TRANSFERS_HUB_FACTORY,
+    data: deployData,
+  });
+
+  // 2. MANDATORY: Record in Registry
+  const recordData = encodeFunctionData({
+    abi: canonGuardRegistryAbi,
+    functionName: "record",
+    args: [guardAddress, ["0x0000000000000000000000000000000000000000" as Address], [formData.title || "Untitled Hub"]],
+  });
+
+  steps.push({
+    id: "record-registry",
+    title: "Save to Canon List",
+    description: "Save the hub for future use",
+    status: "pending",
+    to: CANON_GUARD_REGISTRY,
+    data: recordData,
+  });
+
+  // 3. OPTIONAL: Propose Pre-Approval
+  if (proposePreApproval) {
+    const deployPreApproveData = encodeFunctionData({
+      abi: preApproveActionFactoryAbi,
+      functionName: "createPreApproveAction",
+      args: ["0x0000000000000000000000000000000000000000" as Address, preApprovalDuration],
+    });
+
+    steps.push({
+      id: "deploy-preapprove",
+      title: "Deploy Pre-Approval",
+      description: "Deploy the pre-approval action contract",
+      status: "pending",
+      to: PRE_APPROVE_ACTION_FACTORY,
+      data: deployPreApproveData,
+    });
+
+    const queuePreApproveData = encodeFunctionData({
+      abi: canonGuardEntrypointAbi,
+      functionName: "queueTransaction",
+      args: ["0x0000000000000000000000000000000000000000" as Address],
+    });
+
+    steps.push({
+      id: "queue-preapprove",
+      title: "Queue Pre-Approval",
+      description: "Add the pre-approval to the Canon Guard queue",
+      status: "pending",
+      to: guardAddress,
+      data: queuePreApproveData,
+    });
+
+    const signPreApproveData = encodeFunctionData({
+      abi: safeAbi,
+      functionName: "approveHash",
+      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+    });
+
+    steps.push({
+      id: "sign-preapprove",
+      title: "Sign Pre-Approval",
+      description: "Sign the pre-approval transaction in your Safe wallet",
+      status: "pending",
+      to: safeAddress,
+      data: signPreApproveData,
+    });
+  }
+
+  return { steps };
+}
+
+// Options for building Hub Child deployment steps
+export interface BuildDeployHubChildStepsOptions {
+  formData: HubChildFormData;
+  hubAddress: Address;
+  safeAddress: Address;
+  guardAddress: Address;
+  proposeTransaction: boolean;
+}
+
+/**
+ * Builds the list of transaction steps for deploying a Hub Child (CappedTokenTransfers)
+ */
+export function buildDeployHubChildSteps(options: BuildDeployHubChildStepsOptions): TransactionStepsResult {
+  const { formData, hubAddress, safeAddress, guardAddress, proposeTransaction } = options;
+
+  const steps: TransactionStep[] = [];
+
+  // Parse amount - assuming 18 decimals for now
+  const amount = parseUnits(formData.amount || "0", 18);
+
+  // 1. MANDATORY: Deploy Hub Child via createNewActionsBuilder on the hub
+  const deployData = encodeFunctionData({
+    abi: cappedTokenTransfersHubAbi,
+    functionName: "createNewActionsBuilder",
+    args: [formData.token as Address, amount],
+  });
+
+  steps.push({
+    id: "deploy-hub-child",
+    title: "Deploy Child Action",
+    description: "Deploy the capped transfer action via the hub",
+    status: "pending",
+    to: hubAddress,
+    data: deployData,
+  });
+
+  // 2. MANDATORY: Record in Registry
+  const recordData = encodeFunctionData({
+    abi: canonGuardRegistryAbi,
+    functionName: "record",
+    args: [
+      guardAddress,
+      ["0x0000000000000000000000000000000000000000" as Address],
+      [formData.title || "Untitled Transfer"],
+    ],
+  });
+
+  steps.push({
+    id: "record-registry",
+    title: "Save to Canon List",
+    description: "Save the action for future use",
+    status: "pending",
+    to: CANON_GUARD_REGISTRY,
+    data: recordData,
+  });
+
+  // 3. OPTIONAL: Propose Transaction (queue + sign)
+  if (proposeTransaction) {
+    const queueData = encodeFunctionData({
+      abi: canonGuardEntrypointAbi,
+      functionName: "queueTransaction",
+      args: ["0x0000000000000000000000000000000000000000" as Address],
+    });
+
+    steps.push({
+      id: "queue-action",
+      title: "Queue Transaction",
+      description: "Add the transaction to the Canon Guard queue",
+      status: "pending",
+      to: guardAddress,
+      data: queueData,
+    });
+
+    const approveHashData = encodeFunctionData({
+      abi: safeAbi,
+      functionName: "approveHash",
+      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+    });
+
+    steps.push({
+      id: "sign-safe-tx",
+      title: "Sign Transaction",
+      description: "Sign the transaction in your Safe wallet",
+      status: "pending",
+      to: safeAddress,
+      data: approveHashData,
     });
   }
 

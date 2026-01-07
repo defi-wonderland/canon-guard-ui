@@ -21,6 +21,10 @@ interface QueueActionState {
   approvalDuration?: bigint;
 }
 
+interface QueueActionSectionProps {
+  onQueueCountChange?: () => void;
+}
+
 /**
  * QueueActionSection - Handles queuing/pre-approving existing actions from Canon List
  *
@@ -33,7 +37,7 @@ interface QueueActionState {
  * Note: This flow requires navigation state. If state is missing (e.g., on page refresh),
  * it redirects back to canon-list to restart the flow.
  */
-export const QueueActionSection = () => {
+export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { safeAddress, guardAddress, chainId } = useStateContext();
@@ -288,6 +292,11 @@ export const QueueActionSection = () => {
           if (stepIndex < transactionSteps.length - 1) {
             setCurrentStepIndex(stepIndex + 1);
           }
+
+          // Notify that queue count may have changed after sign steps
+          if (currentStep.id === "sign-transaction" || currentStep.id === "sign-preapprove") {
+            onQueueCountChange?.();
+          }
         } else {
           // Transaction failed or was rejected
           setTransactionSteps((prev) => {
@@ -315,6 +324,7 @@ export const QueueActionSection = () => {
       executeQueueTransaction,
       executeSignTransaction,
       executeDeployPreApproval,
+      onQueueCountChange,
     ],
   );
 

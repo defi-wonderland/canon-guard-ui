@@ -31,7 +31,11 @@ interface QueueSignState {
   threshold: number;
 }
 
-export const QueueSignSection = () => {
+interface QueueSignSectionProps {
+  onQueueCountChange?: () => void;
+}
+
+export const QueueSignSection = ({ onQueueCountChange }: QueueSignSectionProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { safeAddress, guardAddress, chainId } = useStateContext();
@@ -173,6 +177,9 @@ export const QueueSignSection = () => {
 
           // Mark as complete to show success screen
           setIsComplete(true);
+
+          // Notify that queue count may have changed
+          onQueueCountChange?.();
         } else {
           throw new Error("Sign transaction returned no result");
         }
@@ -183,7 +190,15 @@ export const QueueSignSection = () => {
         );
       }
     },
-    [navigationState, safeAddress, guardAddress, transactionSteps, currentStepIndex, executeSignTransaction],
+    [
+      navigationState,
+      safeAddress,
+      guardAddress,
+      transactionSteps,
+      currentStepIndex,
+      executeSignTransaction,
+      onQueueCountChange,
+    ],
   );
 
   // Handle back navigation

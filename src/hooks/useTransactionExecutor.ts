@@ -6,19 +6,31 @@ import {
   simpleTransfersFactoryAbi,
   simpleActionFactoryAbi,
   allowanceClaimorFactoryAbi,
+  cappedTokenTransfersHubFactoryAbi,
   canonGuardRegistryAbi,
   canonGuardAbi,
   preApproveActionFactoryAbi,
   safeAbi,
+  changeSafeGuardActionFactoryAbi,
 } from "~/abis/canonGuard";
-import type { TransferFormData, SimpleActionFormData, ClaimAllowanceFormData } from "~/components/NewAction/steps";
+import { cappedTokenTransfersHubAbi } from "~/abis/canonGuard";
+import type {
+  TransferFormData,
+  SimpleActionFormData,
+  ClaimAllowanceFormData,
+  CappedTransferHubFormData,
+  HubChildFormData,
+} from "~/components/NewAction/steps";
 import {
   SIMPLE_TRANSFERS_FACTORY,
   SIMPLE_ACTIONS_FACTORY,
   ALLOWANCE_CLAIMOR_FACTORY,
+  CAPPED_TOKEN_TRANSFERS_HUB_FACTORY,
   CANON_GUARD_REGISTRY,
   PRE_APPROVE_ACTION_FACTORY,
+  CHANGE_SAFE_GUARD_ACTION_FACTORY,
 } from "~/constants/canonGuard";
+import { EPOCH_TIME_MULTIPLIERS } from "~/utils/timeUnits";
 
 /**
  * Transaction execution states
@@ -106,23 +118,23 @@ export function useTransactionExecutor() {
       setTxHash(null);
 
       try {
-        const tokenAddress = formData.tokenAddress as Address;
+        // Build the transfer action array from form data
+        const transferActions = await Promise.all(
+          formData.transfers.map(async (transfer) => {
+            const tokenAddress = transfer.tokenAddress as Address;
+            // Fetch the token's decimals from the ERC20 contract
+            const decimals = await getTokenDecimals(tokenAddress);
+            console.log(`Token ${tokenAddress} has ${decimals} decimals`);
 
-        // Fetch the token's decimals from the ERC20 contract
-        const decimals = await getTokenDecimals(tokenAddress);
-        console.log(`Token ${tokenAddress} has ${decimals} decimals`);
+            return {
+              token: tokenAddress,
+              to: transfer.recipientAddress as Address,
+              amount: parseUnits(transfer.amount || "0", decimals),
+            };
+          }),
+        );
 
-        // Parse amount with correct decimals
-        const amount = parseUnits(formData.amount || "0", decimals);
-
-        // Build the transfer action array
-        const transferActions = [
-          {
-            token: tokenAddress,
-            to: formData.recipientAddress as Address,
-            amount: amount,
-          },
-        ];
+        console.log("[useTransactionExecutor] Deploying transfers:", transferActions);
 
         // Execute the contract write
         const hash = await writeContractAsync({
@@ -168,7 +180,7 @@ export function useTransactionExecutor() {
 
   /**
    * Execute the Deploy Contract step for SimpleActions
-   * Calls SimpleActionsFactory.createSimpleAction() and returns the deployed address
+   * Calls SimpleActionsFactory.createSimpleActions() and returns the deployed address
    */
   const executeDeploySimpleAction = useCallback(
     async (formData: SimpleActionFormData): Promise<DeployResult | null> => {
@@ -177,36 +189,38 @@ export function useTransactionExecutor() {
       setTxHash(null);
 
       try {
-        // Parse value - handle empty/undefined as 0
-        let valueWei: bigint;
-        if (!formData.value || formData.value.trim() === "") {
-          valueWei = 0n;
-        } else {
-          // If user entered a decimal value, parse as ether; if whole number in wei, use directly
-          const valueStr = formData.value.trim();
-          if (valueStr.includes(".")) {
-            valueWei = parseEther(valueStr);
+        // Build array of SimpleAction structs from form data
+        const simpleActions = formData.actions.map((action) => {
+          // Parse value - handle empty/undefined as 0
+          let valueWei: bigint;
+          if (!action.value || action.value.trim() === "") {
+            valueWei = 0n;
           } else {
-            valueWei = BigInt(valueStr);
+            // If user entered a decimal value, parse as ether; if whole number in wei, use directly
+            const valueStr = action.value.trim();
+            if (valueStr.includes(".")) {
+              valueWei = parseEther(valueStr);
+            } else {
+              valueWei = BigInt(valueStr);
+            }
           }
-        }
 
-        // Build the SimpleAction struct
-        const simpleAction = {
-          target: formData.target as Address,
-          signature: formData.signature,
-          data: (formData.data || "0x") as Hex,
-          value: valueWei,
-        };
+          return {
+            target: action.target as Address,
+            signature: action.signature,
+            data: (action.data || "0x") as Hex,
+            value: valueWei,
+          };
+        });
 
-        console.log("[useTransactionExecutor] Deploying SimpleAction:", simpleAction);
+        console.log("[useTransactionExecutor] Deploying SimpleActions:", simpleActions);
 
         // Execute the contract write
         const hash = await writeContractAsync({
           address: SIMPLE_ACTIONS_FACTORY,
           abi: simpleActionFactoryAbi,
-          functionName: "createSimpleAction",
-          args: [simpleAction],
+          functionName: "createSimpleActions",
+          args: [simpleActions],
         });
 
         setTxHash(hash);
@@ -294,6 +308,219 @@ export function useTransactionExecutor() {
         setError(error);
         setStatus("error");
         console.error("Deploy AllowanceClaimor failed:", error);
+        return null;
+      }
+    },
+    [config, writeContractAsync],
+  );
+
+  /**
+   * Execute the Deploy Hub Child step
+   * Calls CappedTokenTransfersHub.createNewActionsBuilder(token, amount) and returns the deployed address
+   */
+  const executeDeployHubChild = useCallback(
+    async (hubAddress: Address, formData: HubChildFormData): Promise<DeployResult | null> => {
+      setStatus("pending");
+      setError(null);
+      setTxHash(null);
+
+      try {
+        const tokenAddress = formData.token as Address;
+
+        // Fetch the token's decimals from the ERC20 contract
+        const decimals = await getTokenDecimals(tokenAddress);
+        console.log(`Token ${tokenAddress} has ${decimals} decimals`);
+
+        // Parse amount with correct decimals
+        const amount = parseUnits(formData.amount || "0", decimals);
+
+        console.log("[useTransactionExecutor] Deploying Hub Child:", {
+          hubAddress,
+          token: tokenAddress,
+          amount: amount.toString(),
+        });
+
+        // Execute the contract write - call createNewActionsBuilder on the hub
+        const hash = await writeContractAsync({
+          address: hubAddress,
+          abi: cappedTokenTransfersHubAbi,
+          functionName: "createNewActionsBuilder",
+          args: [tokenAddress, amount],
+        });
+
+        setTxHash(hash);
+        setStatus("confirming");
+
+        // Wait for transaction confirmation
+        const receipt = await waitForTransactionReceipt(config, { hash });
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Parse the CappedTokenTransfersCreated event to get the deployed address
+        console.log("[useTransactionExecutor] Parsing Hub Child logs:", receipt.logs);
+        const deployedAddress = parseHubChildAddress(receipt.logs);
+
+        if (!deployedAddress) {
+          console.error("[useTransactionExecutor] Failed to parse deployed address from logs");
+          throw new Error("Could not find deployed address in transaction logs");
+        }
+
+        console.log("[useTransactionExecutor] Deploy Hub Child successful:", { txHash: hash, deployedAddress });
+        setStatus("success");
+        return { txHash: hash, deployedAddress };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Transaction failed");
+        setError(error);
+        setStatus("error");
+        console.error("Deploy Hub Child failed:", error);
+        return null;
+      }
+    },
+    [config, writeContractAsync, getTokenDecimals],
+  );
+
+  /**
+   * Execute the Deploy Contract step for CappedTokenTransfersHub
+   * Calls CappedTokenTransfersHubFactory.createCappedTokenTransfersHub() and returns the deployed address
+   */
+  const executeDeployCappedTransferHub = useCallback(
+    async (formData: CappedTransferHubFormData, safeAddress: Address): Promise<DeployResult | null> => {
+      setStatus("pending");
+      setError(null);
+      setTxHash(null);
+
+      try {
+        // Calculate epoch length in seconds
+        const epochLengthValue = parseFloat(formData.epochLength) || 0;
+        const epochLengthSeconds = BigInt(Math.floor(epochLengthValue * EPOCH_TIME_MULTIPLIERS[formData.epochUnit]));
+
+        // Prepare tokens and caps arrays
+        // For each token, fetch its decimals and parse the cap amount correctly
+        const tokens: Address[] = [];
+        const caps: bigint[] = [];
+
+        for (const token of formData.tokens) {
+          const tokenAddress = token.address as Address;
+          tokens.push(tokenAddress);
+
+          // Fetch token decimals
+          const decimals = await getTokenDecimals(tokenAddress);
+          console.log(`Token ${tokenAddress} has ${decimals} decimals`);
+
+          // Parse cap with correct decimals
+          const cap = parseUnits(token.amount || "0", decimals);
+          caps.push(cap);
+        }
+
+        console.log("[useTransactionExecutor] Deploying CappedTokenTransfersHub:", {
+          safe: safeAddress,
+          recipient: formData.recipientAddress,
+          tokens,
+          caps: caps.map((c) => c.toString()),
+          epochLength: epochLengthSeconds.toString(),
+        });
+
+        // Execute the contract write
+        const hash = await writeContractAsync({
+          address: CAPPED_TOKEN_TRANSFERS_HUB_FACTORY,
+          abi: cappedTokenTransfersHubFactoryAbi,
+          functionName: "createCappedTokenTransfersHub",
+          args: [safeAddress, formData.recipientAddress as Address, tokens, caps, epochLengthSeconds],
+        });
+
+        setTxHash(hash);
+        setStatus("confirming");
+
+        // Wait for transaction confirmation
+        const receipt = await waitForTransactionReceipt(config, { hash });
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Parse the CappedTokenTransfersHubCreated event to get the deployed address
+        console.log("[useTransactionExecutor] Parsing CappedTokenTransfersHub logs:", receipt.logs);
+        const deployedAddress = parseCappedTokenTransfersHubAddress(receipt.logs);
+
+        if (!deployedAddress) {
+          console.error("[useTransactionExecutor] Failed to parse deployed address from logs");
+          throw new Error("Could not find deployed address in transaction logs");
+        }
+
+        console.log("[useTransactionExecutor] Deploy CappedTokenTransfersHub successful:", {
+          txHash: hash,
+          deployedAddress,
+        });
+        setStatus("success");
+        return { txHash: hash, deployedAddress };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Transaction failed");
+        setError(error);
+        setStatus("error");
+        console.error("Deploy CappedTokenTransfersHub failed:", error);
+        return null;
+      }
+    },
+    [config, writeContractAsync, getTokenDecimals],
+  );
+
+  /**
+   * Execute the Deploy Contract step for ChangeSafeGuardAction
+   * Calls ChangeSafeGuardActionFactory.createChangeSafeGuardAction(newGuardAddress) and returns the deployed address
+   * Used to attach or detach Canon Guard from a Safe
+   * @param newGuardAddress - The guard address to set. Use address(0) to detach, or a valid Canon Guard address to attach.
+   */
+  const executeDeployChangeSafeGuardAction = useCallback(
+    async (newGuardAddress?: Address): Promise<DeployResult | null> => {
+      setStatus("pending");
+      setError(null);
+      setTxHash(null);
+
+      const targetAddress = newGuardAddress ?? ("0x0000000000000000000000000000000000000000" as Address);
+      const action = newGuardAddress ? "attach" : "detach";
+
+      try {
+        console.log(`[useTransactionExecutor] Deploying ChangeSafeGuardAction to ${action} guard:`, targetAddress);
+
+        // Execute the contract write
+        const hash = await writeContractAsync({
+          address: CHANGE_SAFE_GUARD_ACTION_FACTORY,
+          abi: changeSafeGuardActionFactoryAbi,
+          functionName: "createChangeSafeGuardAction",
+          args: [targetAddress],
+        });
+
+        setTxHash(hash);
+        setStatus("confirming");
+
+        const receipt = await waitForTransactionReceipt(config, { hash });
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Parse the ChangeSafeGuardActionCreated event to get the deployed address
+        console.log("[useTransactionExecutor] Parsing ChangeSafeGuardAction logs:", receipt.logs);
+        const deployedAddress = parseChangeSafeGuardActionAddress(receipt.logs);
+
+        if (!deployedAddress) {
+          console.error("[useTransactionExecutor] Failed to parse deployed address from logs");
+          throw new Error("Could not find deployed address in transaction logs");
+        }
+
+        console.log("[useTransactionExecutor] Deploy ChangeSafeGuardAction successful:", {
+          txHash: hash,
+          deployedAddress,
+        });
+        setStatus("success");
+        return { txHash: hash, deployedAddress };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Transaction failed");
+        setError(error);
+        setStatus("error");
+        console.error("Deploy ChangeSafeGuardAction failed:", error);
         return null;
       }
     },
@@ -695,6 +922,9 @@ export function useTransactionExecutor() {
     executeDeployTransfer,
     executeDeploySimpleAction,
     executeDeployClaimAllowance,
+    executeDeployHubChild,
+    executeDeployCappedTransferHub,
+    executeDeployChangeSafeGuardAction,
     executeRecordToRegistry,
     executeQueueTransaction,
     executeSignTransaction,
@@ -805,6 +1035,87 @@ function parseAllowanceClaimorAddress(
       if (decoded.eventName === "AllowanceClaimorCreated") {
         // The event has: AllowanceClaimorCreated(address indexed _allowanceClaimor, address indexed _token, address indexed _tokenOwner, address _tokenRecipient)
         return (decoded.args as { _allowanceClaimor: Address })._allowanceClaimor;
+      }
+    } catch {
+      // Not the event we're looking for, continue
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse the deployed CappedTokenTransfersHub address from transaction logs
+ * Looks for the CappedTokenTransfersHubCreated event
+ */
+function parseCappedTokenTransfersHubAddress(
+  logs: readonly { data: `0x${string}`; topics: readonly `0x${string}`[] }[],
+): Address | null {
+  for (const log of logs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: cappedTokenTransfersHubFactoryAbi,
+        data: log.data,
+        topics: log.topics,
+      });
+
+      if (decoded.eventName === "CappedTokenTransfersHubCreated") {
+        // The event has: CappedTokenTransfersHubCreated(address indexed _cappedTokenTransfersHub, address indexed _safe, address indexed _recipient)
+        return (decoded.args as { _cappedTokenTransfersHub: Address })._cappedTokenTransfersHub;
+      }
+    } catch {
+      // Not the event we're looking for, continue
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse the deployed Hub Child (CappedTokenTransfers) address from transaction logs
+ * Looks for the CappedTokenTransfersCreated event emitted by the hub
+ */
+function parseHubChildAddress(
+  logs: readonly { data: `0x${string}`; topics: readonly `0x${string}`[] }[],
+): Address | null {
+  for (const log of logs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: cappedTokenTransfersHubAbi,
+        data: log.data,
+        topics: log.topics,
+      });
+
+      if (decoded.eventName === "CappedTokenTransfersCreated") {
+        // The event has: CappedTokenTransfersCreated(address indexed _actionsBuilder, address _token, uint256 _amount)
+        return (decoded.args as { _actionsBuilder: Address })._actionsBuilder;
+      }
+    } catch {
+      // Not the event we're looking for, continue
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse the deployed ChangeSafeGuardAction address from transaction logs
+ * Looks for the ChangeSafeGuardActionCreated event
+ */
+function parseChangeSafeGuardActionAddress(
+  logs: readonly { data: `0x${string}`; topics: readonly `0x${string}`[] }[],
+): Address | null {
+  for (const log of logs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: changeSafeGuardActionFactoryAbi,
+        data: log.data,
+        topics: log.topics,
+      });
+
+      if (decoded.eventName === "ChangeSafeGuardActionCreated") {
+        // The event has: ChangeSafeGuardActionCreated(address indexed _changeSafeGuardAction, address indexed _safeGuard)
+        return (decoded.args as { _changeSafeGuardAction: Address })._changeSafeGuardAction;
       }
     } catch {
       // Not the event we're looking for, continue

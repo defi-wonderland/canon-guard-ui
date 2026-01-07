@@ -8,10 +8,9 @@
  */
 
 import { Address, keccak256, toHex, PublicClient, getAddress, zeroAddress } from "viem";
-import { canonGuardFactoryAbi } from "../abis/canonGuard";
 import { safeAbi } from "../abis/safe";
-import { CANON_GUARD_FACTORY } from "../constants/addresses";
 import { SafeInfo } from "../types";
+import { CanonGuardValidationService } from "./canonGuardValidationService";
 import { ClientService } from "./clientService";
 
 export class SafeService {
@@ -60,8 +59,13 @@ export class SafeService {
   }
 
   /**
-   * Validate that a guard address was deployed from the supported CanonGuardFactory
-   * This ensures the guard is a legitimate Canon Guard and not an arbitrary contract
+   * Validate that a guard address was deployed from a supported CanonGuardFactory
+   * This ensures the guard is a legitimate Canon Guard and not an arbitrary contract.
+   *
+   * Uses 3-step validation:
+   * 1. Call PARENT() on the guard - must not fail
+   * 2. PARENT() result must be a known factory address
+   * 3. Factory.isChild(guardAddress) must return true
    */
   async isValidCanonGuard(guardAddress: Address): Promise<boolean> {
     if (!guardAddress || guardAddress === zeroAddress) {
@@ -69,14 +73,8 @@ export class SafeService {
     }
 
     try {
-      const isChild = await this.client.readContract({
-        address: CANON_GUARD_FACTORY,
-        abi: canonGuardFactoryAbi,
-        functionName: "isChild",
-        args: [guardAddress],
-      });
-
-      return isChild as boolean;
+      const validationService = new CanonGuardValidationService(this.client);
+      return await validationService.isValidCanonGuard(guardAddress);
     } catch (error) {
       console.error("Failed to validate Canon Guard:", error);
       return false;

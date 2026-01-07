@@ -375,6 +375,18 @@ export const actionBuilderParentAbi = [
   },
 ] as const;
 
+// HUB() function ABI for hub children (implements IActionHubChild)
+// If an action builder has this method, it's a child of a hub
+export const actionHubChildAbi = [
+  {
+    type: "function",
+    name: "HUB",
+    inputs: [],
+    outputs: [{ name: "_hub", type: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
 // Minimal ABI for approvalExpiries on Canon Guard entrypoint
 // Returns uint256 timestamp of when the approval expires for a given action builder
 export const approvalExpiriesAbi = [
@@ -399,8 +411,7 @@ export const preApproveActionAbi = [
   },
 ] as const;
 
-// Custom SimpleActionsFactory ABI with createSimpleAction (singular) and event
-// The package ABI might only include createSimpleActions (plural) without the event
+// Custom SimpleActionsFactory ABI with createSimpleAction (singular), createSimpleActions (plural), and event
 export const simpleActionFactoryAbi = [
   // Function: createSimpleAction - deploys a new SimpleActions contract with a single action
   {
@@ -411,6 +422,26 @@ export const simpleActionFactoryAbi = [
         name: "_simpleAction",
         type: "tuple",
         internalType: "struct ISimpleActions.SimpleAction",
+        components: [
+          { name: "target", type: "address", internalType: "address" },
+          { name: "signature", type: "string", internalType: "string" },
+          { name: "data", type: "bytes", internalType: "bytes" },
+          { name: "value", type: "uint256", internalType: "uint256" },
+        ],
+      },
+    ],
+    outputs: [{ name: "_simpleActions", type: "address", internalType: "address" }],
+    stateMutability: "nonpayable",
+  },
+  // Function: createSimpleActions (plural) - deploys a new SimpleActions contract with multiple actions
+  {
+    type: "function",
+    name: "createSimpleActions",
+    inputs: [
+      {
+        name: "_smplActions",
+        type: "tuple[]",
+        internalType: "struct ISimpleActions.SimpleAction[]",
         components: [
           { name: "target", type: "address", internalType: "address" },
           { name: "signature", type: "string", internalType: "string" },
@@ -455,6 +486,168 @@ export const allowanceClaimorFactoryAbi = [
       { name: "_token", type: "address", indexed: true, internalType: "address" },
       { name: "_tokenOwner", type: "address", indexed: true, internalType: "address" },
       { name: "_tokenRecipient", type: "address", indexed: false, internalType: "address" },
+    ],
+    anonymous: false,
+  },
+] as const;
+
+// CappedTokenTransfersHubFactory ABI for creating capped token transfer hubs
+// Hubs manage groups of related actions with shared approval patterns and budget constraints
+export const cappedTokenTransfersHubFactoryAbi = [
+  // Function: createCappedTokenTransfersHub - deploys a new CappedTokenTransfersHub contract
+  {
+    type: "function",
+    name: "createCappedTokenTransfersHub",
+    inputs: [
+      { name: "_safe", type: "address", internalType: "address" },
+      { name: "_recipient", type: "address", internalType: "address" },
+      { name: "_tokens", type: "address[]", internalType: "address[]" },
+      { name: "_caps", type: "uint256[]", internalType: "uint256[]" },
+      { name: "_epochLength", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [{ name: "_cappedTokenTransfersHub", type: "address", internalType: "address" }],
+    stateMutability: "nonpayable",
+  },
+  // Event: CappedTokenTransfersHubCreated - emitted when a CappedTokenTransfersHub is deployed
+  {
+    type: "event",
+    name: "CappedTokenTransfersHubCreated",
+    inputs: [
+      { name: "_cappedTokenTransfersHub", type: "address", indexed: true, internalType: "address" },
+      { name: "_safe", type: "address", indexed: true, internalType: "address" },
+      { name: "_recipient", type: "address", indexed: true, internalType: "address" },
+    ],
+    anonymous: false,
+  },
+] as const;
+
+// CappedTokenTransfersHub ABI for interacting with hub instances
+// Used to read hub configuration and deploy child action builders
+export const cappedTokenTransfersHubAbi = [
+  // tokens() - Get list of allowed tokens in the hub
+  {
+    type: "function",
+    name: "tokens",
+    inputs: [],
+    outputs: [{ name: "_tokens", type: "address[]", internalType: "address[]" }],
+    stateMutability: "view",
+  },
+  // cap(token) - Get maximum cap per epoch for a token
+  {
+    type: "function",
+    name: "cap",
+    inputs: [{ name: "_token", type: "address", internalType: "address" }],
+    outputs: [{ name: "_cap", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  // capLeft(token) - Get remaining cap for current epoch
+  {
+    type: "function",
+    name: "capLeft",
+    inputs: [{ name: "_token", type: "address", internalType: "address" }],
+    outputs: [{ name: "_capLeft", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  // RECIPIENT() - Get the recipient address
+  {
+    type: "function",
+    name: "RECIPIENT",
+    inputs: [],
+    outputs: [{ name: "_recipient", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  // EPOCH_LENGTH() - Get epoch duration in seconds
+  {
+    type: "function",
+    name: "EPOCH_LENGTH",
+    inputs: [],
+    outputs: [{ name: "_epochLength", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  // PARENT() - Get the parent (factory) address
+  {
+    type: "function",
+    name: "PARENT",
+    inputs: [],
+    outputs: [{ name: "_parent", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  // isHubChild(address) - Check if an action builder is a child of this hub
+  {
+    type: "function",
+    name: "isHubChild",
+    inputs: [{ name: "_actionsBuilder", type: "address", internalType: "address" }],
+    outputs: [{ name: "_isChild", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
+  },
+  // createNewActionsBuilder(token, amount) - Deploy new CappedTokenTransfers child
+  {
+    type: "function",
+    name: "createNewActionsBuilder",
+    inputs: [
+      { name: "_token", type: "address", internalType: "address" },
+      { name: "_amount", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [{ name: "_actionsBuilder", type: "address", internalType: "address" }],
+    stateMutability: "nonpayable",
+  },
+  // totalSpent(token) - Get total amount spent for a token in current epoch
+  {
+    type: "function",
+    name: "totalSpent",
+    inputs: [{ name: "_token", type: "address", internalType: "address" }],
+    outputs: [{ name: "_totalSpent", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  // lastEpoch(token) - Get the last epoch number for a token
+  {
+    type: "function",
+    name: "lastEpoch",
+    inputs: [{ name: "_token", type: "address", internalType: "address" }],
+    outputs: [{ name: "_lastEpoch", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  // Event: CappedTokenTransfersCreated - emitted when a child action builder is deployed
+  {
+    type: "event",
+    name: "CappedTokenTransfersCreated",
+    inputs: [
+      { name: "_actionsBuilder", type: "address", indexed: false, internalType: "address" },
+      { name: "_token", type: "address", indexed: false, internalType: "address" },
+      { name: "_amount", type: "uint256", indexed: false, internalType: "uint256" },
+    ],
+    anonymous: false,
+  },
+] as const;
+
+// ChangeSafeGuardAction ABI - for reading the target guard address
+export const changeSafeGuardActionAbi = [
+  {
+    type: "function",
+    name: "SAFE_GUARD",
+    inputs: [],
+    outputs: [{ name: "_safeGuard", type: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// ChangeSafeGuardActionFactory ABI - for detaching the Canon Guard from a Safe
+export const changeSafeGuardActionFactoryAbi = [
+  // createChangeSafeGuardAction - deploys a ChangeSafeGuardAction contract
+  {
+    type: "function",
+    name: "createChangeSafeGuardAction",
+    inputs: [{ name: "_safeGuard", type: "address", internalType: "address" }],
+    outputs: [{ name: "_changeSafeGuardAction", type: "address", internalType: "address" }],
+    stateMutability: "nonpayable",
+  },
+  // Event: ChangeSafeGuardActionCreated - emitted when a ChangeSafeGuardAction is deployed
+  {
+    type: "event",
+    name: "ChangeSafeGuardActionCreated",
+    inputs: [
+      { name: "_changeSafeGuardAction", type: "address", indexed: true, internalType: "address" },
+      { name: "_safeGuard", type: "address", indexed: true, internalType: "address" },
     ],
     anonymous: false,
   },

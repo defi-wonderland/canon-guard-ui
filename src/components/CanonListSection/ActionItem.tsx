@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Box, Typography, styled } from "@mui/material";
-import { BoxIcon, PlusIcon, EllipsisIcon, ZapIcon, ZapOffIcon, CopyIcon } from "~/components/icons";
+import {
+  BoxIcon,
+  PlusIcon,
+  EllipsisIcon,
+  ZapIcon,
+  ZapOffIcon,
+  VectorSquareIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "~/components/icons";
+import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
-import { getFactoryDisplayName } from "~/utils/factoryDisplay";
+import { getFactoryDisplayName, getHubDisplayName } from "~/utils/factoryDisplay";
 import { ActionMenu } from "./ActionMenu";
 import type { Address } from "viem";
 
@@ -12,10 +22,18 @@ interface ActionItemProps {
   address: Address;
   factoryType: ActionFactoryType;
   isFastPath: boolean;
+  // Hub-related props
+  isHub?: boolean;
+  isHubChild?: boolean;
+  childrenCount?: number;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  // Actions
   onQueue?: () => void;
   onAddToQueue?: () => void;
   onRename?: () => void;
   onProposePreApproval?: () => void;
+  onDeployChild?: () => void;
   onRemove?: () => void;
   isRemoving?: boolean;
 }
@@ -25,23 +43,26 @@ export const ActionItem = ({
   address,
   factoryType,
   isFastPath,
+  isHub = false,
+  isHubChild = false,
+  childrenCount = 0,
+  isExpanded = false,
+  onToggleExpand,
   onQueue,
   onAddToQueue,
   onRename,
   onProposePreApproval,
+  onDeployChild,
   onRemove,
   isRemoving,
 }: ActionItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const isUntitled = !title || title === "Untitled Transaction";
   const displayTitle = isUntitled ? "Untitled Transaction" : title;
-  const factoryDisplayName = getFactoryDisplayName(factoryType);
-
-  const handleCopyAddress = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(address);
-  };
+  // Use hub display name for hubs, factory display name for others
+  const factoryDisplayName = isHub ? `HUB: ${getHubDisplayName(factoryType)}` : getFactoryDisplayName(factoryType);
 
   const handleMoreClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,63 +81,91 @@ export const ActionItem = ({
   return (
     <ItemContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {/* Left icon section */}
-      <IconSection>
-        <BoxIcon size={20} color={canonHeaderTokens.foreground.accent20} />
+      <IconSection $isHubChild={isHubChild}>
+        {isHub ? (
+          <VectorSquareIcon size={20} color={canonHeaderTokens.foreground.accent10} />
+        ) : (
+          <BoxIcon size={20} color={canonHeaderTokens.foreground.accent20} />
+        )}
       </IconSection>
 
       {/* Main content section */}
-      <ContentSection>
-        <ContentInner>
+      <ContentSection $isHubChild={isHubChild}>
+        <ContentInner $isHubChild={isHubChild}>
           <TitleSection>
             <Title $isUntitled={isUntitled}>{displayTitle}</Title>
-            <AddressRow $isVisible={isHovered} onClick={handleCopyAddress}>
-              <AddressText>{address}</AddressText>
-              <CopyIconWrapper className='copy-icon'>
-                <CopyIcon size={10} color={canonHeaderTokens.foreground.accent10} />
-              </CopyIconWrapper>
+            {/* Hub children always show address; others show on hover */}
+            <AddressRow $isVisible={isHubChild || isHovered}>
+              <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
+                <AddressText>{address}</AddressText>
+              </CopyableText>
             </AddressRow>
           </TitleSection>
-          <TypeLabel>{factoryDisplayName}</TypeLabel>
+          {/* Hub children don't show type label */}
+          {!isHubChild && <TypeLabel>{factoryDisplayName}</TypeLabel>}
         </ContentInner>
       </ContentSection>
 
       {/* Actions section */}
-      <ActionsSection>
+      <ActionsSection $isHubChild={isHubChild}>
         <ActionsTop>
-          <QueueButton onClick={onQueue}>
-            <ButtonText>QUEUE</ButtonText>
-            <PlusIcon size={14} color={canonHeaderTokens.foreground.accent10} />
-          </QueueButton>
+          {/* Hubs show styled children count button */}
+          {isHub ? (
+            <ChildrenButton onClick={onToggleExpand}>
+              <ChildrenButtonContent>
+                <BoxIcon size={16} color={canonHeaderTokens.foreground.accent20} />
+                <ChildrenCountText>{childrenCount}</ChildrenCountText>
+              </ChildrenButtonContent>
+              {isExpanded ? (
+                <ChevronUpIcon size={14} color={canonHeaderTokens.foreground.accent10} />
+              ) : (
+                <ChevronDownIcon size={14} color={canonHeaderTokens.foreground.accent10} />
+              )}
+            </ChildrenButton>
+          ) : (
+            /* Both regular actions and hub children show QUEUE button */
+            <QueueButton onClick={isHubChild ? onAddToQueue : onQueue}>
+              <ButtonText>QUEUE</ButtonText>
+              <PlusIcon size={14} color={canonHeaderTokens.foreground.accent10} />
+            </QueueButton>
+          )}
           <MoreButtonWrapper>
-            <MoreButton onClick={handleMoreClick}>
+            <MoreButton ref={moreButtonRef} onClick={handleMoreClick}>
               <EllipsisIcon size={16} color={canonHeaderTokens.foreground.accent10} />
             </MoreButton>
             <ActionMenu
               isOpen={isMenuOpen}
               onClose={handleMenuClose}
+              isHub={isHub}
+              isHubChild={isHubChild}
+              triggerRef={moreButtonRef}
               onAddToQueue={onAddToQueue}
               onRename={onRename}
               onProposePreApproval={onProposePreApproval}
+              onDeployChild={onDeployChild}
               onRemove={handleRemove}
               isRemoving={isRemoving}
             />
           </MoreButtonWrapper>
         </ActionsTop>
-        <ActionsBottom>
-          <PathIndicator $isFastPath={isFastPath}>
-            {isFastPath ? (
-              <>
-                <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
-                <PathText $isFastPath={isFastPath}>Fast-path</PathText>
-              </>
-            ) : (
-              <>
-                <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
-                <PathText $isFastPath={isFastPath}>Slow-path</PathText>
-              </>
-            )}
-          </PathIndicator>
-        </ActionsBottom>
+        {/* Hub children don't show Fast/Slow path - only hubs and regular actions show that */}
+        {!isHubChild && (
+          <ActionsBottom>
+            <PathIndicator $isFastPath={isFastPath}>
+              {isFastPath ? (
+                <>
+                  <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
+                  <PathText $isFastPath={isFastPath}>Fast-path</PathText>
+                </>
+              ) : (
+                <>
+                  <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
+                  <PathText $isFastPath={isFastPath}>Slow-path</PathText>
+                </>
+              )}
+            </PathIndicator>
+          </ActionsBottom>
+        )}
       </ActionsSection>
     </ItemContainer>
   );
@@ -130,31 +179,37 @@ const ItemContainer = styled(Box)({
   position: "relative", // For dropdown positioning
 });
 
-const IconSection = styled(Box)({
+const IconSection = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isHubChild",
+})<{ $isHubChild?: boolean }>(({ $isHubChild }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  width: "100px",
+  width: $isHubChild ? "80px" : "100px",
   backgroundColor: canonHeaderTokens.background.layer1,
-  padding: "20px 24px",
+  padding: $isHubChild ? "16px 20px" : "20px 24px",
   opacity: 0.8,
   borderRadius: "8px 0 0 8px",
-});
+}));
 
-const ContentSection = styled(Box)({
+const ContentSection = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isHubChild",
+})<{ $isHubChild?: boolean }>(({ $isHubChild }) => ({
   flex: 1,
   display: "flex",
   alignItems: "center",
   backgroundColor: canonHeaderTokens.background.layer1,
-  padding: "16px 20px",
+  padding: $isHubChild ? "12px 20px" : "16px 20px",
   minWidth: 0,
-});
+}));
 
-const ContentInner = styled(Box)({
+const ContentInner = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isHubChild",
+})<{ $isHubChild?: boolean }>(({ $isHubChild }) => ({
   display: "flex",
   flexDirection: "column",
-  gap: "24px",
-});
+  gap: $isHubChild ? "8px" : "24px",
+}));
 
 const TitleSection = styled(Box)({
   display: "flex",
@@ -162,26 +217,24 @@ const TitleSection = styled(Box)({
   gap: "8px",
 });
 
-const Title = styled(Typography)<{ $isUntitled: boolean }>(({ $isUntitled }) => ({
+const Title = styled(Typography, {
+  shouldForwardProp: (prop) => prop !== "$isUntitled",
+})<{ $isUntitled: boolean }>(({ $isUntitled }) => ({
   fontSize: "14px",
   fontWeight: 600,
   lineHeight: "20px",
   color: $isUntitled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent0,
 }));
 
-const AddressRow = styled(Box)<{ $isVisible: boolean }>(({ $isVisible }) => ({
+const AddressRow = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isVisible",
+})<{ $isVisible: boolean }>(({ $isVisible }) => ({
   display: "flex",
   alignItems: "center",
   gap: "8px",
   opacity: $isVisible ? 1 : 0,
   transition: "opacity 0.2s ease",
   pointerEvents: $isVisible ? "auto" : "none",
-  cursor: "pointer",
-  "&:hover": {
-    "& .copy-icon": {
-      opacity: 1,
-    },
-  },
 }));
 
 const AddressText = styled(Typography)({
@@ -189,14 +242,6 @@ const AddressText = styled(Typography)({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
-});
-
-const CopyIconWrapper = styled("span")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  opacity: 0.3,
-  transition: "opacity 0.2s ease",
 });
 
 const TypeLabel = styled(Typography)({
@@ -207,17 +252,53 @@ const TypeLabel = styled(Typography)({
   textTransform: "uppercase",
 });
 
-const ActionsSection = styled(Box)({
+const ActionsSection = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isHubChild",
+})<{ $isHubChild?: boolean }>(({ $isHubChild }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-end",
   justifyContent: "space-between",
   backgroundColor: canonHeaderTokens.background.layer1,
-  padding: "16px",
-  minWidth: "200px",
+  padding: $isHubChild ? "12px" : "16px",
+  minWidth: $isHubChild ? "150px" : "200px",
   alignSelf: "stretch", // Ensure it fills parent height
   gap: "32px", // Minimum gap between buttons and path indicator
   borderRadius: "0 8px 8px 0",
+}));
+
+// Styled pill button for children count (matches Figma design)
+const ChildrenButton = styled("button")({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "16px",
+  height: "36px",
+  padding: "8px 12px 8px 16px",
+  border: "none",
+  borderRadius: "100px",
+  backgroundColor: canonHeaderTokens.background.layer1Variation,
+  cursor: "pointer",
+  transition: "opacity 0.2s ease",
+  "&:hover": {
+    opacity: 0.8,
+  },
+});
+
+const ChildrenButtonContent = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  width: "40px",
+});
+
+const ChildrenCountText = styled(Typography)({
+  fontSize: "12px",
+  fontWeight: 600,
+  lineHeight: "16px",
+  letterSpacing: "0.6px",
+  textTransform: "uppercase",
+  color: canonHeaderTokens.foreground.accent10,
 });
 
 const ActionsTop = styled(Box)({
@@ -278,14 +359,18 @@ const ActionsBottom = styled(Box)({
   justifyContent: "flex-end",
 });
 
-const PathIndicator = styled(Box)<{ $isFastPath: boolean }>(({ $isFastPath }) => ({
+const PathIndicator = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isFastPath",
+})<{ $isFastPath: boolean }>(({ $isFastPath }) => ({
   display: "flex",
   alignItems: "center",
   gap: $isFastPath ? "6px" : "8px",
   justifyContent: "flex-end",
 }));
 
-const PathText = styled(Typography)<{ $isFastPath: boolean }>(({ $isFastPath }) => ({
+const PathText = styled(Typography, {
+  shouldForwardProp: (prop) => prop !== "$isFastPath",
+})<{ $isFastPath: boolean }>(({ $isFastPath }) => ({
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",

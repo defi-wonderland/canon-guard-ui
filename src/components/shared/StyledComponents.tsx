@@ -42,6 +42,68 @@ export const MainContent = styled(Box)({
 export const SafePageContainer = PageContainer;
 export const SafeMainContent = MainContent;
 
+// ============================================
+// Setup Flow Layout Components
+// ============================================
+
+/**
+ * Header bar for setup screens (72px height, layer1 background)
+ */
+export const SetupHeader = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  height: "72px",
+  backgroundColor: canonHeaderTokens.background.layer1,
+  width: "100%",
+});
+
+/**
+ * Centered content area for setup screens
+ */
+export const SetupContentArea = styled(Box)({
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  padding: "32px 24px 64px",
+});
+
+/**
+ * Form wrapper with max-width constraint (576px)
+ */
+export const SetupFormWrapper = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  width: "100%",
+  maxWidth: "576px",
+});
+
+/**
+ * Section title for setup screens (uppercase, small text)
+ */
+export const SetupSectionTitle = styled("h2")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  fontWeight: 600,
+  letterSpacing: "0.6px",
+  textTransform: "uppercase",
+  color: canonHeaderTokens.foreground.accent30,
+  padding: "8px",
+  margin: 0,
+});
+
+/**
+ * Card container for setup screens
+ */
+export const SetupCard = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  borderRadius: "8px",
+  overflow: "hidden",
+  backgroundColor: canonHeaderTokens.background.layer1,
+});
+
 export const SafeActionCard = styled(Card, {
   shouldForwardProp: (prop) => prop !== "isPreApproved",
 })<{ isPreApproved?: boolean }>(({ theme, isPreApproved = false }) => {

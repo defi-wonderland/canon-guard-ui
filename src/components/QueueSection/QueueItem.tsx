@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
-import { BoxIcon, ZapIcon, ZapOffIcon, CheckIcon, LockIcon, InfoIcon, CopyIcon } from "~/components/icons";
+import { BoxIcon, ZapIcon, ZapOffIcon, CheckIcon, LockIcon, InfoIcon, VectorSquareIcon } from "~/components/icons";
+import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { QueueItem as QueueItemType } from "~/services";
@@ -38,9 +39,13 @@ export const QueueItem = ({
   const {
     actionBuilderAddress,
     nonce,
+    currentNonce,
     label,
     factoryType,
     factoryLabel,
+    isHubChild,
+    hubType,
+    hubLabel,
     proposer,
     approversCount,
     threshold,
@@ -51,8 +56,11 @@ export const QueueItem = ({
     isAtCurrentNonce,
   } = item;
 
-  // Warning state: 0 signatures and at current nonce
-  const isWarningState = approversCount === 0 && isAtCurrentNonce;
+  // Stale nonce: item's nonce is behind current nonce (signatures are invalid)
+  const isStaleNonce = nonce < currentNonce;
+
+  // Warning state: 0 signatures OR stale nonce (needs re-signing)
+  const isWarningState = approversCount === 0 || isStaleNonce;
 
   // Untitled state: no label in registry
   const isUntitled = !label || label.trim() === "";
@@ -76,11 +84,6 @@ export const QueueItem = ({
 
     return () => clearInterval(interval);
   }, [hasExecutionDelay, remainingSeconds]);
-
-  const handleCopyAddress = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(actionBuilderAddress);
-  };
 
   // Get display label for factory type using centralized utility
   const getFactoryDisplayName = (): string => {
@@ -128,10 +131,10 @@ export const QueueItem = ({
   };
 
   // Determine action button state
-  // Sign: only signers can sign, and only if not fully signed
-  const showSignButton = isSigner && !isFullySigned && isAtCurrentNonce;
-  // Execute: show when wallet is connected (disabled state handled by tooltip)
-  const showExecuteButton = !!connectedAddress;
+  // Sign: signers can sign if not fully signed, including stale items that need re-signing
+  const showSignButton = isSigner && !isFullySigned;
+  // Execute: show when wallet is connected AND sign button is not showing
+  const showExecuteButton = !!connectedAddress && !showSignButton;
   const executeDisableReason = showExecuteButton ? getExecuteDisableReason() : null;
   const showNoAction = !isAtCurrentNonce && !showSignButton && !showExecuteButton;
 
@@ -167,11 +170,10 @@ export const QueueItem = ({
         <TopRow>
           <TitleSection>
             <Title $isUntitled={isUntitled}>{displayLabel}</Title>
-            <AddressRow $isVisible={isHovered} onClick={handleCopyAddress}>
-              <AddressText>{actionBuilderAddress}</AddressText>
-              <CopyIconWrapper className='copy-icon'>
-                <CopyIcon size={10} color={canonHeaderTokens.foreground.accent10} />
-              </CopyIconWrapper>
+            <AddressRow $isVisible={isHovered}>
+              <CopyableText text={actionBuilderAddress} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
+                <AddressText>{actionBuilderAddress}</AddressText>
+              </CopyableText>
             </AddressRow>
           </TitleSection>
           <ActionSection>
@@ -215,10 +217,18 @@ export const QueueItem = ({
         </TopRow>
 
         <BottomRow>
-          <FactoryInfo>
-            <BoxIcon size={14} color={canonHeaderTokens.foreground.accent20} />
-            <FactoryLabel>{getFactoryDisplayName()}</FactoryLabel>
-          </FactoryInfo>
+          <FactoryInfoSection>
+            <FactoryInfo>
+              <BoxIcon size={14} color={canonHeaderTokens.foreground.accent20} />
+              <FactoryLabel>{isHubChild ? hubType || "Capped Transfer" : getFactoryDisplayName()}</FactoryLabel>
+            </FactoryInfo>
+            {isHubChild && (
+              <HubInfo>
+                <VectorSquareIcon size={14} color={canonHeaderTokens.foreground.accent20} />
+                <HubLabel>{hubLabel || "Untitled Hub"}</HubLabel>
+              </HubInfo>
+            )}
+          </FactoryInfoSection>
 
           <StatusInfo>
             {/* Execution Delay */}
@@ -425,12 +435,6 @@ const AddressRow = styled(Box, {
   opacity: $isVisible ? 1 : 0,
   transition: "opacity 0.2s ease",
   pointerEvents: $isVisible ? "auto" : "none",
-  cursor: "pointer",
-  "&:hover": {
-    "& .copy-icon": {
-      opacity: 1,
-    },
-  },
 }));
 
 const AddressText = styled("span")({
@@ -439,14 +443,6 @@ const AddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
-});
-
-const CopyIconWrapper = styled("span")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  opacity: 0.3,
-  transition: "opacity 0.2s ease",
 });
 
 const ActionSection = styled(Box)({
@@ -550,6 +546,26 @@ const FactoryLabel = styled("span")({
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
   textTransform: "uppercase",
+});
+
+const FactoryInfoSection = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "16px",
+});
+
+const HubInfo = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+});
+
+const HubLabel = styled("span")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  fontWeight: 400,
+  lineHeight: "16px",
+  color: canonHeaderTokens.foreground.accent20,
 });
 
 const StatusInfo = styled(Box)({

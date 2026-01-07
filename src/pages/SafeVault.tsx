@@ -1,22 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Box, Typography, CircularProgress, styled } from "@mui/material";
 import { flushSync } from "react-dom";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Address, isAddress } from "viem";
 import { CanonGuardApp } from "~/components/CanonGuardApp";
+import { DetachedGuardInput } from "~/components/DetachedGuardInput";
 import { ErrorState } from "~/components/ErrorState";
 import { GuardSetupWizard } from "~/components/GuardSetupWizard";
+import { NoGuardChoiceScreen } from "~/components/NoGuardChoiceScreen";
 import { VaultSetupModal } from "~/components/VaultSetupModal";
 import { SupportedChainId, parseChainId, getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { useStateContext } from "~/hooks/useStateContext";
-import { ClientService, SafeService } from "~/services";
+import { ClientService, SafeService, CanonGuardValidationService } from "~/services";
 import { SafeInfo } from "~/types";
 
-type ViewState = "setup" | "loading" | "error" | "ready";
+type ViewState = "setup" | "loading" | "error" | "ready" | "no-guard-choice" | "detached-input" | "deploy-wizard";
 
 export const SafeVault = () => {
-  const { setSafeAddress, setChainId, setGuardAddress, clearConfig } = useStateContext();
+  const { setSafeAddress, setChainId, setGuardAddress, setIsDetached, clearConfig } = useStateContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
   const [viewState, setViewState] = useState<ViewState>("setup");
@@ -30,6 +33,7 @@ export const SafeVault = () => {
 
     const safeAddressParam = searchParams.get("safeAddress");
     const chainIdParam = searchParams.get("chainId");
+    const guardAddressParam = searchParams.get("guardAddress");
 
     if (safeAddressParam && isAddress(safeAddressParam)) {
       const parsedChainId = parseChainId(chainIdParam);
@@ -50,9 +54,41 @@ export const SafeVault = () => {
 
             const info = await freshSafeService.getSafeInfo(safeAddressParam as Address);
             setSafeInfo(info);
-            if (info.guardAddress) {
-              setGuardAddress(info.guardAddress);
+
+            // Case D: URL has guardAddress param - validate and use detached mode
+            if (guardAddressParam && isAddress(guardAddressParam) && !info.hasGuard) {
+              const validationService = new CanonGuardValidationService(clientService.getClient());
+              const isValid = await validationService.isValidCanonGuard(guardAddressParam as Address);
+
+              if (isValid) {
+                setGuardAddress(guardAddressParam as Address);
+                setIsDetached(true);
+                setViewState("ready");
+                return;
+              }
+              // If invalid, fall through to normal flow
             }
+
+            // Case A: Safe has valid attached guard
+            if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
+              setGuardAddress(info.guardAddress);
+              setIsDetached(false);
+              setViewState("ready");
+              return;
+            }
+
+            // Case B: Safe has invalid guard (not Canon Guard)
+            if (info.hasGuard && !info.isValidCanonGuard) {
+              setViewState("error");
+              return;
+            }
+
+            // Case C: Safe has no guard - show choice screen
+            if (!info.hasGuard) {
+              setViewState("no-guard-choice");
+              return;
+            }
+
             setViewState("ready");
           } catch (error) {
             console.error("Failed to load Safe info:", error);
@@ -69,14 +105,6 @@ export const SafeVault = () => {
 
   const handleSetupSubmit = useCallback(
     async (address: Address, selectedChainId: SupportedChainId) => {
-      setSafeAddress(address);
-      setChainId(selectedChainId);
-      setSearchParams({
-        safeAddress: address,
-        chainId: String(selectedChainId),
-      });
-      setViewState("loading");
-
       // Create a fresh service for the selected chain to avoid stale closure issues
       try {
         const rpcUrl = getRpcUrlForChain(selectedChainId);
@@ -85,10 +113,36 @@ export const SafeVault = () => {
         const freshSafeService = new SafeService(clientService);
 
         const info = await freshSafeService.getSafeInfo(address);
+
+        // Only update state after successful fetch - VaultSetupModal shows loading on button
+        setSafeAddress(address);
+        setChainId(selectedChainId);
+        setSearchParams({
+          safeAddress: address,
+          chainId: String(selectedChainId),
+        });
         setSafeInfo(info);
-        if (info.guardAddress) {
+
+        // Case A: Safe has valid attached guard
+        if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
           setGuardAddress(info.guardAddress);
+          setIsDetached(false);
+          setViewState("ready");
+          return;
         }
+
+        // Case B: Safe has invalid guard (not Canon Guard)
+        if (info.hasGuard && !info.isValidCanonGuard) {
+          setViewState("error");
+          return;
+        }
+
+        // Case C: Safe has no guard - show choice screen
+        if (!info.hasGuard) {
+          setViewState("no-guard-choice");
+          return;
+        }
+
         setViewState("ready");
       } catch (error) {
         console.error("Failed to load Safe info:", error);
@@ -96,13 +150,10 @@ export const SafeVault = () => {
         setViewState("error");
       }
     },
-    [setSafeAddress, setChainId, setSearchParams, setGuardAddress],
+    [setSafeAddress, setChainId, setSearchParams, setGuardAddress, setIsDetached],
   );
 
   const handleClearConfig = useCallback(() => {
-    // Clear URL params first using history API to avoid react-router re-renders
-    window.history.replaceState({}, "", "/");
-
     // Reset everything and go back to setup
     initializedRef.current = false;
 
@@ -112,7 +163,45 @@ export const SafeVault = () => {
       setSafeInfo(null);
       setViewState("setup");
     });
-  }, [clearConfig]);
+
+    // Navigate to root using React Router to ensure proper state sync
+    navigate("/", { replace: true });
+  }, [clearConfig, navigate]);
+
+  // Handle choice: Deploy New Guard
+  const handleDeployNew = useCallback(() => {
+    setViewState("deploy-wizard");
+  }, []);
+
+  // Handle choice: Use Existing Guard (detached mode)
+  const handleUseExisting = useCallback(() => {
+    setViewState("detached-input");
+  }, []);
+
+  // Handle detached guard input continue
+  const handleDetachedContinue = useCallback(
+    (guardAddr: Address) => {
+      if (!safeInfo) return;
+
+      // Save to URL params
+      setSearchParams({
+        safeAddress: safeInfo.address,
+        chainId: String(safeInfo.chainId),
+        guardAddress: guardAddr,
+      });
+
+      // Set in context
+      setGuardAddress(guardAddr);
+      setIsDetached(true);
+      setViewState("ready");
+    },
+    [safeInfo, setSearchParams, setGuardAddress, setIsDetached],
+  );
+
+  // Handle back from choice/input screens
+  const handleBackToChoice = useCallback(() => {
+    setViewState("no-guard-choice");
+  }, []);
 
   // Show setup modal
   if (viewState === "setup") {
@@ -129,8 +218,19 @@ export const SafeVault = () => {
     );
   }
 
-  // Handle error - couldn't connect to Safe
+  // Handle error - couldn't connect to Safe or invalid guard
   if (viewState === "error" || !safeInfo) {
+    // Check if it's an invalid guard error
+    if (safeInfo?.hasGuard && !safeInfo.isValidCanonGuard) {
+      return (
+        <ErrorState
+          title='Unsupported Guard'
+          message={`This Safe has a guard attached (${safeInfo.guardAddress}), but it was not deployed from a supported Canon Guard Factory. Canon Guard UI only works with guards deployed from the official factory. Please remove the current guard before using Canon Guard.`}
+          onChangeSetup={handleClearConfig}
+        />
+      );
+    }
+
     return (
       <ErrorState
         title='Invalid Safe'
@@ -140,18 +240,38 @@ export const SafeVault = () => {
     );
   }
 
-  // Handle case where Safe has NO guard attached
-  if (!safeInfo.hasGuard) {
-    return <GuardSetupWizard safeInfo={safeInfo} onBack={handleClearConfig} />;
+  // Case C: Safe has no guard - show choice screen
+  if (viewState === "no-guard-choice") {
+    return (
+      <NoGuardChoiceScreen
+        safeInfo={safeInfo}
+        onDeployNew={handleDeployNew}
+        onUseExisting={handleUseExisting}
+        onBack={handleClearConfig}
+      />
+    );
   }
 
-  // Handle case where Safe has a guard but it's NOT a valid Canon Guard
-  if (!safeInfo.isValidCanonGuard) {
+  // Deploy new guard wizard
+  if (viewState === "deploy-wizard") {
     return (
-      <ErrorState
-        title='Unsupported Guard'
-        message={`This Safe has a guard attached (${safeInfo.guardAddress}), but it was not deployed from a supported Canon Guard Factory. Canon Guard UI only works with guards deployed from the official factory.`}
-        onChangeSetup={handleClearConfig}
+      <GuardSetupWizard
+        safeInfo={safeInfo}
+        onBack={handleBackToChoice}
+        onReset={handleClearConfig}
+        onComplete={handleDetachedContinue}
+      />
+    );
+  }
+
+  // Detached guard input
+  if (viewState === "detached-input") {
+    return (
+      <DetachedGuardInput
+        safeInfo={safeInfo}
+        onContinue={handleDetachedContinue}
+        onBack={handleBackToChoice}
+        onReset={handleClearConfig}
       />
     );
   }

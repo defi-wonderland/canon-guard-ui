@@ -1,24 +1,24 @@
 import { useMemo } from "react";
 import { Box, Typography, styled } from "@mui/material";
-import { isAddress } from "viem";
 import { BoxIcon, AsteriskIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { FACTORY_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection, FormInput, ActionButton, ButtonRow } from "../shared";
-import type { TransferFormData } from "./index";
-
-// Validation helpers
-const isValidAddress = (value: string): boolean => {
-  if (!value.trim()) return true; // Empty is not invalid (just incomplete)
-  return isAddress(value);
-};
-
-const isValidAmount = (value: string): boolean => {
-  if (!value.trim()) return true; // Empty is not invalid (just incomplete)
-  const num = parseFloat(value);
-  return !isNaN(num) && num >= 0 && /^[0-9]*\.?[0-9]*$/.test(value);
-};
+import { isValidAddress, isValidAmount } from "~/utils/validation";
+import {
+  Breadcrumb,
+  FormSection,
+  FormInput,
+  ActionButton,
+  ItemsCard,
+  ItemSection,
+  ItemDividerHeader,
+  ItemFieldsSection,
+  AddItemRow,
+  ActionButtonRow,
+  ButtonsContainer,
+} from "../shared";
+import type { TransferFormData, TransferItem } from "./index";
 
 interface TransferFormStepProps {
   formData: TransferFormData;
@@ -37,31 +37,54 @@ export const TransferFormStep = ({
   onNavigateToCreate,
   onChangeFactory,
 }: TransferFormStepProps) => {
-  const updateField = (field: keyof TransferFormData, value: string) => {
-    onFormDataChange({ ...formData, [field]: value });
+  // Update title field
+  const updateTitle = (value: string) => {
+    onFormDataChange({ ...formData, title: value });
   };
 
-  // Validation errors
-  const errors = useMemo(
-    () => ({
+  // Update a specific transfer item
+  const updateTransfer = (index: number, field: keyof TransferItem, value: string) => {
+    const newTransfers = [...formData.transfers];
+    newTransfers[index] = { ...newTransfers[index], [field]: value };
+    onFormDataChange({ ...formData, transfers: newTransfers });
+  };
+
+  // Add a new transfer item
+  const addTransfer = () => {
+    onFormDataChange({
+      ...formData,
+      transfers: [...formData.transfers, { tokenAddress: "", recipientAddress: "", amount: "" }],
+    });
+  };
+
+  // Remove a transfer item
+  const removeTransfer = (index: number) => {
+    const newTransfers = formData.transfers.filter((_, i) => i !== index);
+    onFormDataChange({ ...formData, transfers: newTransfers });
+  };
+
+  // Validation errors for each transfer item
+  const errors = useMemo(() => {
+    return formData.transfers.map((transfer) => ({
       tokenAddress:
-        formData.tokenAddress.trim() && !isValidAddress(formData.tokenAddress) ? "Invalid address format" : undefined,
+        transfer.tokenAddress.trim() && !isValidAddress(transfer.tokenAddress) ? "Invalid address format" : undefined,
       recipientAddress:
-        formData.recipientAddress.trim() && !isValidAddress(formData.recipientAddress)
+        transfer.recipientAddress.trim() && !isValidAddress(transfer.recipientAddress)
           ? "Invalid address format"
           : undefined,
-      amount: formData.amount.trim() && !isValidAmount(formData.amount) ? "Must be a valid number" : undefined,
-    }),
-    [formData.tokenAddress, formData.recipientAddress, formData.amount],
-  );
+      amount: transfer.amount.trim() && !isValidAmount(transfer.amount) ? "Must be a valid number" : undefined,
+    }));
+  }, [formData.transfers]);
 
-  const hasErrors = Boolean(errors.tokenAddress || errors.recipientAddress || errors.amount);
+  const hasErrors = errors.some((e) => e.tokenAddress || e.recipientAddress || e.amount);
 
   const isValid =
     formData.title.trim() !== "" &&
-    formData.tokenAddress.trim() !== "" &&
-    formData.recipientAddress.trim() !== "" &&
-    formData.amount.trim() !== "" &&
+    formData.transfers.length > 0 &&
+    formData.transfers.every(
+      (transfer) =>
+        transfer.tokenAddress.trim() !== "" && transfer.recipientAddress.trim() !== "" && transfer.amount.trim() !== "",
+    ) &&
     !hasErrors;
 
   return (
@@ -89,7 +112,7 @@ export const TransferFormStep = ({
                   label='Transaction Title'
                   placeholder='Eg. Transfer 300 USDC to John...'
                   value={formData.title}
-                  onChange={(value) => updateField("title", value)}
+                  onChange={updateTitle}
                 />
                 <PublicBadge>Public</PublicBadge>
               </FormInputWrapper>
@@ -105,39 +128,63 @@ export const TransferFormStep = ({
 
         {/* Set Action Parameters Section */}
         <FormSection label='SET ACTION PARAMETERS'>
-          <ParametersCard>
-            <CardContent>
-              <FormInput
-                label='Token Address'
-                placeholder='0x...'
-                value={formData.tokenAddress}
-                onChange={(value) => updateField("tokenAddress", value)}
-                error={errors.tokenAddress}
-              />
-              <FormInput
-                label='Recipient Address'
-                placeholder='0x...'
-                value={formData.recipientAddress}
-                onChange={(value) => updateField("recipientAddress", value)}
-                error={errors.recipientAddress}
-              />
-              <FormInput
-                label='Amount'
-                placeholder='0'
-                value={formData.amount}
-                onChange={(value) => updateField("amount", value)}
-                error={errors.amount}
-              />
-            </CardContent>
-            <ButtonRow>
-              <ActionButton variant='secondary' onClick={onBack}>
-                BACK
-              </ActionButton>
-              <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
-                CONTINUE
-              </ActionButton>
-            </ButtonRow>
-          </ParametersCard>
+          <ItemsCard>
+            {/* Transfer Items */}
+            {formData.transfers.map((transfer, index) => (
+              <ItemSection key={index}>
+                {/* Divider header with transfer number and remove button */}
+                <ItemDividerHeader
+                  label={`Transfer ${index + 1}`}
+                  showRemove={formData.transfers.length > 1}
+                  onRemove={() => removeTransfer(index)}
+                />
+
+                {/* Transfer Fields */}
+                <ItemFieldsSection>
+                  <FormInput
+                    label='Token Address'
+                    placeholder='0x...'
+                    value={transfer.tokenAddress}
+                    onChange={(value) => updateTransfer(index, "tokenAddress", value)}
+                    error={errors[index]?.tokenAddress}
+                  />
+                  <FormInput
+                    label='Recipient Address'
+                    placeholder='0x...'
+                    value={transfer.recipientAddress}
+                    onChange={(value) => updateTransfer(index, "recipientAddress", value)}
+                    error={errors[index]?.recipientAddress}
+                  />
+                  <FormInput
+                    label='Amount'
+                    placeholder='0'
+                    value={transfer.amount}
+                    onChange={(value) => updateTransfer(index, "amount", value)}
+                    error={errors[index]?.amount}
+                  />
+                </ItemFieldsSection>
+              </ItemSection>
+            ))}
+
+            {/* Info Row with ADD TRANSFER button */}
+            <AddItemRow
+              infoText='You can add multiple transfers in one action.'
+              addButtonText='ADD TRANSFER'
+              onAdd={addTransfer}
+            />
+
+            {/* Action Buttons Row */}
+            <ActionButtonRow>
+              <ButtonsContainer>
+                <ActionButton variant='secondary' onClick={onBack}>
+                  BACK
+                </ActionButton>
+                <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
+                  CONTINUE
+                </ActionButton>
+              </ButtonsContainer>
+            </ActionButtonRow>
+          </ItemsCard>
         </FormSection>
       </ContentWrapper>
     </Container>
@@ -255,12 +302,4 @@ const NoteText = styled(Typography)({
 const LearnMoreLink = styled("span")({
   textDecoration: "underline",
   cursor: "pointer",
-});
-
-const ParametersCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
 });

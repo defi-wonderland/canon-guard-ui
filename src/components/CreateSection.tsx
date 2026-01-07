@@ -34,6 +34,8 @@ const CreateMain = () => {
   const handleActionClick = (actionType: ActionType) => {
     if (actionType === "new-action") {
       navigateWithParams("/create/action");
+    } else if (actionType === "new-action-hub") {
+      navigateWithParams("/create/hub");
     } else if (actionType === "canon-list") {
       navigateWithParams("/canon-list");
     }
@@ -93,7 +95,11 @@ const CreateMain = () => {
   );
 };
 
-export const CreateSection = () => {
+interface CreateSectionProps {
+  onQueueCountChange?: () => void;
+}
+
+export const CreateSection = ({ onQueueCountChange }: CreateSectionProps) => {
   const location = useLocation();
 
   // Determine what to render based on current path
@@ -106,7 +112,12 @@ export const CreateSection = () => {
 
   // If at /create/action or deeper, show the NewActionSection
   if (path.startsWith("/create/action")) {
-    return <NewActionSection />;
+    return <NewActionSection onQueueCountChange={onQueueCountChange} />;
+  }
+
+  // If at /create/hub or deeper, show the NewActionSection (hub flow)
+  if (path.startsWith("/create/hub")) {
+    return <NewActionSection onQueueCountChange={onQueueCountChange} />;
   }
 
   // Default to main create view

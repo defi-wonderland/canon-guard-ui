@@ -1,4 +1,5 @@
-import { Box, Tooltip, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
+import { CopyableText } from "~/components/shared/CopyButton";
 import {
   SafeActionCard,
   SafeCardContent,
@@ -7,7 +8,7 @@ import {
   SafeStatusChip,
   SafeAddress,
 } from "~/components/shared/StyledComponents";
-import { safeDesignTokens } from "~/config/themes/safeTheme";
+import { safeDesignTokens, canonHeaderTokens } from "~/config/themes/safeTheme";
 import { QueuedTransaction } from "~/types/canon-guard";
 import { formatTimeRemaining, truncateAddress, formatDate } from "~/utils";
 
@@ -17,7 +18,6 @@ interface ActionCardProps {
 }
 
 export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps) => {
-  const copyAddressToClipboard = (address: string) => navigator.clipboard.writeText(address);
   const timeUntilExecutable = Math.max(0, action.executableAt.getTime() - Date.now());
   const isExecutableNow = timeUntilExecutable === 0;
 
@@ -30,13 +30,13 @@ export const ActionCard = ({ action, showApprovalInfo = false }: ActionCardProps
             {action.actionBuilder.isApproved && <SafeStatusChip label='Pre-Approved' size='small' isPreApproved />}
           </CardTitleSection>
 
-          <CardAddressSection>
-            <Tooltip title='Click to copy action builder address'>
-              <ActionCardAddress onClick={() => copyAddressToClipboard(action.actionBuilder.actionBuilderAddress)}>
-                {truncateAddress(action.actionBuilder.actionBuilderAddress)}
-              </ActionCardAddress>
-            </Tooltip>
-          </CardAddressSection>
+          <CopyableText
+            text={action.actionBuilder.actionBuilderAddress}
+            iconSize={10}
+            iconColor={canonHeaderTokens.foreground.accent30}
+          >
+            <ActionCardAddress>{truncateAddress(action.actionBuilder.actionBuilderAddress)}</ActionCardAddress>
+          </CopyableText>
         </CardHeaderRow>
 
         {showApprovalInfo && (
@@ -95,12 +95,6 @@ const CardTitleSection = styled(Box)(() => ({
   gap: safeDesignTokens.spacing.sm,
   flex: 1,
   minWidth: 0,
-}));
-
-const CardAddressSection = styled(Box)(() => ({
-  display: "flex",
-  alignItems: "center",
-  flexShrink: 0,
 }));
 
 const InfoRow = styled(Box)(() => ({

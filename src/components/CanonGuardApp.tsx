@@ -10,7 +10,10 @@ import { useQueueService } from "~/hooks/useServices";
 import { useStateContext } from "~/hooks/useStateContext";
 import { SafeInfo } from "~/types";
 import { CanonListSection } from "./CanonListSection";
+import { ChangeGuardSection } from "./ChangeGuardSection";
 import { CreateSection } from "./CreateSection";
+import { DeploymentModesPanel } from "./DeploymentModesPanel";
+import { DetachedModeBanner } from "./DetachedModeBanner";
 import { EmergencyModeBanner } from "./EmergencyModeBanner";
 import { Header } from "./Header";
 import { QueueActionSection } from "./QueueActionSection";
@@ -29,11 +32,12 @@ interface CanonGuardAppProps {
  */
 const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => {
   const queueService = useQueueService();
-  const { chainId, guardAddress } = useStateContext();
+  const { chainId, guardAddress, isDetached } = useStateContext();
   const { emergencyMode } = useCanonGuardConfig();
   const location = useLocation();
 
   const [queueCount, setQueueCount] = useState(0);
+  const [isDeploymentModesPanelOpen, setIsDeploymentModesPanelOpen] = useState(false);
 
   const chainConfig = getChainConfig(chainId);
 
@@ -61,6 +65,14 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
   const renderContent = () => {
     const path = location.pathname;
 
+    // Attach/Detach Guard flow (must come before /settings check)
+    if (path === "/settings/attach") {
+      return <ChangeGuardSection mode='attach' onQueueCountChange={fetchQueueCount} />;
+    }
+    if (path === "/settings/detach") {
+      return <ChangeGuardSection mode='detach' onQueueCountChange={fetchQueueCount} />;
+    }
+
     // Settings page
     if (path === "/settings") {
       return <SettingsSection />;
@@ -73,31 +85,46 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Queue Sign (from Queue item Sign button)
     if (path === "/queue/sign") {
-      return <QueueSignSection />;
+      return <QueueSignSection onQueueCountChange={fetchQueueCount} />;
     }
 
     // Queue Action (from Canon List)
     if (path === "/queue-action") {
-      return <QueueActionSection />;
+      return <QueueActionSection onQueueCountChange={fetchQueueCount} />;
     }
 
     // Canon List
     if (path === "/canon-list") {
-      return <CanonListSection safeInfo={safeInfo} />;
+      return <CanonListSection safeInfo={safeInfo} onQueueCountChange={fetchQueueCount} />;
     }
 
     // Create routes - render CreateSection which handles its own nested routing
     if (path.startsWith("/create")) {
-      return <CreateSection />;
+      return <CreateSection onQueueCountChange={fetchQueueCount} />;
     }
 
     // Default to queue for unknown routes
     return <Navigate to='/queue' replace />;
   };
 
+  // Handle Learn More click - open deployment modes panel
+  const handleDetachedLearnMore = useCallback(() => {
+    setIsDeploymentModesPanelOpen(true);
+  }, []);
+
+  // Handle closing the deployment modes panel
+  const handleCloseDeploymentModesPanel = useCallback(() => {
+    setIsDeploymentModesPanelOpen(false);
+  }, []);
+
   return (
     <PageContainer>
-      <EmergencyModeBanner isActive={emergencyMode === true} />
+      {/* Emergency mode takes priority over detached mode */}
+      {emergencyMode === true ? (
+        <EmergencyModeBanner isActive={true} />
+      ) : isDetached ? (
+        <DetachedModeBanner isActive={true} onLearnMore={handleDetachedLearnMore} />
+      ) : null}
       <Header
         safeAddress={safeInfo.address}
         chain={chainConfig.chain}
@@ -105,6 +132,13 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
         onClearConfig={onClearConfig}
       />
       <MainContent>{renderContent()}</MainContent>
+
+      {/* Deployment Modes Panel */}
+      <DeploymentModesPanel
+        isOpen={isDeploymentModesPanelOpen}
+        onClose={handleCloseDeploymentModesPanel}
+        isDetached={isDetached}
+      />
     </PageContainer>
   );
 };

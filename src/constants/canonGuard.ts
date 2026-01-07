@@ -1,5 +1,5 @@
 import { Address } from "viem";
-import { ActionFactoryType } from "../types/canon-guard";
+import { ActionFactoryType, HubFactoryType } from "../types/canon-guard";
 
 // Delay in milliseconds to wait after a transaction is confirmed before refetching data.
 // This gives RPC nodes time to index the new blockchain state.
@@ -11,6 +11,8 @@ export const PRE_APPROVE_ACTION_FACTORY: Address = "0x2A62b0644BA7F4648179BfAE9a
 export const SIMPLE_TRANSFERS_FACTORY: Address = "0xC2E8c09Eb985Dd34285bc154D1B6886e6886aE54";
 export const SIMPLE_ACTIONS_FACTORY: Address = "0xEE501087737570c780C3C219A0d3FFf2d86417a4";
 export const ALLOWANCE_CLAIMOR_FACTORY: Address = "0x6636eDd0125880677f3a1f7411555ea64411d60E";
+export const CAPPED_TOKEN_TRANSFERS_HUB_FACTORY: Address = "0x8531f72986374445507c29A0753fcc9cA36468D0";
+export const CHANGE_SAFE_GUARD_ACTION_FACTORY: Address = "0xE4Fd8EBFC17aA71b41E15143D35FCE6F48cB1a38";
 
 // Canon Guard factory addresses from scripts/scripts/Constants.s.sol
 // These are deployed via CREATE2 and share the same addresses across all supported chains
@@ -66,6 +68,31 @@ export const KNOWN_FACTORY_MAPPINGS: Record<Address, { type: ActionFactoryType; 
 };
 
 export const FACTORY_ADDRESSES = Object.keys(KNOWN_FACTORY_MAPPINGS) as Address[];
+
+// Hub factory addresses - entities whose PARENT() returns one of these are hubs
+export const KNOWN_HUB_FACTORIES: Record<Address, { type: HubFactoryType; label: string }> = {
+  "0x8531f72986374445507c29A0753fcc9cA36468D0": {
+    type: HubFactoryType.CAPPED_TOKEN_TRANSFERS_HUB,
+    label: "Capped Token Transfers Hub",
+  },
+};
+
+export const HUB_FACTORY_ADDRESSES = Object.keys(KNOWN_HUB_FACTORIES) as Address[];
+
+export const isHubFactory = (parentAddress: Address): boolean => {
+  const lowerParent = parentAddress.toLowerCase();
+  return HUB_FACTORY_ADDRESSES.some((addr) => addr.toLowerCase() === lowerParent);
+};
+
+export const getHubFactoryType = (parentAddress: Address): HubFactoryType | null => {
+  const lowerParent = parentAddress.toLowerCase();
+  for (const [addr, mapping] of Object.entries(KNOWN_HUB_FACTORIES)) {
+    if (addr.toLowerCase() === lowerParent) {
+      return mapping.type;
+    }
+  }
+  return null;
+};
 
 export const getFactoryType = (actionBuilderAddress: Address): ActionFactoryType => {
   const mapping = KNOWN_FACTORY_MAPPINGS[actionBuilderAddress];

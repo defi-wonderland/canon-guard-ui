@@ -8,6 +8,8 @@
 import { useState } from "react";
 import { Box, Typography, styled, Divider, Button } from "@mui/material";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import type { CappedTransferHubFormData } from "~/components/NewAction/steps";
+import { CappedTransferHubFormStep } from "~/components/NewAction/steps/CappedTransferHubFormStep";
 import { NonceSelector } from "~/components/NonceSelector";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import type { QueueItem } from "~/services/queueService";
@@ -55,6 +57,18 @@ export const TestPage = () => {
   const [selectedNonce2, setSelectedNonce2] = useState(0);
   const [selectedNonce3, setSelectedNonce3] = useState(2);
 
+  // State for CappedTransferHubFormStep
+  const [hubFormData, setHubFormData] = useState<CappedTransferHubFormData>({
+    title: "",
+    recipientAddress: "",
+    epochLength: "10",
+    epochUnit: "weeks",
+    tokens: [
+      { address: "", amount: "" },
+      { address: "", amount: "" },
+    ],
+  });
+
   // Get safeAddress and chainId from URL params (to preserve in navigation)
   const safeAddress = searchParams.get("safeAddress") || "0x9c798F32A328292b296d9B4AD4aEbC69ed012554";
   const chainId = searchParams.get("chainId") || "10";
@@ -76,6 +90,24 @@ export const TestPage = () => {
     <Container>
       <Title>Component Test Page</Title>
       <Subtitle>Use this page to test and iterate on components in isolation</Subtitle>
+
+      {/* CappedTransferHubFormStep Test */}
+      <Section>
+        <SectionTitle>CappedTransferHubFormStep Component</SectionTitle>
+        <TestDescription>Testing the Hub form with multiple tokens and proper divider styling.</TestDescription>
+        <HubFormContainer>
+          <CappedTransferHubFormStep
+            formData={hubFormData}
+            onFormDataChange={setHubFormData}
+            onContinue={() => console.log("Continue clicked", hubFormData)}
+            onBack={() => console.log("Back clicked")}
+            onNavigateToCreate={() => console.log("Navigate to create")}
+            onChangeHub={() => console.log("Change hub")}
+          />
+        </HubFormContainer>
+      </Section>
+
+      <Divider sx={{ my: 4, borderColor: canonHeaderTokens.foreground.accent40 }} />
 
       <Section>
         <SectionTitle>Queue Sign Flow Test</SectionTitle>
@@ -260,6 +292,13 @@ const TestButton = styled(Button)({
   "&:hover": {
     backgroundColor: "#8ae58a",
   },
+});
+
+const HubFormContainer = styled(Box)({
+  backgroundColor: canonHeaderTokens.background.layer0,
+  borderRadius: "12px",
+  overflow: "hidden",
+  width: "100%",
 });
 
 export default TestPage;

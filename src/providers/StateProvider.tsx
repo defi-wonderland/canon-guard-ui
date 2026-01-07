@@ -39,6 +39,10 @@ type ContextType = {
   guardAddress: Address | null;
   setGuardAddress: (address: Address) => void;
 
+  // Whether the Canon Guard is in detached mode (not attached to the Safe)
+  isDetached: boolean;
+  setIsDetached: (val: boolean) => void;
+
   chainId: SupportedChainId | null;
   setChainId: (chainId: SupportedChainId) => void;
 
@@ -57,6 +61,7 @@ export const StateProvider = ({ children }: StateProps) => {
   const [isError, setIsError] = useState<boolean>(false);
   const [safeAddress, setSafeAddressState] = useState<Address | null>(null);
   const [guardAddress, setGuardAddressState] = useState<Address | null>(null);
+  const [isDetached, setIsDetachedState] = useState<boolean>(false);
   const [chainId, setChainIdState] = useState<SupportedChainId | null>(null);
   const [services, setServices] = useState<ServiceInstances>(initialServices);
 
@@ -73,6 +78,10 @@ export const StateProvider = ({ children }: StateProps) => {
     setGuardAddressState(address);
   };
 
+  const setIsDetached = (val: boolean) => {
+    setIsDetachedState(val);
+  };
+
   const setChainId = (newChainId: SupportedChainId) => {
     setChainIdState(newChainId);
     updateServicesForChain(newChainId);
@@ -81,6 +90,7 @@ export const StateProvider = ({ children }: StateProps) => {
   const clearConfig = () => {
     setSafeAddressState(null);
     setGuardAddressState(null);
+    setIsDetachedState(false);
     setChainIdState(null);
   };
 
@@ -93,6 +103,8 @@ export const StateProvider = ({ children }: StateProps) => {
         setSafeAddress,
         guardAddress,
         setGuardAddress,
+        isDetached,
+        setIsDetached,
         chainId,
         setChainId,
         services,

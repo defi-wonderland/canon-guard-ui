@@ -14,10 +14,13 @@ import {
   safeAbi,
   canonGuardRegistryAbi,
   actionBuilderParentAbi,
+  actionHubChildAbi,
   preApproveActionAbi,
+  changeSafeGuardActionAbi,
 } from "../abis/canonGuard";
-import { CANON_GUARD_REGISTRY, KNOWN_FACTORY_MAPPINGS } from "../constants/canonGuard";
+import { CANON_GUARD_REGISTRY, KNOWN_FACTORY_MAPPINGS, getHubFactoryType } from "../constants/canonGuard";
 import { ActionFactoryType } from "../types";
+import { HUB_FACTORY_DISPLAY_NAMES } from "../utils/factoryDisplay";
 import { ClientService } from "./clientService";
 
 // Number of extra nonces to scan beyond queue size
@@ -51,6 +54,12 @@ export interface QueueItem {
   // Factory info
   factoryType: ActionFactoryType;
   factoryLabel: string;
+
+  // Hub child info (for actions that are children of a hub)
+  isHubChild: boolean;
+  hubAddress?: Address;
+  hubType?: string; // e.g., "Capped Transfer"
+  hubLabel?: string; // Label from registry, or "Untitled Hub"
 
   // Label from registry (if available)
   label: string;
@@ -101,7 +110,7 @@ export class QueueService {
     // Step 4: Batch fetch all data in parallel
     const [transactionInfoMap, factoryTypeMap, approvalsByActionAndNonce] = await Promise.all([
       this.batchFetchTransactionInfo(guardAddress, actionBuilders),
-      this.batchFetchFactoryTypes(actionBuilders),
+      this.batchFetchFactoryTypes(actionBuilders, guardAddress),
       this.batchScanAllNonces(guardAddress, actionBuilders, currentNonce, endNonce),
     ]);
 
@@ -117,6 +126,14 @@ export class QueueService {
     const underlyingAddresses = Array.from(underlyingActionMap.values());
     const allAddressesToFetchLabels = [...regularActions, ...underlyingAddresses];
     const labelsMap = await this.batchFetchLabels(guardAddress, allAddressesToFetchLabels);
+
+    // Step 5b: For CHANGE_SAFE_GUARD actions without a label, check if they're removing the guard
+    const unlabeledChangeSafeGuardActions = actionBuilders.filter((addr) => {
+      const factoryInfo = factoryTypeMap.get(addr);
+      const label = labelsMap.get(addr);
+      return factoryInfo?.type === ActionFactoryType.CHANGE_SAFE_GUARD && !label;
+    });
+    const safeGuardAddressMap = await this.batchFetchSafeGuardAddresses(unlabeledChangeSafeGuardActions);
 
     // Step 6: Pre-compute best nonces for all action builders
     const bestNonceMap = new Map<Address, { bestNonce: number; approvers: Address[] }>();
@@ -153,6 +170,18 @@ export class QueueService {
         const underlyingAction = underlyingActionMap.get(actionBuilder);
         const underlyingLabel = underlyingAction ? labelsMap.get(underlyingAction) : "";
         label = `Pre-Approval | ${underlyingLabel || "Untitled Transaction"}`;
+      } else if (
+        factoryInfo.type === ActionFactoryType.CHANGE_SAFE_GUARD &&
+        !labelsMap.get(actionBuilder) &&
+        safeGuardAddressMap.get(actionBuilder) === "0x0000000000000000000000000000000000000000"
+      ) {
+        label = "Remove Safe Guard";
+      } else if (
+        factoryInfo.type === ActionFactoryType.CHANGE_SAFE_GUARD &&
+        !labelsMap.get(actionBuilder) &&
+        safeGuardAddressMap.get(actionBuilder) !== "0x0000000000000000000000000000000000000000"
+      ) {
+        label = "Add Guard to Safe";
       } else {
         label = labelsMap.get(actionBuilder) || "";
       }
@@ -198,6 +227,10 @@ export class QueueService {
         threshold,
         factoryType: factoryInfo.type,
         factoryLabel: factoryInfo.label,
+        isHubChild: factoryInfo.isHubChild,
+        hubAddress: factoryInfo.hubAddress,
+        hubType: factoryInfo.hubType,
+        hubLabel: factoryInfo.hubLabel,
         label,
         isFullySigned,
         isExecutable,
@@ -455,17 +488,43 @@ export class QueueService {
     return map;
   }
 
+  /**
+   * Factory info including optional hub child information
+   */
   private async batchFetchFactoryTypes(
     actionBuilders: Address[],
-  ): Promise<Map<Address, { type: ActionFactoryType; label: string }>> {
-    const map = new Map<Address, { type: ActionFactoryType; label: string }>();
+    guardAddress: Address,
+  ): Promise<
+    Map<
+      Address,
+      {
+        type: ActionFactoryType;
+        label: string;
+        isHubChild: boolean;
+        hubAddress?: Address;
+        hubType?: string;
+        hubLabel?: string;
+      }
+    >
+  > {
+    const map = new Map<
+      Address,
+      {
+        type: ActionFactoryType;
+        label: string;
+        isHubChild: boolean;
+        hubAddress?: Address;
+        hubType?: string;
+        hubLabel?: string;
+      }
+    >();
 
     if (actionBuilders.length === 0) return map;
 
     // First check known factory mappings (action builder might be a factory)
     for (const address of actionBuilders) {
       if (KNOWN_FACTORY_MAPPINGS[address]) {
-        map.set(address, KNOWN_FACTORY_MAPPINGS[address]);
+        map.set(address, { ...KNOWN_FACTORY_MAPPINGS[address], isHubChild: false });
       }
     }
 
@@ -474,37 +533,164 @@ export class QueueService {
 
     if (unknownBuilders.length === 0) return map;
 
-    const contracts = unknownBuilders.map((address) => ({
+    const parentContracts = unknownBuilders.map((address) => ({
       address,
       abi: actionBuilderParentAbi,
       functionName: "PARENT" as const,
     }));
 
+    // Track which builders have unknown parents (potential hub children)
+    const potentialHubChildren: { actionBuilder: Address; parentAddress: Address }[] = [];
+
     try {
-      const results = await this.client.multicall({ contracts });
+      const parentResults = await this.client.multicall({ contracts: parentContracts });
 
       for (let i = 0; i < unknownBuilders.length; i++) {
-        const result = results[i];
+        const result = parentResults[i];
         if (result.status === "success" && result.result) {
           const parentFactory = result.result as Address;
           const factoryMapping = KNOWN_FACTORY_MAPPINGS[parentFactory];
           if (factoryMapping) {
-            map.set(unknownBuilders[i], factoryMapping);
+            map.set(unknownBuilders[i], { ...factoryMapping, isHubChild: false });
           } else {
-            map.set(unknownBuilders[i], {
-              type: ActionFactoryType.UNKNOWN,
-              label: "Unknown",
-            });
+            // Parent is not a known factory - might be a hub child
+            potentialHubChildren.push({ actionBuilder: unknownBuilders[i], parentAddress: parentFactory });
           }
         } else {
           map.set(unknownBuilders[i], {
             type: ActionFactoryType.UNKNOWN,
             label: "Unknown",
+            isHubChild: false,
           });
         }
       }
     } catch (error) {
       console.error("Failed to batch fetch factory types:", error);
+      // Set all unknown builders to UNKNOWN
+      for (const builder of unknownBuilders) {
+        if (!map.has(builder)) {
+          map.set(builder, { type: ActionFactoryType.UNKNOWN, label: "Unknown", isHubChild: false });
+        }
+      }
+      return map;
+    }
+
+    // For potential hub children, try calling HUB() to confirm they are hub children
+    if (potentialHubChildren.length > 0) {
+      const hubContracts = potentialHubChildren.map(({ actionBuilder }) => ({
+        address: actionBuilder,
+        abi: actionHubChildAbi,
+        functionName: "HUB" as const,
+      }));
+
+      try {
+        const hubResults = await this.client.multicall({ contracts: hubContracts });
+
+        const confirmedHubChildren: { actionBuilder: Address; hubAddress: Address }[] = [];
+
+        for (let i = 0; i < potentialHubChildren.length; i++) {
+          const { actionBuilder } = potentialHubChildren[i];
+          const hubResult = hubResults[i];
+
+          if (hubResult.status === "success" && hubResult.result) {
+            // This is a hub child - store hub address for further processing
+            const hubAddress = hubResult.result as Address;
+            confirmedHubChildren.push({ actionBuilder, hubAddress });
+          } else {
+            // Not a hub child - mark as unknown
+            map.set(actionBuilder, {
+              type: ActionFactoryType.UNKNOWN,
+              label: "Unknown",
+              isHubChild: false,
+            });
+          }
+        }
+
+        // For confirmed hub children, get hub factory types by calling PARENT() on the hubs
+        if (confirmedHubChildren.length > 0) {
+          const uniqueHubAddresses = [...new Set(confirmedHubChildren.map((c) => c.hubAddress))];
+
+          // Call PARENT() on each hub to get hub factory type
+          const hubParentContracts = uniqueHubAddresses.map((hubAddress) => ({
+            address: hubAddress,
+            abi: actionBuilderParentAbi,
+            functionName: "PARENT" as const,
+          }));
+
+          // Also fetch hub labels from registry
+          const hubLabelContracts = uniqueHubAddresses.map((hubAddress) => ({
+            address: CANON_GUARD_REGISTRY,
+            abi: canonGuardRegistryAbi,
+            functionName: "entityLabel" as const,
+            args: [guardAddress, hubAddress],
+          }));
+
+          const [hubParentResults, hubLabelResults] = await Promise.all([
+            this.client.multicall({ contracts: hubParentContracts }),
+            this.client.multicall({ contracts: hubLabelContracts }),
+          ]);
+
+          // Build maps for hub info
+          const hubFactoryMap = new Map<Address, { type: ActionFactoryType; displayName: string }>();
+          const hubLabelMap = new Map<Address, string>();
+
+          for (let i = 0; i < uniqueHubAddresses.length; i++) {
+            const hubAddress = uniqueHubAddresses[i];
+
+            // Get hub factory type
+            const parentResult = hubParentResults[i];
+            if (parentResult.status === "success" && parentResult.result) {
+              const hubFactoryAddress = parentResult.result as Address;
+              const hubFactoryType = getHubFactoryType(hubFactoryAddress);
+              if (hubFactoryType) {
+                hubFactoryMap.set(hubAddress, {
+                  type: hubFactoryType,
+                  displayName: HUB_FACTORY_DISPLAY_NAMES[hubFactoryType] || "Unknown Hub",
+                });
+              } else {
+                hubFactoryMap.set(hubAddress, {
+                  type: ActionFactoryType.UNKNOWN,
+                  displayName: "Unknown Hub",
+                });
+              }
+            }
+
+            // Get hub label
+            const labelResult = hubLabelResults[i];
+            if (labelResult.status === "success" && labelResult.result) {
+              const edition = labelResult.result as { label: string; lastEditedAt: bigint };
+              hubLabelMap.set(hubAddress, edition.label || "");
+            }
+          }
+
+          // Now populate the map for each confirmed hub child
+          for (const { actionBuilder, hubAddress } of confirmedHubChildren) {
+            const hubFactoryInfo = hubFactoryMap.get(hubAddress);
+            const hubLabel = hubLabelMap.get(hubAddress) || "";
+
+            map.set(actionBuilder, {
+              type: hubFactoryInfo?.type ?? ActionFactoryType.CAPPED_TOKEN_TRANSFERS_HUB_CHILD,
+              label: hubFactoryInfo?.displayName ?? "Capped Transfer",
+              isHubChild: true,
+              hubAddress,
+              hubType: hubFactoryInfo?.displayName ?? "Capped Transfer",
+              hubLabel: hubLabel || "Untitled Hub",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to detect hub children:", error);
+        // Fall back to UNKNOWN for potential hub children
+        for (const { actionBuilder } of potentialHubChildren) {
+          if (!map.has(actionBuilder)) {
+            map.set(actionBuilder, {
+              type: ActionFactoryType.UNKNOWN,
+              label: "Unknown",
+              isHubChild: false,
+            });
+          }
+        }
+      }
     }
 
     return map;
@@ -618,5 +804,36 @@ export class QueueService {
    */
   async getCurrentSafeNonce(guardAddress: Address): Promise<number> {
     return this.getSafeNonce(guardAddress);
+  }
+
+  /**
+   * Batch fetch SAFE_GUARD() addresses from ChangeSafeGuardAction contracts
+   * Used to determine if a CHANGE_SAFE_GUARD action is removing the guard (address(0))
+   */
+  private async batchFetchSafeGuardAddresses(actionBuilders: Address[]): Promise<Map<Address, Address>> {
+    const map = new Map<Address, Address>();
+
+    if (actionBuilders.length === 0) return map;
+
+    const contracts = actionBuilders.map((address) => ({
+      address,
+      abi: changeSafeGuardActionAbi,
+      functionName: "SAFE_GUARD" as const,
+    }));
+
+    try {
+      const results = await this.client.multicall({ contracts });
+
+      for (let i = 0; i < actionBuilders.length; i++) {
+        const result = results[i];
+        if (result.status === "success" && result.result) {
+          map.set(actionBuilders[i], result.result as Address);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to batch fetch SAFE_GUARD addresses:", error);
+    }
+
+    return map;
   }
 }

@@ -3,7 +3,8 @@ import { Box, styled, CircularProgress } from "@mui/material";
 import { useConfig } from "wagmi";
 import { writeContract, waitForTransactionReceipt } from "wagmi/actions";
 import { canonGuardAbi } from "~/abis/canonGuard";
-import { XIcon, ShieldAlertIcon, CopyIcon } from "~/components/icons";
+import { XIcon, ShieldAlertIcon } from "~/components/icons";
+import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useCanonGuardConfig, useWallet, useNavigateWithParams } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
@@ -34,10 +35,6 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
   const canActivate = !isEmergencyOn && isTrigger;
   const canDeactivate = isEmergencyOn && isCaller;
   const hasNoPermissions = !isTrigger && !isCaller;
-
-  const handleCopyAddress = (address: string) => {
-    navigator.clipboard.writeText(address);
-  };
 
   const handleActivateEmergencyMode = async () => {
     if (!guardAddress || isActivating) return;
@@ -111,14 +108,13 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
               {/* Emergency Trigger */}
               <AddressSection>
                 <AddressLabel>Emergency Trigger</AddressLabel>
-                <AddressRow>
-                  <AddressText>{emergencyTrigger || "-"}</AddressText>
-                  {emergencyTrigger && (
-                    <CopyButton onClick={() => handleCopyAddress(emergencyTrigger)}>
-                      <CopyIcon size={10} color={canonHeaderTokens.foreground.accent30} />
-                    </CopyButton>
-                  )}
-                </AddressRow>
+                {emergencyTrigger ? (
+                  <CopyableText text={emergencyTrigger} iconSize={10} iconColor={canonHeaderTokens.foreground.accent30}>
+                    <AddressText>{emergencyTrigger}</AddressText>
+                  </CopyableText>
+                ) : (
+                  <AddressText>-</AddressText>
+                )}
               </AddressSection>
 
               <Divider />
@@ -126,14 +122,13 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
               {/* Emergency Caller */}
               <AddressSection>
                 <AddressLabel>Emergency Caller</AddressLabel>
-                <AddressRow>
-                  <AddressText>{emergencyCaller || "-"}</AddressText>
-                  {emergencyCaller && (
-                    <CopyButton onClick={() => handleCopyAddress(emergencyCaller)}>
-                      <CopyIcon size={10} color={canonHeaderTokens.foreground.accent30} />
-                    </CopyButton>
-                  )}
-                </AddressRow>
+                {emergencyCaller ? (
+                  <CopyableText text={emergencyCaller} iconSize={10} iconColor={canonHeaderTokens.foreground.accent30}>
+                    <AddressText>{emergencyCaller}</AddressText>
+                  </CopyableText>
+                ) : (
+                  <AddressText>-</AddressText>
+                )}
               </AddressSection>
 
               <Divider />
@@ -326,32 +321,12 @@ const AddressLabel = styled("span")({
   color: canonHeaderTokens.foreground.accent0,
 });
 
-const AddressRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-});
-
 const AddressText = styled("span")({
   fontFamily: "Inter, sans-serif",
   fontSize: "12px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
-});
-
-const CopyButton = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 0,
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  opacity: 0.3,
-  "&:hover": {
-    opacity: 0.6,
-  },
 });
 
 // Warning Box

@@ -1,6 +1,13 @@
 import { Box, Typography, Button, styled } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { HeaderLogo } from "./Header";
+import {
+  PageContainer,
+  SetupHeader,
+  SetupContentArea,
+  SetupFormWrapper,
+  SetupSectionTitle,
+} from "./shared/StyledComponents";
 
 interface ErrorStateProps {
   title: string;
@@ -12,13 +19,13 @@ interface ErrorStateProps {
 export const ErrorState = ({ title, message, buttonText = "Go Back", onChangeSetup }: ErrorStateProps) => {
   return (
     <PageContainer>
-      <Header>
+      <SetupHeader>
         <HeaderLogo onClick={onChangeSetup} />
-      </Header>
+      </SetupHeader>
 
-      <ContentArea>
-        <FormWrapper>
-          <SectionTitle>ERROR</SectionTitle>
+      <SetupContentArea>
+        <SetupFormWrapper>
+          <SetupSectionTitle>Error</SetupSectionTitle>
 
           <ErrorCard>
             <CardContent>
@@ -27,56 +34,14 @@ export const ErrorState = ({ title, message, buttonText = "Go Back", onChangeSet
             </CardContent>
 
             <ButtonSection>
-              <GoBackButton onClick={onChangeSetup}>{buttonText.toUpperCase()}</GoBackButton>
+              <GoBackButton onClick={onChangeSetup}>{buttonText}</GoBackButton>
             </ButtonSection>
           </ErrorCard>
-        </FormWrapper>
-      </ContentArea>
+        </SetupFormWrapper>
+      </SetupContentArea>
     </PageContainer>
   );
 };
-
-// Page layout (matching landing page)
-const PageContainer = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  minHeight: "100vh",
-  width: "100%",
-  backgroundColor: canonHeaderTokens.background.layer0,
-});
-
-const Header = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  height: "72px",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  width: "100%",
-});
-
-const ContentArea = styled(Box)({
-  flex: 1,
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-});
-
-const FormWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
-const SectionTitle = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 600,
-  letterSpacing: "0.6px",
-  textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent30,
-  padding: "8px",
-});
 
 // Error card
 const ErrorCard = styled(Box)({

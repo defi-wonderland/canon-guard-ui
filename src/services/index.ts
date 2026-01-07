@@ -6,3 +6,5 @@ export type { RegisteredEntity } from "./registryService";
 export { QueueService } from "./queueService";
 export type { QueueItem } from "./queueService";
 export * from "./transactionBuilderService";
+export { CanonGuardValidationService } from "./canonGuardValidationService";
+export type { ValidationResult } from "./canonGuardValidationService";
