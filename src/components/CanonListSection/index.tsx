@@ -304,6 +304,7 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
       navigateWithParams(`/create/hub-child/${hubEntity.address}`, {
         state: {
           hubLabel: hubEntity.label,
+          isFastPath: hubEntity.isFastPath,
         },
       });
     },

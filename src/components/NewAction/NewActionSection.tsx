@@ -126,6 +126,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
   const [hubInfo, setHubInfo] = useState<CappedTokenTransfersHubInfo | null>(null);
   const [isLoadingHubInfo, setIsLoadingHubInfo] = useState(false);
   const [hubLabel, setHubLabel] = useState<string>("");
+  const [hubIsFastPath, setHubIsFastPath] = useState(false);
 
   // Signing flow state
   const [isSigningMode, setIsSigningMode] = useState(false);
@@ -192,6 +193,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     setHubInfo(null);
     setIsLoadingHubInfo(false);
     setHubLabel("");
+    setHubIsFastPath(false);
     resetExecutor();
   };
 
@@ -276,10 +278,13 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           const registryService = new RegistryService(clientService);
           const info = await registryService.getHubConfiguration(hubAddressParam as Address);
           setHubInfo(info);
-          // Get hub label from location state if available
-          const stateLabel = (location.state as { hubLabel?: string })?.hubLabel;
-          if (stateLabel) {
-            setHubLabel(stateLabel);
+          // Get hub label and fast path status from location state if available
+          const state = location.state as { hubLabel?: string; isFastPath?: boolean } | null;
+          if (state?.hubLabel) {
+            setHubLabel(state.hubLabel);
+          }
+          if (state?.isFastPath !== undefined) {
+            setHubIsFastPath(state.isFastPath);
           }
         } catch (error) {
           console.error("[NewActionSection] Failed to fetch hub info:", error);
@@ -1437,6 +1442,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           hubAddress={hubAddressParam as Address}
           hubLabel={hubLabel || "Capped Transfer Hub"}
           hubInfo={hubInfo}
+          isFastPath={hubIsFastPath}
           formData={hubChildFormData}
           onBack={handleBackToHubChildForm}
           onInitiate={handleInitiateHubChild}

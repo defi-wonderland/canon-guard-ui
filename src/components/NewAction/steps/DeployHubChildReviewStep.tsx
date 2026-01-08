@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { Box, Typography, styled } from "@mui/material";
 import { Address } from "viem";
-import { VectorSquareIcon, PlusIcon, MinusIcon, CheckIcon, InfoIcon, ZapOffIcon, LockIcon } from "~/components/icons";
+import {
+  VectorSquareIcon,
+  PlusIcon,
+  MinusIcon,
+  CheckIcon,
+  InfoIcon,
+  ZapIcon,
+  ZapOffIcon,
+  LockIcon,
+} from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -12,13 +21,16 @@ import type { HubChildFormData } from "./DeployHubChildFormStep";
 
 // Tooltip content
 const TOOLTIP_DEPLOY_SAVE = "Deploy and save for future use. Deploying and saving doesn't require multisig.";
-const TOOLTIP_PROPOSE_TRANSACTION =
+const TOOLTIP_PROPOSE_TRANSACTION_SLOW =
   "Request signatures from Safe signers. This transaction will follow the slow path with a 7-day delay.";
+const TOOLTIP_PROPOSE_TRANSACTION_FAST =
+  "Request signatures from Safe signers. This transaction will follow the fast-path with a 1 hour delay.";
 
 interface DeployHubChildReviewStepProps {
   hubAddress: Address;
   hubLabel: string;
   hubInfo: CappedTokenTransfersHubInfo | null;
+  isFastPath: boolean;
   formData: HubChildFormData;
   onBack: () => void;
   onInitiate: (proposeTransaction: boolean) => void;
@@ -27,7 +39,7 @@ interface DeployHubChildReviewStepProps {
 }
 
 export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) => {
-  const { hubInfo, formData, onBack, onInitiate, onNavigateToCreate, onEdit } = props;
+  const { hubInfo, isFastPath, formData, onBack, onInitiate, onNavigateToCreate, onEdit } = props;
   const [parametersExpanded, setParametersExpanded] = useState(false);
   const [proposeTransaction, setProposeTransaction] = useState(true);
 
@@ -140,11 +152,18 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
                 <CheckboxLabel>Propose Transaction</CheckboxLabel>
               </CheckboxLeft>
               <RightContent>
-                <SlowPathTag>
-                  <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
-                  <SlowPathLabel>SLOW-PATH</SlowPathLabel>
-                </SlowPathTag>
-                <StyledTooltip title={TOOLTIP_PROPOSE_TRANSACTION} placement='top-end'>
+                <PathTag $isFastPath={isFastPath}>
+                  {isFastPath ? (
+                    <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
+                  ) : (
+                    <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
+                  )}
+                  <PathLabel $isFastPath={isFastPath}>{isFastPath ? "FAST-PATH" : "SLOW-PATH"}</PathLabel>
+                </PathTag>
+                <StyledTooltip
+                  title={isFastPath ? TOOLTIP_PROPOSE_TRANSACTION_FAST : TOOLTIP_PROPOSE_TRANSACTION_SLOW}
+                  placement='top-end'
+                >
                   <InfoIconWrapper>
                     <InfoIcon size={14} color={canonHeaderTokens.foreground.accent30} />
                   </InfoIconWrapper>
@@ -390,18 +409,22 @@ const RightContent = styled(Box)({
   gap: "8px",
 });
 
-const SlowPathTag = styled(Box)({
+const PathTag = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isFastPath",
+})<{ $isFastPath: boolean }>({
   display: "flex",
   alignItems: "center",
   gap: "8px",
 });
 
-const SlowPathLabel = styled(Typography)({
+const PathLabel = styled(Typography, {
+  shouldForwardProp: (prop) => prop !== "$isFastPath",
+})<{ $isFastPath: boolean }>(({ $isFastPath }) => ({
   fontSize: "11px",
   fontWeight: 400,
   lineHeight: "12px",
-  color: canonHeaderTokens.status.red,
-});
+  color: $isFastPath ? canonHeaderTokens.brand.green : canonHeaderTokens.status.red,
+}));
 
 const InfoIconWrapper = styled(Box)({
   display: "flex",
