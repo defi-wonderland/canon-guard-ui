@@ -14,7 +14,7 @@ interface DurationInputProps {
 
 /**
  * DurationInput - A reusable input for entering time durations
- * Combines a number input with a unit dropdown (seconds, minutes, hours, days, weeks, months)
+ * Combines a number input with a unit dropdown (minutes, hours, days, weeks, months)
  */
 export const DurationInput = ({
   value,
@@ -36,7 +36,6 @@ export const DurationInput = ({
         $hasError={hasError}
       />
       <StyledSelect value={unit} onChange={(e) => onUnitChange(e.target.value as DurationTimeUnit)}>
-        <option value='seconds'>seconds</option>
         <option value='minutes'>minutes</option>
         <option value='hours'>hours</option>
         <option value='days'>days</option>

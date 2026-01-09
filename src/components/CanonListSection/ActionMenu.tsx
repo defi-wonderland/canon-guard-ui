@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Box, styled } from "@mui/material";
-import { CircleFadingPlusIcon, SquarePenIcon, ZapIcon, TrashIcon, PlusIcon } from "~/components/icons";
+import { CircleFadingPlusIcon, SquarePenIcon, ZapIcon, ZapOffIcon, TrashIcon, PlusIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 
 interface ActionMenuProps {
@@ -8,6 +8,7 @@ interface ActionMenuProps {
   onClose: () => void;
   isHub?: boolean;
   isHubChild?: boolean;
+  isFastPath?: boolean;
   triggerRef?: React.RefObject<HTMLButtonElement | null>;
   onAddToQueue?: () => void;
   onRename?: () => void;
@@ -22,6 +23,7 @@ export const ActionMenu = ({
   onClose,
   isHub = false,
   isHubChild = false,
+  isFastPath = false,
   triggerRef,
   onAddToQueue,
   onRename,
@@ -71,8 +73,12 @@ export const ActionMenu = ({
         </MenuItem>
         <MenuDivider />
         <MenuItem onClick={onProposePreApproval}>
-          <ZapIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-          <MenuItemText>Pre-Approve</MenuItemText>
+          {isFastPath ? (
+            <ZapOffIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          ) : (
+            <ZapIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+          )}
+          <MenuItemText>{isFastPath ? "Remove pre-approval" : "Pre-Approve"}</MenuItemText>
         </MenuItem>
         <MenuDivider />
         <MenuItem onClick={onDeployChild}>
@@ -119,8 +125,12 @@ export const ActionMenu = ({
       </MenuItem>
       <MenuDivider />
       <MenuItem onClick={onProposePreApproval}>
-        <ZapIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-        <MenuItemText>Pre-Approve</MenuItemText>
+        {isFastPath ? (
+          <ZapOffIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+        ) : (
+          <ZapIcon size={16} color={canonHeaderTokens.foreground.accent0} />
+        )}
+        <MenuItemText>{isFastPath ? "Remove pre-approval" : "Pre-Approve"}</MenuItemText>
       </MenuItem>
       <MenuDivider />
       <MenuItem onClick={onRemove} disabled={isRemoving}>

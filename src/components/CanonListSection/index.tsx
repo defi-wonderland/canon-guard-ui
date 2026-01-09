@@ -243,10 +243,26 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
     }
   }, [isRenaming]);
 
-  const handleProposePreApproval = useCallback((entity: RegisteredEntity) => {
-    setSelectedEntityForPreApprove(entity);
-    setPreApproveModalOpen(true);
-  }, []);
+  const handleProposePreApproval = useCallback(
+    (entity: RegisteredEntity) => {
+      // If already pre-approved, skip modal and navigate directly with duration=0
+      if (entity.isFastPath) {
+        navigateWithParams("/queue-action", {
+          state: {
+            actionBuilderAddress: entity.address,
+            label: entity.label,
+            factoryType: getFactoryDisplayName(entity.factoryType),
+            approvalDuration: 0n,
+          },
+        });
+        return;
+      }
+      // Otherwise, open the modal to select duration
+      setSelectedEntityForPreApprove(entity);
+      setPreApproveModalOpen(true);
+    },
+    [navigateWithParams],
+  );
 
   const handlePreApproveSubmit = useCallback(
     (durationSeconds: bigint) => {

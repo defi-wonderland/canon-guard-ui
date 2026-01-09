@@ -45,8 +45,11 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
   // Get state passed from Canon List (required - redirects if missing)
   const navigationState = location.state as QueueActionState | null;
 
-  // Determine if we're in pre-approve mode based on presence of approvalDuration
-  const isPreApproveMode = Boolean(navigationState?.approvalDuration);
+  // Determine if we're in pre-approve mode based on presence of approvalDuration (includes 0n for removal)
+  const isPreApproveMode = navigationState?.approvalDuration !== undefined;
+
+  // Determine if this is a removal (duration is 0)
+  const isRemovePreApproval = isPreApproveMode && navigationState?.approvalDuration === 0n;
 
   // Transaction executor hook for real blockchain transactions
   const { executeQueueTransaction, executeSignTransaction, executeDeployPreApproval } = useTransactionExecutor();
@@ -350,7 +353,11 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
   }
 
   // Determine breadcrumb based on mode
-  const breadcrumbPage = isPreApproveMode ? "Pre-Approve Action" : "Queue Action";
+  const breadcrumbPage = isRemovePreApproval
+    ? "Remove Pre-Approval"
+    : isPreApproveMode
+      ? "Pre-Approve Action"
+      : "Queue Action";
 
   return (
     <SigningFlowStep

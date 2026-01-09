@@ -138,6 +138,7 @@ export const ActionItem = ({
               onClose={handleMenuClose}
               isHub={isHub}
               isHubChild={isHubChild}
+              isFastPath={isFastPath}
               triggerRef={moreButtonRef}
               onAddToQueue={onAddToQueue}
               onRename={onRename}
