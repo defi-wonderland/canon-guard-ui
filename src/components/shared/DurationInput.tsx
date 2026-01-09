@@ -2,6 +2,8 @@ import { Box, styled } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { DurationTimeUnit } from "~/utils/timeUnits";
 
+const ALL_DURATION_UNITS: DurationTimeUnit[] = ["seconds", "minutes", "hours", "days", "weeks", "months"];
+
 interface DurationInputProps {
   value: string;
   unit: DurationTimeUnit;
@@ -10,11 +12,13 @@ interface DurationInputProps {
   hasError?: boolean;
   placeholder?: string;
   className?: string;
+  /** Units to exclude from the dropdown */
+  excludeUnits?: DurationTimeUnit[];
 }
 
 /**
  * DurationInput - A reusable input for entering time durations
- * Combines a number input with a unit dropdown (minutes, hours, days, weeks, months)
+ * Combines a number input with a unit dropdown (seconds, minutes, hours, days, weeks, months)
  */
 export const DurationInput = ({
   value,
@@ -24,7 +28,10 @@ export const DurationInput = ({
   hasError = false,
   placeholder = "Enter duration",
   className,
+  excludeUnits = [],
 }: DurationInputProps) => {
+  const availableUnits = ALL_DURATION_UNITS.filter((u) => !excludeUnits.includes(u));
+
   return (
     <DurationInputRow className={className}>
       <StyledInput
@@ -36,11 +43,11 @@ export const DurationInput = ({
         $hasError={hasError}
       />
       <StyledSelect value={unit} onChange={(e) => onUnitChange(e.target.value as DurationTimeUnit)}>
-        <option value='minutes'>minutes</option>
-        <option value='hours'>hours</option>
-        <option value='days'>days</option>
-        <option value='weeks'>weeks</option>
-        <option value='months'>months</option>
+        {availableUnits.map((u) => (
+          <option key={u} value={u}>
+            {u}
+          </option>
+        ))}
       </StyledSelect>
     </DurationInputRow>
   );

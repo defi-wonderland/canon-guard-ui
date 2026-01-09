@@ -170,6 +170,7 @@ export const PreApproveDurationModal = ({
             onUnitChange={setDurationUnit}
             hasError={!isValid && durationAmount !== ""}
             placeholder='Enter duration'
+            excludeUnits={["seconds"]}
           />
           {!isValid && errorMessage && (
             <DurationError>
