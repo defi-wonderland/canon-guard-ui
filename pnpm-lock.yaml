@@ -1421,8 +1421,8 @@ packages:
     resolution: {integrity: sha512-6ORQfwtEJYpalCeVO21L4XXGSdbEMfyp2hEv6cP82afKXSwvse6d3sdelgaPWUxHIsFRkWvHDdzh8IyyKHZKxw==}
     engines: {node: '>=16'}
 
-  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e250':
-    resolution: {commit: b75e250, repo: git@github.com:safe-global/safe-smart-account.git, type: git}
+  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e2509ba4968f97c427f2657996a0711b7a4cf':
+    resolution: {commit: b75e2509ba4968f97c427f2657996a0711b7a4cf, repo: git@github.com:safe-global/safe-smart-account.git, type: git}
     version: 1.4.1-build.0
 
   '@scure/base@1.1.9':
@@ -4867,7 +4867,7 @@ snapshots:
 
   '@defi-wonderland/canon-guard-interfaces@0.0.1':
     dependencies:
-      '@safe-global/safe-contracts': '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e250'
+      '@safe-global/safe-contracts': '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e2509ba4968f97c427f2657996a0711b7a4cf'
       solady: https://codeload.github.com/vectorized/solady/tar.gz/701406e
 
   '@defi-wonderland/crypto-husky-checks@1.5.6': {}
@@ -6265,7 +6265,7 @@ snapshots:
 
   '@safe-global/safe-gateway-typescript-sdk@3.23.1': {}
 
-  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e250': {}
+  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e2509ba4968f97c427f2657996a0711b7a4cf': {}
 
   '@scure/base@1.1.9': {}
 
