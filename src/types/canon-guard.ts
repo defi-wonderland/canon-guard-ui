@@ -19,7 +19,7 @@ export enum QueuedTransactionState {
  */
 export enum ActionFactoryType {
   SAFE_ENTRYPOINT = "safe_entrypoint",
-  SIMPLE_ACTIONS = "simple_actions",
+  ARBITRARY_ACTIONS = "arbitrary_actions",
   SIMPLE_TRANSFERS = "simple_transfers",
   CAPPED_TOKEN_TRANSFERS = "capped_token_transfers",
   ALLOWANCE_CLAIMOR = "allowance_claimor",
@@ -48,7 +48,7 @@ export interface CanonRegistry {
   allowanceClaimorFactory: Address;
   approveActionFactory: Address;
   cappedTokenTransfersHubFactory: Address;
-  simpleActionsFactory: Address;
+  arbitraryActionsFactory: Address;
   simpleTransfersFactory: Address;
 }
 
@@ -189,12 +189,12 @@ export interface ActionDetails {
 }
 
 /**
- * Simple action structure for building new actions
+ * Arbitrary action structure for building new actions
  */
-export interface SimpleAction {
+export interface ArbitraryAction {
   target: Address;
-  fnSignature: string; // Function signature like "transfer(address,uint256)"
-  data: Hex; // ABI-encoded parameters
+  fnSignature?: string; // Optional function signature like "transfer(address,uint256)"
+  data: Hex; // Full calldata including selector
   value: bigint;
 }
 

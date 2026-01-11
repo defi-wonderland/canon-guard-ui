@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box, Typography, styled } from "@mui/material";
 import { useLocation, useParams } from "react-router-dom";
 import { Address, Hex, encodeFunctionData } from "viem";
@@ -7,12 +7,13 @@ import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams, useTransactionExecutor } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
+import type { ParsedWalletConnectTransaction } from "~/providers/WalletConnectProvider";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
 import { RegistryService } from "~/services/registryService";
 import {
   buildTransactionSteps,
-  buildSimpleActionSteps,
+  buildArbitraryActionSteps,
   buildClaimAllowanceSteps,
   buildCappedTransferHubSteps,
   buildDeployHubChildSteps,
@@ -24,7 +25,7 @@ import { FACTORY_DISPLAY_NAMES, HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay
 import {
   SelectFactoryStep,
   TransferFormStep,
-  SimpleActionFormStep,
+  ArbitraryActionFormStep,
   ClaimAllowanceFormStep,
   ReviewDeployStep,
   SigningFlowStep,
@@ -36,7 +37,7 @@ import {
 } from "./steps";
 import type {
   TransferFormData,
-  SimpleActionFormData,
+  ArbitraryActionFormData,
   ClaimAllowanceFormData,
   FactoryType,
   HubType,
@@ -52,7 +53,7 @@ const INITIAL_TRANSFER_FORM_DATA: TransferFormData = {
   transfers: [{ tokenAddress: "", recipientAddress: "", amount: "" }],
 };
 
-const INITIAL_SIMPLE_ACTION_FORM_DATA: SimpleActionFormData = {
+const INITIAL_ARBITRARY_ACTION_FORM_DATA: ArbitraryActionFormData = {
   title: "",
   actions: [{ target: "", signature: "", data: "", value: "" }],
 };
@@ -91,7 +92,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
   // Transaction executor hook for real blockchain transactions
   const {
     executeDeployTransfer,
-    executeDeploySimpleAction,
+    executeDeployArbitraryAction,
     executeDeployClaimAllowance,
     executeDeployHubChild,
     executeDeployCappedTransferHub,
@@ -105,8 +106,8 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
   // Local state for factory selection and form data
   const [selectedFactory, setSelectedFactory] = useState<FactoryType>(null);
   const [transferFormData, setTransferFormData] = useState<TransferFormData>(INITIAL_TRANSFER_FORM_DATA);
-  const [simpleActionFormData, setSimpleActionFormData] = useState<SimpleActionFormData>(
-    INITIAL_SIMPLE_ACTION_FORM_DATA,
+  const [arbitraryActionFormData, setArbitraryActionFormData] = useState<ArbitraryActionFormData>(
+    INITIAL_ARBITRARY_ACTION_FORM_DATA,
   );
   const [claimAllowanceFormData, setClaimAllowanceFormData] = useState<ClaimAllowanceFormData>(
     INITIAL_CLAIM_ALLOWANCE_FORM_DATA,
@@ -147,6 +148,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
   // Track if turn-off-emergency flow has been initialized
   const [emergencyFlowInitialized, setEmergencyFlowInitialized] = useState(false);
 
+  // Track if WalletConnect transaction has been processed
+  const walletConnectProcessed = useRef(false);
+
   // Nonce selection state
   const [currentSafeNonce, setCurrentSafeNonce] = useState<number>(0);
   const [queueItems, setQueueItems] = useState<QueueItem[]>([]);
@@ -166,7 +170,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
   const resetFlow = () => {
     setSelectedFactory(null);
     setTransferFormData(INITIAL_TRANSFER_FORM_DATA);
-    setSimpleActionFormData(INITIAL_SIMPLE_ACTION_FORM_DATA);
+    setArbitraryActionFormData(INITIAL_ARBITRARY_ACTION_FORM_DATA);
     setClaimAllowanceFormData(INITIAL_CLAIM_ALLOWANCE_FORM_DATA);
     setIsReviewMode(false);
     setIsSigningMode(false);
@@ -315,13 +319,84 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     }
   }, [path, emergencyFlowInitialized, guardAddress, safeAddress, buildTurnOffEmergencySteps]);
 
+  // Handle WalletConnect transaction - pre-fill form and go directly to signing
+  useEffect(() => {
+    const state = location.state as { walletConnectTx?: ParsedWalletConnectTransaction } | null;
+    const wcTx = state?.walletConnectTx;
+
+    // Only process once and only on arbitrary-action path
+    if (!wcTx || walletConnectProcessed.current || path !== "/create/action/arbitrary-action") {
+      return;
+    }
+
+    // Only process if we have the required addresses
+    if (!safeAddress || !guardAddress) {
+      return;
+    }
+
+    walletConnectProcessed.current = true;
+
+    // Parse value - WalletConnect sends hex values like "0x0"
+    let parsedValue = "";
+    if (wcTx.value && wcTx.value !== "0" && wcTx.value !== "0x0") {
+      try {
+        // Convert hex to decimal string
+        parsedValue = BigInt(wcTx.value).toString();
+      } catch {
+        parsedValue = wcTx.value;
+      }
+    }
+
+    // Pre-fill the form data - use full calldata directly
+    const prefilledData: ArbitraryActionFormData = {
+      title: `WalletConnect: ${wcTx.dappName || "Unknown App"}`,
+      actions: [
+        {
+          target: wcTx.target,
+          signature: "", // Signature is now optional
+          data: wcTx.data.startsWith("0x") ? wcTx.data : `0x${wcTx.data}`, // Full calldata with selector
+          value: parsedValue,
+        },
+      ],
+    };
+
+    setArbitraryActionFormData(prefilledData);
+    setSelectedFactory("arbitrary-action");
+
+    // Always go directly to signing flow
+    // Build steps and start signing flow - skip registry for WalletConnect transactions
+    const { steps } = buildArbitraryActionSteps({
+      formData: prefilledData,
+      safeAddress: safeAddress as Address,
+      guardAddress: guardAddress as Address,
+      proposeTransaction: true,
+      proposePreApproval: false,
+      approvalDurationSeconds: undefined,
+      skipRegistry: true, // Don't save WalletConnect transactions to Canon List
+    });
+
+    console.log("[NewActionSection] WalletConnect tx - going directly to signing flow");
+
+    setReviewCheckboxState({
+      proposeTransaction: true,
+      proposePreApproval: false,
+      approvalDurationSeconds: undefined,
+    });
+    setTransactionSteps(steps);
+    setCurrentStepIndex(0);
+    setIsSigningMode(true);
+
+    // Clear the location state to prevent re-processing on navigation
+    window.history.replaceState({}, document.title);
+  }, [location.state, path, safeAddress, guardAddress]);
+
   // Handle factory selection
   const handleSelectFactory = (factory: FactoryType) => {
     setSelectedFactory(factory);
     if (factory === "transfer") {
       navigateWithParams("/create/action/transfer");
-    } else if (factory === "simple-action") {
-      navigateWithParams("/create/action/simple-action");
+    } else if (factory === "arbitrary-action") {
+      navigateWithParams("/create/action/arbitrary-action");
     } else if (factory === "claim-allowance") {
       navigateWithParams("/create/action/claim-allowance");
     }
@@ -345,9 +420,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     setIsReviewMode(true);
   };
 
-  // Go to review step (Simple Action)
-  const handleSimpleActionFormContinue = () => {
-    setSelectedFactory("simple-action");
+  // Go to review step (Arbitrary Action)
+  const handleArbitraryActionFormContinue = () => {
+    setSelectedFactory("arbitrary-action");
     setIsReviewMode(true);
   };
 
@@ -399,8 +474,8 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     setIsSigningMode(true);
   };
 
-  // Handle initiate Simple Action - starts signing flow
-  const handleInitiateSimpleAction = (
+  // Handle initiate Arbitrary Action - starts signing flow
+  const handleInitiateArbitraryAction = (
     proposeTransaction: boolean,
     proposePreApproval: boolean,
     approvalDurationSeconds?: bigint,
@@ -410,8 +485,8 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
       return;
     }
 
-    const { steps } = buildSimpleActionSteps({
-      formData: simpleActionFormData,
+    const { steps } = buildArbitraryActionSteps({
+      formData: arbitraryActionFormData,
       safeAddress: safeAddress as Address,
       guardAddress: guardAddress as Address,
       proposeTransaction,
@@ -635,15 +710,15 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
         return;
       }
 
-      // Handle the Deploy Contract step for Simple Action
-      if (currentStep.id === "deploy-simple-action") {
-        console.log("[handleExecuteStep] Executing deploy-simple-action step");
-        const result = await executeDeploySimpleAction(simpleActionFormData);
-        console.log("[handleExecuteStep] Deploy SimpleAction result:", result);
+      // Handle the Deploy Contract step for Arbitrary Action
+      if (currentStep.id === "deploy-arbitrary-action") {
+        console.log("[handleExecuteStep] Executing deploy-arbitrary-action step");
+        const result = await executeDeployArbitraryAction(arbitraryActionFormData);
+        console.log("[handleExecuteStep] Deploy ArbitraryAction result:", result);
 
         if (result) {
           setDeployedActionAddress(result.deployedAddress);
-          console.log("[handleExecuteStep] SimpleAction deployed at:", result.deployedAddress);
+          console.log("[handleExecuteStep] ArbitraryAction deployed at:", result.deployedAddress);
 
           setTransactionSteps((prev) => {
             const updated = [...prev];
@@ -655,7 +730,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           });
           setCurrentStepIndex(stepIndex + 1);
         } else {
-          console.log("[handleExecuteStep] Deploy SimpleAction failed, setting error status");
+          console.log("[handleExecuteStep] Deploy ArbitraryAction failed, setting error status");
           setTransactionSteps((prev) => {
             const updated = [...prev];
             updated[stepIndex] = { ...updated[stepIndex], status: "error" };
@@ -785,8 +860,8 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           label = hubChildFormData.title || "Untitled Transfer";
         } else if (selectedHub === "capped-transfer-hub") {
           label = cappedTransferHubFormData.title || "Untitled Hub";
-        } else if (selectedFactory === "simple-action") {
-          label = simpleActionFormData.title || "Untitled Simple Action";
+        } else if (selectedFactory === "arbitrary-action") {
+          label = arbitraryActionFormData.title || "Untitled Arbitrary Action";
         } else if (selectedFactory === "claim-allowance") {
           label = claimAllowanceFormData.title || "Untitled Claim Allowance";
         } else {
@@ -1140,13 +1215,13 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
       selectedFactory,
       selectedHub,
       transferFormData,
-      simpleActionFormData,
+      arbitraryActionFormData,
       claimAllowanceFormData,
       cappedTransferHubFormData,
       hubChildFormData,
       hubAddressParam,
       executeDeployTransfer,
-      executeDeploySimpleAction,
+      executeDeployArbitraryAction,
       executeDeployClaimAllowance,
       executeDeployHubChild,
       executeDeployCappedTransferHub,
@@ -1219,21 +1294,21 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     );
   }
 
-  // /create/action/simple-action -> Simple Action Form, Review, or Signing
-  if (path === "/create/action/simple-action") {
+  // /create/action/arbitrary-action -> Arbitrary Action Form, Review, or Signing
+  if (path === "/create/action/arbitrary-action") {
     // Show signing flow if in signing mode
     if (isSigningMode) {
       return (
         <SigningFlowStep
           steps={transactionSteps}
           currentStepIndex={currentStepIndex}
-          formData={simpleActionFormData}
+          formData={arbitraryActionFormData}
           onBack={handleBackFromSigning}
           onNavigateToCreate={handleNavigateToCreate}
           onSimulateSign={handleExecuteStep}
           isComplete={isSigningComplete}
-          actionTitle={simpleActionFormData.title || "Simple Action"}
-          factoryType={FACTORY_DISPLAY_NAMES[ActionFactoryType.SIMPLE_ACTIONS]!}
+          actionTitle={arbitraryActionFormData.title || "Arbitrary Action"}
+          factoryType={FACTORY_DISPLAY_NAMES[ActionFactoryType.ARBITRARY_ACTIONS]!}
           nonceSelectionEnabled={nonceDataLoaded}
           currentSafeNonce={currentSafeNonce}
           queueItems={queueItems}
@@ -1245,23 +1320,23 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     if (isReviewMode) {
       return (
         <ReviewDeployStep
-          formData={simpleActionFormData}
+          formData={arbitraryActionFormData}
           guardAddress={guardAddress as Address}
           chainId={chainId as number}
           onBack={handleBackToForm}
-          onInitiate={handleInitiateSimpleAction}
+          onInitiate={handleInitiateArbitraryAction}
           onNavigateToCreate={handleNavigateToCreate}
           onEdit={handleEdit}
         />
       );
     }
 
-    // Show simple action form
+    // Show arbitrary action form
     return (
-      <SimpleActionFormStep
-        formData={simpleActionFormData}
-        onFormDataChange={setSimpleActionFormData}
-        onContinue={handleSimpleActionFormContinue}
+      <ArbitraryActionFormStep
+        formData={arbitraryActionFormData}
+        onFormDataChange={setArbitraryActionFormData}
+        onContinue={handleArbitraryActionFormContinue}
         onBack={handleBackToFactory}
         onNavigateToCreate={handleNavigateToCreate}
         onChangeFactory={handleChangeFactory}

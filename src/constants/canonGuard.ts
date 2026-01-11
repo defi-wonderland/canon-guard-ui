@@ -9,7 +9,7 @@ export const RPC_INDEXING_DELAY_MS = 2000;
 export const CANON_GUARD_REGISTRY: Address = "0x1d6f006964fBDf260B06cA38283Ec952B51f4f84";
 export const PRE_APPROVE_ACTION_FACTORY: Address = "0x2A62b0644BA7F4648179BfAE9a279D63DC44eF4a";
 export const SIMPLE_TRANSFERS_FACTORY: Address = "0xC2E8c09Eb985Dd34285bc154D1B6886e6886aE54";
-export const SIMPLE_ACTIONS_FACTORY: Address = "0xEE501087737570c780C3C219A0d3FFf2d86417a4";
+export const ARBITRARY_ACTIONS_FACTORY: Address = "0xD1F0e9D34B292E3EB27324F041f28929dBa41845";
 export const ALLOWANCE_CLAIMOR_FACTORY: Address = "0x6636eDd0125880677f3a1f7411555ea64411d60E";
 export const CAPPED_TOKEN_TRANSFERS_HUB_FACTORY: Address = "0x8531f72986374445507c29A0753fcc9cA36468D0";
 export const CHANGE_SAFE_GUARD_ACTION_FACTORY: Address = "0xE4Fd8EBFC17aA71b41E15143D35FCE6F48cB1a38";
@@ -34,9 +34,9 @@ export const KNOWN_FACTORY_MAPPINGS: Record<Address, { type: ActionFactoryType; 
     type: ActionFactoryType.CAPPED_TOKEN_TRANSFERS,
     label: "Capped Token Transfers Hub Factory",
   },
-  "0xEE501087737570c780C3C219A0d3FFf2d86417a4": {
-    type: ActionFactoryType.SIMPLE_ACTIONS,
-    label: "Simple Actions Factory",
+  "0xD1F0e9D34B292E3EB27324F041f28929dBa41845": {
+    type: ActionFactoryType.ARBITRARY_ACTIONS,
+    label: "Arbitrary Actions Factory",
   },
   "0xC2E8c09Eb985Dd34285bc154D1B6886e6886aE54": {
     type: ActionFactoryType.SIMPLE_TRANSFERS,
@@ -104,7 +104,7 @@ export const FACTORY_TYPE_TO_LABEL: Record<ActionFactoryType, string> = {
   [ActionFactoryType.ALLOWANCE_CLAIMOR]: "Allowance Claimor Factory",
   [ActionFactoryType.APPROVE_ACTION]: "Pre-Approve Action Factory",
   [ActionFactoryType.CAPPED_TOKEN_TRANSFERS]: "Capped Token Transfers Hub Factory",
-  [ActionFactoryType.SIMPLE_ACTIONS]: "Simple Actions Factory",
+  [ActionFactoryType.ARBITRARY_ACTIONS]: "Arbitrary Actions Factory",
   [ActionFactoryType.SIMPLE_TRANSFERS]: "Simple Transfers Factory",
   [ActionFactoryType.CHANGE_SAFE_GUARD]: "Change Safe Guard Action Factory",
   [ActionFactoryType.SET_EMERGENCY_CALLER]: "Set Emergency Caller Action Factory",

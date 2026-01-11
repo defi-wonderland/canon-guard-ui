@@ -5,7 +5,7 @@ import { BoxIcon, AsteriskIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { FACTORY_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { isValidAddress, isValidSignature, isValidHexData, isValidValue } from "~/utils/validation";
+import { isValidAddress, isValidHexData, isValidValue } from "~/utils/validation";
 import {
   Breadcrumb,
   FormSection,
@@ -19,7 +19,7 @@ import {
   ActionButtonRow,
   ButtonsContainer,
 } from "../shared";
-import type { SimpleActionFormData, SimpleActionItem } from "./index";
+import type { ArbitraryActionFormData, ArbitraryActionItem } from "./index";
 
 // Compute function selector from signature (first 4 bytes of keccak256)
 const computeSelector = (signature: string): string | null => {
@@ -32,30 +32,37 @@ const computeSelector = (signature: string): string | null => {
   }
 };
 
-interface SimpleActionFormStepProps {
-  formData: SimpleActionFormData;
-  onFormDataChange: (data: SimpleActionFormData) => void;
+// Extract selector from calldata (first 4 bytes)
+const extractSelectorFromCalldata = (calldata: string): string | null => {
+  const trimmed = calldata.trim().toLowerCase();
+  if (!trimmed.startsWith("0x") || trimmed.length < 10) return null;
+  return trimmed.slice(0, 10);
+};
+
+interface ArbitraryActionFormStepProps {
+  formData: ArbitraryActionFormData;
+  onFormDataChange: (data: ArbitraryActionFormData) => void;
   onContinue: () => void;
   onBack: () => void;
   onNavigateToCreate: () => void;
   onChangeFactory: () => void;
 }
 
-export const SimpleActionFormStep = ({
+export const ArbitraryActionFormStep = ({
   formData,
   onFormDataChange,
   onContinue,
   onBack,
   onNavigateToCreate,
   onChangeFactory,
-}: SimpleActionFormStepProps) => {
+}: ArbitraryActionFormStepProps) => {
   // Update title field
   const updateTitle = (value: string) => {
     onFormDataChange({ ...formData, title: value });
   };
 
   // Update a specific action item
-  const updateAction = (index: number, field: keyof SimpleActionItem, value: string) => {
+  const updateAction = (index: number, field: keyof ArbitraryActionItem, value: string) => {
     const newActions = [...formData.actions];
     newActions[index] = { ...newActions[index], [field]: value };
     onFormDataChange({ ...formData, actions: newActions });
@@ -75,45 +82,65 @@ export const SimpleActionFormStep = ({
     onFormDataChange({ ...formData, actions: newActions });
   };
 
-  // Validation errors and warnings for each action
-  const { errors, warnings } = useMemo(() => {
-    const actionErrors = formData.actions.map((action) => {
-      const selector = computeSelector(action.signature);
-      const dataTrimmed = action.data.trim().toLowerCase();
-      const hasDuplicateSelector =
-        selector && dataTrimmed.length >= 10 && dataTrimmed.startsWith(selector.toLowerCase());
+  // Validation errors for each action
+  const errors = useMemo(() => {
+    return formData.actions.map((action) => {
+      const dataTrimmed = action.data.trim();
+      const signatureTrimmed = action.signature.trim();
+
+      // Calldata validation - must have selector (at least 10 chars: 0x + 8 hex)
+      let dataError: string | undefined;
+      if (dataTrimmed) {
+        if (!dataTrimmed.startsWith("0x")) {
+          dataError = "Must be a valid hex string starting with 0x";
+        } else if (dataTrimmed.length < 10) {
+          dataError = "Calldata must include the function selector (at least 10 characters)";
+        } else if (!isValidHexData(dataTrimmed)) {
+          dataError = "Must be a valid hex string";
+        }
+      }
+
+      // Signature validation - optional, but if provided must match calldata selector
+      let signatureError: string | undefined;
+      if (signatureTrimmed) {
+        // Basic format check: must have parentheses
+        if (!signatureTrimmed.includes("(") || !signatureTrimmed.includes(")")) {
+          signatureError = "Invalid signature format (e.g. transfer(address,uint256))";
+        } else if (dataTrimmed.length >= 10) {
+          // Validate that signature matches calldata selector
+          const computedSelector = computeSelector(signatureTrimmed);
+          const calldataSelector = extractSelectorFromCalldata(dataTrimmed);
+
+          if (computedSelector && calldataSelector && computedSelector.toLowerCase() !== calldataSelector) {
+            signatureError = "Signature does not match the calldata selector";
+          }
+        }
+      }
 
       return {
-        errors: {
-          target: action.target.trim() && !isValidAddress(action.target) ? "Invalid address format" : undefined,
-          signature:
-            action.signature.trim() && !isValidSignature(action.signature)
-              ? "Invalid signature format (e.g. transfer(address,uint256))"
-              : undefined,
-          data:
-            action.data.trim() && !isValidHexData(action.data)
-              ? "Must be a valid hex string starting with 0x"
-              : undefined,
-          value: action.value.trim() && !isValidValue(action.value) ? "Must be a valid number" : undefined,
-        },
-        warnings: {
-          data: hasDuplicateSelector ? "The encoded parameters should not contain the function selector." : undefined,
-        },
+        target: action.target.trim() && !isValidAddress(action.target) ? "Invalid address format" : undefined,
+        data: dataError,
+        signature: signatureError,
+        value: action.value.trim() && !isValidValue(action.value) ? "Must be a valid number" : undefined,
       };
     });
-
-    return {
-      errors: actionErrors.map((e) => e.errors),
-      warnings: actionErrors.map((e) => e.warnings),
-    };
   }, [formData.actions]);
 
   const hasErrors = errors.some((e) => e.target || e.signature || e.data || e.value);
 
+  // Validation: title required, at least one action with target and calldata (with selector)
   const isValid =
     formData.title.trim() !== "" &&
     formData.actions.length > 0 &&
-    formData.actions.every((action) => action.target.trim() !== "" && action.signature.trim() !== "") &&
+    formData.actions.every((action) => {
+      const dataTrimmed = action.data.trim();
+      return (
+        action.target.trim() !== "" &&
+        dataTrimmed.startsWith("0x") &&
+        dataTrimmed.length >= 10 &&
+        isValidHexData(dataTrimmed)
+      );
+    }) &&
     !hasErrors;
 
   return (
@@ -128,7 +155,7 @@ export const SimpleActionFormStep = ({
             <LeftContent>
               <FactoryLabel>CANON FACTORY</FactoryLabel>
               <BoxIcon size={16} color={canonHeaderTokens.foreground.accent20} />
-              <FactoryValue>{FACTORY_DISPLAY_NAMES[ActionFactoryType.SIMPLE_ACTIONS]}</FactoryValue>
+              <FactoryValue>{FACTORY_DISPLAY_NAMES[ActionFactoryType.ARBITRARY_ACTIONS]}</FactoryValue>
             </LeftContent>
             <ChangeButton>CHANGE</ChangeButton>
           </FactorySelector>
@@ -168,7 +195,7 @@ export const SimpleActionFormStep = ({
                   onRemove={() => removeAction(index)}
                 />
 
-                {/* Action Fields */}
+                {/* Action Fields - Calldata first, then signature (optional) */}
                 <ItemFieldsSection>
                   <FormInput
                     label='Target Address'
@@ -178,19 +205,18 @@ export const SimpleActionFormStep = ({
                     error={errors[index]?.target}
                   />
                   <FormInput
-                    label='Function Signature'
+                    label='Calldata'
+                    placeholder='0x... (full calldata including selector)'
+                    value={action.data}
+                    onChange={(value) => updateAction(index, "data", value)}
+                    error={errors[index]?.data}
+                  />
+                  <FormInput
+                    label='Function Signature (optional)'
                     placeholder='e.g. transfer(address,uint256)'
                     value={action.signature}
                     onChange={(value) => updateAction(index, "signature", value)}
                     error={errors[index]?.signature}
-                  />
-                  <FormInput
-                    label='Encoded Parameters'
-                    placeholder='0x... (encoded arguments, without selector)'
-                    value={action.data}
-                    onChange={(value) => updateAction(index, "data", value)}
-                    error={errors[index]?.data}
-                    warning={warnings[index]?.data}
                   />
                   <FormInput
                     label='Value (wei)'

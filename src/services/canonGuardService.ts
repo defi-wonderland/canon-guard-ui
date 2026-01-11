@@ -280,7 +280,7 @@ export class CanonGuardService {
 
       const classification = factoryClassifications[actionAddress];
       const factoryType =
-        classification?.factoryType || getFactoryType(actionAddress) || ActionFactoryType.SIMPLE_ACTIONS;
+        classification?.factoryType || getFactoryType(actionAddress) || ActionFactoryType.ARBITRARY_ACTIONS;
       const factoryLabel = classification?.factoryLabel || getFactoryLabel(actionAddress);
       const actionBuilderAddress = classification?.actionBuilderAddress || actionAddress;
       const isApproved = Number(approvalExpiry) > now;

@@ -1,9 +1,11 @@
 import { Box, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { Chain } from "viem/chains";
+import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
+import { useWalletConnect } from "~/providers/WalletConnectProvider";
 import { HeaderLogo } from "./HeaderLogo";
 import { HeaderNav } from "./HeaderNav";
 import { HeaderSafeDropdown } from "./HeaderSafeDropdown";
@@ -21,7 +23,9 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig }: He
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress } = useStateContext();
+  const { isInitialized, openModal, sessions } = useWalletConnect();
   const isCreateActive = location.pathname.startsWith("/create");
+  const hasActiveSessions = sessions.length > 0;
 
   return (
     <HeaderContainer>
@@ -34,6 +38,16 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig }: He
           <HeaderNav queueCount={queueCount} />
         </NavSection>
       </HeaderLeftSection>
+
+      {/* WalletConnect button */}
+      {isInitialized && (
+        <WalletConnectButton onClick={openModal} $hasActiveSessions={hasActiveSessions}>
+          <WalletConnectIcon
+            size={28}
+            color={hasActiveSessions ? canonHeaderTokens.brand.green : canonHeaderTokens.foreground.accent20}
+          />
+        </WalletConnectButton>
+      )}
 
       {/* Right section: CREATE | Safe | Wallet with dividers */}
       <CreateButton $isActive={isCreateActive} onClick={() => navigateWithParams("/create")}>
@@ -80,6 +94,36 @@ const NavSection = styled(Box)({
   alignItems: "center",
   height: "100%",
 });
+
+// WalletConnect button
+const WalletConnectButton = styled("button")<{ $hasActiveSessions?: boolean }>(({ $hasActiveSessions }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100%",
+  padding: "0 24px",
+  background: canonHeaderTokens.background.layer1,
+  border: "none",
+  cursor: "pointer",
+  position: "relative",
+  "&:hover": {
+    opacity: 0.8,
+  },
+  // Active indicator dot
+  "&::after": $hasActiveSessions
+    ? {
+        content: '""',
+        position: "absolute",
+        top: "50%",
+        right: "8px",
+        transform: "translateY(-50%)",
+        width: "6px",
+        height: "6px",
+        borderRadius: "50%",
+        backgroundColor: canonHeaderTokens.brand.green,
+      }
+    : {},
+}));
 
 // CREATE button with layer1 background for divider effect
 const CreateButton = styled("button")<{ $isActive?: boolean }>(() => ({

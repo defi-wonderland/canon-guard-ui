@@ -4,7 +4,7 @@ import { useWriteContract, useConfig } from "wagmi";
 import { waitForTransactionReceipt, readContract } from "wagmi/actions";
 import {
   simpleTransfersFactoryAbi,
-  simpleActionFactoryAbi,
+  arbitraryActionsFactoryAbi,
   allowanceClaimorFactoryAbi,
   cappedTokenTransfersHubFactoryAbi,
   canonGuardRegistryAbi,
@@ -16,14 +16,14 @@ import {
 import { cappedTokenTransfersHubAbi } from "~/abis/canonGuard";
 import type {
   TransferFormData,
-  SimpleActionFormData,
+  ArbitraryActionFormData,
   ClaimAllowanceFormData,
   CappedTransferHubFormData,
   HubChildFormData,
 } from "~/components/NewAction/steps";
 import {
   SIMPLE_TRANSFERS_FACTORY,
-  SIMPLE_ACTIONS_FACTORY,
+  ARBITRARY_ACTIONS_FACTORY,
   ALLOWANCE_CLAIMOR_FACTORY,
   CAPPED_TOKEN_TRANSFERS_HUB_FACTORY,
   CANON_GUARD_REGISTRY,
@@ -179,18 +179,19 @@ export function useTransactionExecutor() {
   );
 
   /**
-   * Execute the Deploy Contract step for SimpleActions
-   * Calls SimpleActionsFactory.createSimpleActions() and returns the deployed address
+   * Execute the Deploy Contract step for ArbitraryActions
+   * Calls ArbitraryActionsFactory.createArbitraryActions() and returns the deployed address
    */
-  const executeDeploySimpleAction = useCallback(
-    async (formData: SimpleActionFormData): Promise<DeployResult | null> => {
+  const executeDeployArbitraryAction = useCallback(
+    async (formData: ArbitraryActionFormData): Promise<DeployResult | null> => {
       setStatus("pending");
       setError(null);
       setTxHash(null);
 
       try {
-        // Build array of SimpleAction structs from form data
-        const simpleActions = formData.actions.map((action) => {
+        // Build array of ArbitraryAction structs from form data
+        // Signature is now optional - pass empty string if not provided
+        const arbitraryActions = formData.actions.map((action) => {
           // Parse value - handle empty/undefined as 0
           let valueWei: bigint;
           if (!action.value || action.value.trim() === "") {
@@ -207,20 +208,20 @@ export function useTransactionExecutor() {
 
           return {
             target: action.target as Address,
-            signature: action.signature,
-            data: (action.data || "0x") as Hex,
+            signature: action.signature || "", // Optional signature
+            data: (action.data || "0x") as Hex, // Full calldata including selector
             value: valueWei,
           };
         });
 
-        console.log("[useTransactionExecutor] Deploying SimpleActions:", simpleActions);
+        console.log("[useTransactionExecutor] Deploying ArbitraryActions:", arbitraryActions);
 
         // Execute the contract write
         const hash = await writeContractAsync({
-          address: SIMPLE_ACTIONS_FACTORY,
-          abi: simpleActionFactoryAbi,
-          functionName: "createSimpleActions",
-          args: [simpleActions],
+          address: ARBITRARY_ACTIONS_FACTORY,
+          abi: arbitraryActionsFactoryAbi,
+          functionName: "createArbitraryActions",
+          args: [arbitraryActions],
         });
 
         setTxHash(hash);
@@ -233,23 +234,23 @@ export function useTransactionExecutor() {
           throw new Error("Transaction reverted");
         }
 
-        // Parse the SimpleActionsCreated event to get the deployed address
-        console.log("[useTransactionExecutor] Parsing SimpleActions logs:", receipt.logs);
-        const deployedAddress = parseSimpleActionsAddress(receipt.logs);
+        // Parse the ArbitraryActionsCreated event to get the deployed address
+        console.log("[useTransactionExecutor] Parsing ArbitraryActions logs:", receipt.logs);
+        const deployedAddress = parseArbitraryActionsAddress(receipt.logs);
 
         if (!deployedAddress) {
           console.error("[useTransactionExecutor] Failed to parse deployed address from logs");
           throw new Error("Could not find deployed address in transaction logs");
         }
 
-        console.log("[useTransactionExecutor] Deploy SimpleAction successful:", { txHash: hash, deployedAddress });
+        console.log("[useTransactionExecutor] Deploy ArbitraryAction successful:", { txHash: hash, deployedAddress });
         setStatus("success");
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
-        console.error("Deploy SimpleAction failed:", error);
+        console.error("Deploy ArbitraryAction failed:", error);
         return null;
       }
     },
@@ -920,7 +921,7 @@ export function useTransactionExecutor() {
 
     // Actions
     executeDeployTransfer,
-    executeDeploySimpleAction,
+    executeDeployArbitraryAction,
     executeDeployClaimAllowance,
     executeDeployHubChild,
     executeDeployCappedTransferHub,
@@ -991,23 +992,23 @@ function parsePreApprovalAddress(
 }
 
 /**
- * Parse the deployed SimpleActions address from transaction logs
- * Looks for the SimpleActionsCreated event
+ * Parse the deployed ArbitraryActions address from transaction logs
+ * Looks for the ArbitraryActionsCreated event
  */
-function parseSimpleActionsAddress(
+function parseArbitraryActionsAddress(
   logs: readonly { data: `0x${string}`; topics: readonly `0x${string}`[] }[],
 ): Address | null {
   for (const log of logs) {
     try {
       const decoded = decodeEventLog({
-        abi: simpleActionFactoryAbi,
+        abi: arbitraryActionsFactoryAbi,
         data: log.data,
         topics: log.topics,
       });
 
-      if (decoded.eventName === "SimpleActionsCreated") {
-        // The event has: SimpleActionsCreated(address indexed _simpleActions)
-        return (decoded.args as { _simpleActions: Address })._simpleActions;
+      if (decoded.eventName === "ArbitraryActionsCreated") {
+        // The event has: ArbitraryActionsCreated(address indexed _arbitraryActions)
+        return (decoded.args as { _arbitraryActions: Address })._arbitraryActions;
       }
     } catch {
       // Not the event we're looking for, continue

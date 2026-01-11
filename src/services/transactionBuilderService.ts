@@ -10,7 +10,7 @@
 import { Address, Hex, encodeFunctionData, parseUnits } from "viem";
 import {
   simpleTransfersFactoryAbi,
-  simpleActionFactoryAbi,
+  arbitraryActionsFactoryAbi,
   allowanceClaimorFactoryAbi,
   cappedTokenTransfersHubFactoryAbi,
   canonGuardRegistryAbi,
@@ -23,14 +23,14 @@ import {
   CANON_GUARD_REGISTRY,
   PRE_APPROVE_ACTION_FACTORY,
   SIMPLE_TRANSFERS_FACTORY,
-  SIMPLE_ACTIONS_FACTORY,
+  ARBITRARY_ACTIONS_FACTORY,
   ALLOWANCE_CLAIMOR_FACTORY,
   CAPPED_TOKEN_TRANSFERS_HUB_FACTORY,
 } from "../constants/canonGuard";
 import { EPOCH_TIME_MULTIPLIERS } from "../utils/timeUnits";
 import type {
   TransferFormData,
-  SimpleActionFormData,
+  ArbitraryActionFormData,
   ClaimAllowanceFormData,
   CappedTransferHubFormData,
   HubChildFormData,
@@ -233,69 +233,80 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
   return { steps };
 }
 
-// Options for building Simple Action transaction steps
-export interface BuildSimpleActionStepsOptions {
-  formData: SimpleActionFormData;
+// Options for building Arbitrary Action transaction steps
+export interface BuildArbitraryActionStepsOptions {
+  formData: ArbitraryActionFormData;
   safeAddress: Address;
   guardAddress: Address;
   proposeTransaction: boolean;
   proposePreApproval: boolean;
   approvalDurationSeconds?: bigint;
+  skipRegistry?: boolean; // Skip saving to Canon List (e.g., for WalletConnect transactions)
 }
 
 /**
- * Builds the list of transaction steps for Simple Action
+ * Builds the list of transaction steps for Arbitrary Action
  */
-export function buildSimpleActionSteps(options: BuildSimpleActionStepsOptions): TransactionStepsResult {
-  const { formData, safeAddress, guardAddress, proposeTransaction, proposePreApproval, approvalDurationSeconds } =
-    options;
+export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOptions): TransactionStepsResult {
+  const {
+    formData,
+    safeAddress,
+    guardAddress,
+    proposeTransaction,
+    proposePreApproval,
+    approvalDurationSeconds,
+    skipRegistry,
+  } = options;
 
   const preApprovalDuration = approvalDurationSeconds ?? DEFAULT_PRE_APPROVAL_DURATION;
   const steps: TransactionStep[] = [];
 
-  // Build array of simple actions from form data
-  const simpleActions = formData.actions.map((action) => ({
+  // Build array of arbitrary actions from form data
+  // Signature is now optional - pass empty string if not provided
+  const arbitraryActions = formData.actions.map((action) => ({
     target: action.target as Address,
-    signature: action.signature,
-    data: (action.data || "0x") as Hex,
+    signature: action.signature || "", // Optional signature
+    data: (action.data || "0x") as Hex, // Full calldata including selector
     value: action.value && action.value.trim() !== "" ? BigInt(action.value) : 0n,
   }));
 
-  // 1. MANDATORY: Deploy Simple Actions
+  // 1. MANDATORY: Deploy Arbitrary Actions
   const deployData = encodeFunctionData({
-    abi: simpleActionFactoryAbi,
-    functionName: "createSimpleActions",
-    args: [simpleActions],
+    abi: arbitraryActionsFactoryAbi,
+    functionName: "createArbitraryActions",
+    args: [arbitraryActions],
   });
 
   steps.push({
-    id: "deploy-simple-action",
-    title: "Deploy Simple Action",
-    description: "Deploy the simple action builder contract",
+    id: "deploy-arbitrary-action",
+    title: "Deploy Arbitrary Action",
+    description: "Deploy the arbitrary action builder contract",
     status: "pending",
-    to: SIMPLE_ACTIONS_FACTORY,
+    to: ARBITRARY_ACTIONS_FACTORY,
     data: deployData,
   });
 
-  // 2. MANDATORY: Record in Registry
-  const recordData = encodeFunctionData({
-    abi: canonGuardRegistryAbi,
-    functionName: "record",
-    args: [
-      guardAddress,
-      ["0x0000000000000000000000000000000000000000" as Address],
-      [formData.title || "Untitled Simple Action"],
-    ],
-  });
+  // 2. OPTIONAL: Record in Registry (skipped for WalletConnect transactions)
+  if (!skipRegistry) {
+    const recordData = encodeFunctionData({
+      abi: canonGuardRegistryAbi,
+      functionName: "record",
+      args: [
+        guardAddress,
+        ["0x0000000000000000000000000000000000000000" as Address],
+        [formData.title || "Untitled Arbitrary Action"],
+      ],
+    });
 
-  steps.push({
-    id: "record-registry",
-    title: "Save to Canon List",
-    description: "Save the action for future use",
-    status: "pending",
-    to: CANON_GUARD_REGISTRY,
-    data: recordData,
-  });
+    steps.push({
+      id: "record-registry",
+      title: "Save to Canon List",
+      description: "Save the action for future use",
+      status: "pending",
+      to: CANON_GUARD_REGISTRY,
+      data: recordData,
+    });
+  }
 
   // 3. OPTIONAL: Propose Transaction (queue + sign)
   if (proposeTransaction) {

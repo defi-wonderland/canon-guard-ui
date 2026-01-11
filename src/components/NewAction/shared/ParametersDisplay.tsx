@@ -1,31 +1,31 @@
 import { Box, Typography, styled } from "@mui/material";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import type { TransferFormData, SimpleActionFormData, CappedTransferHubFormData } from "../steps";
+import type { TransferFormData, ArbitraryActionFormData, CappedTransferHubFormData } from "../steps";
 
 // Type guard to detect hub form data
 export const isHubFormData = (
-  data: TransferFormData | SimpleActionFormData | CappedTransferHubFormData,
+  data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
 ): data is CappedTransferHubFormData => {
   return "tokens" in data && Array.isArray(data.tokens) && "epochLength" in data;
 };
 
 // Type guard to detect transfer form data
 export const isTransferFormData = (
-  data: TransferFormData | SimpleActionFormData | CappedTransferHubFormData,
+  data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
 ): data is TransferFormData => {
   return "transfers" in data && Array.isArray(data.transfers);
 };
 
-// Type guard to detect simple action form data
-export const isSimpleActionFormData = (
-  data: TransferFormData | SimpleActionFormData | CappedTransferHubFormData,
-): data is SimpleActionFormData => {
+// Type guard to detect arbitrary action form data
+export const isArbitraryActionFormData = (
+  data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
+): data is ArbitraryActionFormData => {
   return "actions" in data && Array.isArray(data.actions);
 };
 
 interface ParametersDisplayProps {
-  formData: TransferFormData | SimpleActionFormData | CappedTransferHubFormData;
+  formData: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData;
   onCopy?: (value: string) => void;
 }
 
@@ -70,8 +70,8 @@ export const ParametersDisplay = ({ formData }: ParametersDisplayProps) => {
     );
   }
 
-  if (isSimpleActionFormData(formData)) {
-    // Simple Action parameters (multiple actions)
+  if (isArbitraryActionFormData(formData)) {
+    // Arbitrary Action parameters (multiple actions)
     return (
       <ParametersContent>
         {formData.actions.map((action, index) => (

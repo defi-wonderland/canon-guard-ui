@@ -12,7 +12,7 @@ interface FactoryOption {
 }
 
 const FACTORY_OPTIONS: FactoryOption[] = [
-  { id: "simple-action", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.SIMPLE_ACTIONS]! },
+  { id: "arbitrary-action", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.ARBITRARY_ACTIONS]! },
   { id: "transfer", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.SIMPLE_TRANSFERS]! },
   { id: "claim-allowance", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.ALLOWANCE_CLAIMOR]! },
 ];

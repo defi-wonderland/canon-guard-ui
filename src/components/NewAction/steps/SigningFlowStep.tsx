@@ -18,12 +18,12 @@ import { useWallet, useStateContext, useNavigateWithParams } from "~/hooks";
 import type { QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
 import { Breadcrumb, ParametersDisplay } from "../shared";
-import type { TransferFormData, SimpleActionFormData, CappedTransferHubFormData } from "./index";
+import type { TransferFormData, ArbitraryActionFormData, CappedTransferHubFormData } from "./index";
 
 interface SigningFlowStepProps {
   steps: TransactionStep[];
   currentStepIndex: number;
-  formData?: TransferFormData | SimpleActionFormData | CappedTransferHubFormData;
+  formData?: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData;
   onBack: () => void;
   onNavigateToCreate: () => void;
   onSimulateSign: (nonce?: number) => void;
@@ -375,7 +375,7 @@ export const SigningFlowStep = ({
                     </ToggleContent>
                   </ParametersToggle>
 
-                  {parametersExpanded && <ParametersDisplay formData={formData} onCopy={handleCopy} />}
+                  {parametersExpanded && <ParametersDisplay formData={formData} />}
                 </>
               ) : (
                 <ParametersToggle>

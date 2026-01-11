@@ -411,17 +411,18 @@ export const preApproveActionAbi = [
   },
 ] as const;
 
-// Custom SimpleActionsFactory ABI with createSimpleAction (singular), createSimpleActions (plural), and event
-export const simpleActionFactoryAbi = [
-  // Function: createSimpleAction - deploys a new SimpleActions contract with a single action
+// ArbitraryActionsFactory ABI with createArbitraryAction (singular), createArbitraryActions (plural), and event
+// Signature is now optional - pass empty string if not provided
+export const arbitraryActionsFactoryAbi = [
+  // Function: createArbitraryAction - deploys a new ArbitraryActions contract with a single action
   {
     type: "function",
-    name: "createSimpleAction",
+    name: "createArbitraryAction",
     inputs: [
       {
-        name: "_simpleAction",
+        name: "_arbitraryAction",
         type: "tuple",
-        internalType: "struct ISimpleActions.SimpleAction",
+        internalType: "struct IArbitraryActions.ArbitraryAction",
         components: [
           { name: "target", type: "address", internalType: "address" },
           { name: "signature", type: "string", internalType: "string" },
@@ -430,18 +431,18 @@ export const simpleActionFactoryAbi = [
         ],
       },
     ],
-    outputs: [{ name: "_simpleActions", type: "address", internalType: "address" }],
+    outputs: [{ name: "_arbitraryActions", type: "address", internalType: "address" }],
     stateMutability: "nonpayable",
   },
-  // Function: createSimpleActions (plural) - deploys a new SimpleActions contract with multiple actions
+  // Function: createArbitraryActions (plural) - deploys a new ArbitraryActions contract with multiple actions
   {
     type: "function",
-    name: "createSimpleActions",
+    name: "createArbitraryActions",
     inputs: [
       {
-        name: "_smplActions",
+        name: "_arbActions",
         type: "tuple[]",
-        internalType: "struct ISimpleActions.SimpleAction[]",
+        internalType: "struct IArbitraryActions.ArbitraryAction[]",
         components: [
           { name: "target", type: "address", internalType: "address" },
           { name: "signature", type: "string", internalType: "string" },
@@ -450,14 +451,14 @@ export const simpleActionFactoryAbi = [
         ],
       },
     ],
-    outputs: [{ name: "_simpleActions", type: "address", internalType: "address" }],
+    outputs: [{ name: "_arbitraryActions", type: "address", internalType: "address" }],
     stateMutability: "nonpayable",
   },
-  // Event: SimpleActionsCreated - emitted when a SimpleActions contract is deployed
+  // Event: ArbitraryActionsCreated - emitted when an ArbitraryActions contract is deployed
   {
     type: "event",
-    name: "SimpleActionsCreated",
-    inputs: [{ name: "_simpleActions", type: "address", indexed: true, internalType: "address" }],
+    name: "ArbitraryActionsCreated",
+    inputs: [{ name: "_arbitraryActions", type: "address", indexed: true, internalType: "address" }],
     anonymous: false,
   },
 ] as const;

@@ -5,7 +5,7 @@ import { ActionFactoryType, HubFactoryType } from "~/types/canon-guard";
 export const FACTORY_DISPLAY_NAMES: Partial<Record<ActionFactoryType, string>> = {
   [ActionFactoryType.SIMPLE_TRANSFERS]: "Transfer",
   [ActionFactoryType.CAPPED_TOKEN_TRANSFERS]: "Capped Transfer",
-  [ActionFactoryType.SIMPLE_ACTIONS]: "Arbitrary Action",
+  [ActionFactoryType.ARBITRARY_ACTIONS]: "Arbitrary Action",
   [ActionFactoryType.APPROVE_ACTION]: "Pre-Approve",
   [ActionFactoryType.ALLOWANCE_CLAIMOR]: "Claim Allowance",
   [ActionFactoryType.CHANGE_SAFE_GUARD]: "Change Guard",

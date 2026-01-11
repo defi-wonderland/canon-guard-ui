@@ -6,7 +6,7 @@ import type { EpochTimeUnit } from "~/utils/timeUnits";
 
 export { SelectFactoryStep } from "./SelectFactoryStep";
 export { TransferFormStep } from "./TransferFormStep";
-export { SimpleActionFormStep } from "./SimpleActionFormStep";
+export { ArbitraryActionFormStep } from "./ArbitraryActionFormStep";
 export { ClaimAllowanceFormStep } from "./ClaimAllowanceFormStep";
 export { ReviewDeployStep } from "./ReviewDeployStep";
 export { SigningFlowStep } from "./SigningFlowStep";
@@ -28,7 +28,7 @@ export type TransferItem = {
   amount: string;
 };
 
-export type SimpleActionItem = {
+export type ArbitraryActionItem = {
   target: string;
   signature: string;
   data: string;
@@ -41,9 +41,9 @@ export type TransferFormData = {
   transfers: TransferItem[];
 };
 
-export type SimpleActionFormData = {
+export type ArbitraryActionFormData = {
   title: string;
-  actions: SimpleActionItem[];
+  actions: ArbitraryActionItem[];
 };
 
 export type ClaimAllowanceFormData = {
@@ -54,7 +54,7 @@ export type ClaimAllowanceFormData = {
 };
 
 export type FactoryType =
-  | "simple-action"
+  | "arbitrary-action"
   | "transfer"
   | "claim-allowance"
   | "pre-approve"

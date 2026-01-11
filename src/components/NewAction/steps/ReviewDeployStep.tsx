@@ -12,10 +12,10 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { humanizeDuration } from "~/hooks/useCanonGuardConfig";
 import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
 import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
-import type { TransferFormData, SimpleActionFormData } from "./index";
+import type { TransferFormData, ArbitraryActionFormData } from "./index";
 
 // Type guard to detect transfer form data
-const isTransferFormData = (data: TransferFormData | SimpleActionFormData): data is TransferFormData => {
+const isTransferFormData = (data: TransferFormData | ArbitraryActionFormData): data is TransferFormData => {
   return "transfers" in data;
 };
 
@@ -28,7 +28,7 @@ const TOOLTIP_PROPOSE_PREAPPROVAL =
   "Request signatures from Safe signers. This transaction will follow the fast-path with a 1 hour delay.";
 
 interface ReviewDeployStepProps {
-  formData: TransferFormData | SimpleActionFormData;
+  formData: TransferFormData | ArbitraryActionFormData;
   guardAddress: Address;
   chainId: number;
   onBack: () => void;

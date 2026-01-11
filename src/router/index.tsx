@@ -30,7 +30,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: null }, // Select factory
               { path: "transfer", element: null }, // Transfer form (review is internal state)
-              { path: "simple-action", element: null }, // Simple action form
+              { path: "arbitrary-action", element: null }, // Arbitrary action form
               { path: "claim-allowance", element: null }, // Claim allowance form
               { path: "turn-off-emergency", element: null }, // Turn off emergency mode signing flow
             ],
