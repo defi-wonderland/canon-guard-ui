@@ -10,6 +10,9 @@
 
 import { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
+import { getEnv } from "./env";
+
+const { IS_PLAYWRIGHT } = getEnv();
 
 /**
  * Enum of supported chain IDs for type safety
@@ -49,7 +52,9 @@ export const SUPPORTED_CHAINS: Record<SupportedChainId, ChainConfig> = {
     name: "Ethereum Mainnet",
     shortName: "Ethereum",
     chain: mainnet,
-    rpcUrl: getRpcUrl("VITE_RPC_ETHEREUM", "https://eth-mainnet.g.alchemy.com/v2/J9qI8VqN68cHHr4-b4wB2"),
+    rpcUrl: IS_PLAYWRIGHT
+      ? "http://127.0.0.1:8546"
+      : getRpcUrl("VITE_RPC_ETHEREUM", "https://eth-mainnet.g.alchemy.com/v2/J9qI8VqN68cHHr4-b4wB2"),
     blockExplorerUrl: "https://etherscan.io",
     iconColor: "#627EEA",
   },
@@ -58,7 +63,9 @@ export const SUPPORTED_CHAINS: Record<SupportedChainId, ChainConfig> = {
     name: "OP Mainnet",
     shortName: "OP Mainnet",
     chain: optimism,
-    rpcUrl: getRpcUrl("VITE_RPC_OPTIMISM", "https://opt-mainnet.g.alchemy.com/v2/J9qI8VqN68cHHr4-b4wB2"),
+    rpcUrl: IS_PLAYWRIGHT
+      ? "http://127.0.0.1:8545"
+      : getRpcUrl("VITE_RPC_OPTIMISM", "https://opt-mainnet.g.alchemy.com/v2/J9qI8VqN68cHHr4-b4wB2"),
     blockExplorerUrl: "https://optimistic.etherscan.io",
     iconColor: "#FF0420",
   },

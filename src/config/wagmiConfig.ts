@@ -9,19 +9,15 @@ import { e2eWallet } from "./e2eConnector";
 const { PROJECT_ID, IS_PLAYWRIGHT } = getConfig().env;
 
 const getWallets = () => {
-  // E2E testing mode - only show test wallet
   if (IS_PLAYWRIGHT) {
-    return [e2eWallet()];
+    return [e2eWallet];
   }
-
-  // Production mode - show real wallets
-  const wallets = [injectedWallet];
 
   if (PROJECT_ID) {
-    wallets.push(rainbowWallet, walletConnectWallet);
+    return [injectedWallet, rainbowWallet, walletConnectWallet];
+  } else {
+    return [injectedWallet];
   }
-
-  return wallets;
 };
 
 const connectors = connectorsForWallets(
@@ -44,8 +40,12 @@ export const config = createConfig({
     storage: cookieStorage,
   }),
   transports: {
-    [mainnet.id]: http(SUPPORTED_CHAINS[SupportedChainId.ETHEREUM].rpcUrl),
-    [optimism.id]: http(SUPPORTED_CHAINS[SupportedChainId.OPTIMISM].rpcUrl),
+    [mainnet.id]: IS_PLAYWRIGHT
+      ? http("http://127.0.0.1:8546")
+      : http(SUPPORTED_CHAINS[SupportedChainId.ETHEREUM].rpcUrl),
+    [optimism.id]: IS_PLAYWRIGHT
+      ? http("http://127.0.0.1:8545")
+      : http(SUPPORTED_CHAINS[SupportedChainId.OPTIMISM].rpcUrl),
   },
   batch: { multicall: true },
   connectors,

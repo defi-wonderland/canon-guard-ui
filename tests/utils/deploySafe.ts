@@ -1,30 +1,23 @@
-import {
-  createPublicClient,
-  createWalletClient,
-  http,
-  type Address,
-  type Hash,
-  encodeFunctionData,
-} from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
-import { optimism } from 'viem/chains';
-import { safeAbi } from '../../src/abis/safe';
-import { safeProxyFactoryAbi } from '../../src/abis/safeProxyFactory';
+import { createPublicClient, createWalletClient, http, type Address, type Hash, encodeFunctionData } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { optimism } from "viem/chains";
+import { safeAbi } from "../../src/abis/safe";
+import { safeProxyFactoryAbi } from "../../src/abis/safeProxyFactory";
 
 /**
  * Safe v1.4.1 deployment addresses (same across all EVM chains)
  */
 export const SAFE_ADDRESSES = {
-  SAFE_PROXY_FACTORY: '0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67' as Address,
-  SAFE_SINGLETON: '0x41675C099F32341bf84BFc5382aF534df5C7461a' as Address,
-  FALLBACK_HANDLER: '0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4' as Address,
+  SAFE_PROXY_FACTORY: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67" as Address,
+  SAFE_SINGLETON: "0x41675C099F32341bf84BFc5382aF534df5C7461a" as Address,
+  FALLBACK_HANDLER: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4" as Address,
 } as const;
 
 /**
  * Anvil's well-known private key for account 0
  * Public address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
  */
-const ANVIL_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' as const;
+const ANVIL_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
 
 /**
  * Configuration for deploying a Safe
@@ -78,7 +71,7 @@ export interface DeploySafeResult {
  */
 export async function deploySafe(options: DeploySafeOptions = {}): Promise<DeploySafeResult> {
   const {
-    rpcUrl = 'http://127.0.0.1:8545',
+    rpcUrl = "http://127.0.0.1:8545",
     owners: providedOwners,
     threshold = 1,
     saltNonce = BigInt(Date.now()),
@@ -105,11 +98,11 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
   } else {
     // Fetch accounts from Anvil
     const accounts = await publicClient.request({
-      method: 'eth_accounts',
+      method: "eth_accounts",
       params: [],
     });
     if (!accounts || accounts.length === 0) {
-      throw new Error('No accounts available from Anvil');
+      throw new Error("No accounts available from Anvil");
     }
     owners = [accounts[0] as Address];
   }
@@ -118,16 +111,16 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
   // setup(address[],uint256,address,bytes,address,address,uint256,address)
   const setupData = encodeFunctionData({
     abi: safeAbi,
-    functionName: 'setup',
+    functionName: "setup",
     args: [
       owners, // _owners
       BigInt(threshold), // _threshold
-      '0x0000000000000000000000000000000000000000' as Address, // to (no delegate call)
-      '0x' as `0x${string}`, // data (empty)
+      "0x0000000000000000000000000000000000000000" as Address, // to (no delegate call)
+      "0x" as `0x${string}`, // data (empty)
       SAFE_ADDRESSES.FALLBACK_HANDLER, // fallbackHandler
-      '0x0000000000000000000000000000000000000000' as Address, // paymentToken (native)
+      "0x0000000000000000000000000000000000000000" as Address, // paymentToken (native)
       0n, // payment
-      '0x0000000000000000000000000000000000000000' as Address, // paymentReceiver
+      "0x0000000000000000000000000000000000000000" as Address, // paymentReceiver
     ],
   });
 
@@ -135,7 +128,7 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
   const { result: safeAddress, request } = await publicClient.simulateContract({
     address: SAFE_ADDRESSES.SAFE_PROXY_FACTORY,
     abi: safeProxyFactoryAbi,
-    functionName: 'createProxyWithNonce',
+    functionName: "createProxyWithNonce",
     args: [SAFE_ADDRESSES.SAFE_SINGLETON, setupData, saltNonce],
     account,
   });
@@ -151,26 +144,22 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
     publicClient.readContract({
       address: safeAddress,
       abi: safeAbi,
-      functionName: 'getOwners',
+      functionName: "getOwners",
     }),
     publicClient.readContract({
       address: safeAddress,
       abi: safeAbi,
-      functionName: 'getThreshold',
+      functionName: "getThreshold",
     }),
   ]);
 
   // Verification checks
   if (deployedOwners.length !== owners.length) {
-    throw new Error(
-      `Owner count mismatch: expected ${owners.length}, got ${deployedOwners.length}`
-    );
+    throw new Error(`Owner count mismatch: expected ${owners.length}, got ${deployedOwners.length}`);
   }
 
   if (Number(deployedThreshold) !== threshold) {
-    throw new Error(
-      `Threshold mismatch: expected ${threshold}, got ${deployedThreshold}`
-    );
+    throw new Error(`Threshold mismatch: expected ${threshold}, got ${deployedThreshold}`);
   }
 
   return {

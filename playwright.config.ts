@@ -1,34 +1,37 @@
-import { defineConfig, devices } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
+
+  // Global setup: Deploy Safe once before all tests
+  globalSetup: "./tests/global-setup.ts",
 
   // Test execution settings
-  fullyParallel: true, // Enable parallel execution (Walletless supports it!)
+  fullyParallel: true, // Safe is deployed once in global setup, tests can run in parallel
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined, // Increased from 1 (Synpress limitation removed)
+  workers: process.env.CI ? 2 : undefined, // Parallel execution supported
 
   // Reporting
-  reporter: process.env.CI ? 'github' : 'html',
+  reporter: process.env.CI ? "github" : "html",
 
   // Test settings
   timeout: 60000, // 60 second timeout per test
 
   use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    baseURL: "http://localhost:3000",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
 
     // No need for special browser flags with Walletless
     actionTimeout: 10000,
@@ -37,8 +40,8 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
     // Optional: Add more browsers (Walletless supports all of them)
     // {
@@ -51,22 +54,22 @@ export default defineConfig({
   webServer: [
     // 1. Start Anvil fork of Optimism
     {
-      command: 'pnpm test:fork:op',
-      url: 'http://127.0.0.1:8545',
+      command: "pnpm test:fork:op",
+      url: "http://127.0.0.1:8545",
       reuseExistingServer: !process.env.CI,
       timeout: 120000, // 2 minutes for fork to initialize
-      stdout: 'pipe',
-      stderr: 'pipe',
+      stdout: "pipe",
+      stderr: "pipe",
     },
     // 2. Start the application dev server
     {
-      command: 'pnpm run dev',
-      url: 'http://localhost:3000',
+      command: "pnpm run dev",
+      url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
       env: {
-        VITE_PUBLIC_IS_PLAYWRIGHT: 'true', // Enable E2E wallet
-        RPC_URL_TESTING: 'http://127.0.0.1:8545',
+        VITE_PUBLIC_IS_PLAYWRIGHT: "true", // Enable E2E wallet
+        RPC_URL_TESTING: "http://127.0.0.1:8545",
       },
     },
   ],
