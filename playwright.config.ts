@@ -1,84 +1,73 @@
-import dotenv from "@dotenvx/dotenvx";
-import { defineConfig, devices } from "@playwright/test";
-import path from "path";
+import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables from .env file
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
+// Load environment variables
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 export default defineConfig({
-  testDir: "./tests",
-  /* Run tests in files in parallel - disabled for Synpress compatibility */
-  fullyParallel: false,
-  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  testDir: './tests',
+
+  // Test execution settings
+  fullyParallel: true, // Enable parallel execution (Walletless supports it!)
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Use single worker for Synpress compatibility */
-  workers: 1,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: "html",
-  /* Global test timeout */
-  timeout: 60000,
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  workers: process.env.CI ? 2 : undefined, // Increased from 1 (Synpress limitation removed)
+
+  // Reporting
+  reporter: process.env.CI ? 'github' : 'html',
+
+  // Test settings
+  timeout: 60000, // 60 second timeout per test
+
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: "http://localhost:3000",
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: "on-first-retry",
-
-    /* Screenshot on failure */
-    screenshot: "only-on-failure",
-
-    /* Video on failure */
-    video: "retain-on-failure",
-
-    /* Synpress specific configurations */
-    headless: process.env.HEADLESS !== "false",
-
-    /* Increase timeouts for MetaMask operations */
-    actionTimeout: 30000,
+    // No need for special browser flags with Walletless
+    actionTimeout: 10000,
     navigationTimeout: 30000,
-
-    /* Browser context configurations for better extension support */
-    ignoreHTTPSErrors: true,
-
-    /* Additional Chrome args for better extension compatibility */
-    launchOptions: {
-      args: [
-        "--disable-web-security",
-        "--disable-features=VizDisplayCompositor",
-        "--disable-dev-shm-usage",
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-gpu",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-      ],
-    },
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
-      name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        /* Override headless for Synpress */
-        headless: process.env.HEADLESS !== "false",
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Optional: Add more browsers (Walletless supports all of them)
+    // {
+    //   name: 'firefox',
+    //   use: { ...devices['Desktop Firefox'] },
+    // },
+  ],
+
+  // Start services before running tests
+  webServer: [
+    // 1. Start Anvil fork of Optimism
+    {
+      command: 'pnpm test:fork:op',
+      url: 'http://127.0.0.1:8545',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000, // 2 minutes for fork to initialize
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+    // 2. Start the application dev server
+    {
+      command: 'pnpm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+      env: {
+        VITE_PUBLIC_IS_PLAYWRIGHT: 'true', // Enable E2E wallet
+        RPC_URL_TESTING: 'http://127.0.0.1:8545',
       },
     },
   ],
-
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: "pnpm dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
 });

@@ -4,15 +4,24 @@ import { createConfig, http, cookieStorage, createStorage } from "wagmi";
 import { mainnet, optimism } from "wagmi/chains";
 import { getConfig } from "~/config";
 import { SUPPORTED_CHAINS, SupportedChainId } from "~/config/chains";
+import { e2eWallet } from "./e2eConnector";
 
-const { PROJECT_ID } = getConfig().env;
+const { PROJECT_ID, IS_PLAYWRIGHT } = getConfig().env;
 
 const getWallets = () => {
-  if (PROJECT_ID) {
-    return [injectedWallet, rainbowWallet, walletConnectWallet];
-  } else {
-    return [injectedWallet];
+  // E2E testing mode - only show test wallet
+  if (IS_PLAYWRIGHT) {
+    return [e2eWallet()];
   }
+
+  // Production mode - show real wallets
+  const wallets = [injectedWallet];
+
+  if (PROJECT_ID) {
+    wallets.push(rainbowWallet, walletConnectWallet);
+  }
+
+  return wallets;
 };
 
 const connectors = connectorsForWallets(
@@ -30,7 +39,7 @@ const connectors = connectorsForWallets(
 
 export const config = createConfig({
   chains: [mainnet, optimism],
-  ssr: true,
+  ssr: false, // Client-side only app
   storage: createStorage({
     storage: cookieStorage,
   }),

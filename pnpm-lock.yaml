@@ -90,6 +90,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: 4.5.1
         version: 4.5.1(vite@6.3.5(@types/node@24.0.1)(yaml@2.8.2))
+      '@wonderland/walletless':
+        specifier: ^1.1.0
+        version: 1.1.0(viem@2.30.6(bufferutil@4.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(wagmi@2.15.5(@tanstack/query-core@5.80.2)(@tanstack/react-query@5.80.3(react@19.1.0))(@types/react@19.1.6)(bufferutil@4.1.0)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.30.6(bufferutil@4.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(zod@3.22.4))
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       eslint:
         specifier: 9.28.0
         version: 9.28.0
@@ -1421,8 +1427,8 @@ packages:
     resolution: {integrity: sha512-6ORQfwtEJYpalCeVO21L4XXGSdbEMfyp2hEv6cP82afKXSwvse6d3sdelgaPWUxHIsFRkWvHDdzh8IyyKHZKxw==}
     engines: {node: '>=16'}
 
-  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e2509ba4968f97c427f2657996a0711b7a4cf':
-    resolution: {commit: b75e2509ba4968f97c427f2657996a0711b7a4cf, repo: git@github.com:safe-global/safe-smart-account.git, type: git}
+  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e250':
+    resolution: {commit: b75e250, repo: git@github.com:safe-global/safe-smart-account.git, type: git}
     version: 1.4.1-build.0
 
   '@scure/base@1.1.9':
@@ -1809,6 +1815,13 @@ packages:
 
   '@walletconnect/window-metadata@1.0.1':
     resolution: {integrity: sha512-9koTqyGrM2cqFRW517BPY/iEtUDx2r1+Pwwu5m7sJ7ka79wi3EyqhqcICk/yDmv6jAS1rjKgTKXlEhanYjijcA==}
+
+  '@wonderland/walletless@1.1.0':
+    resolution: {integrity: sha512-P00T9rYqKzwqIOigiURtcZ0Vh0x1kqy/VXQjpPUPxrv2GUrmH9cuAKCjnfBl+VBF0+JkXr0EEtWEJhy+kUvVOw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      viem: '>=2.0.0'
+      wagmi: '>=2.0.0'
 
   abitype@1.0.0:
     resolution: {integrity: sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==}
@@ -2320,6 +2333,10 @@ packages:
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
+    engines: {node: '>=12'}
+
+  dotenv@17.2.3:
+    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
     engines: {node: '>=12'}
 
   dunder-proto@1.0.1:
@@ -4867,7 +4884,7 @@ snapshots:
 
   '@defi-wonderland/canon-guard-interfaces@0.0.1':
     dependencies:
-      '@safe-global/safe-contracts': '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e2509ba4968f97c427f2657996a0711b7a4cf'
+      '@safe-global/safe-contracts': '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e250'
       solady: https://codeload.github.com/vectorized/solady/tar.gz/701406e
 
   '@defi-wonderland/crypto-husky-checks@1.5.6': {}
@@ -6265,7 +6282,7 @@ snapshots:
 
   '@safe-global/safe-gateway-typescript-sdk@3.23.1': {}
 
-  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e2509ba4968f97c427f2657996a0711b7a4cf': {}
+  '@safe-global/safe-smart-account@git+https://git@github.com:safe-global/safe-smart-account.git#b75e250': {}
 
   '@scure/base@1.1.9': {}
 
@@ -7441,6 +7458,11 @@ snapshots:
       '@walletconnect/window-getters': 1.0.1
       tslib: 1.14.1
 
+  '@wonderland/walletless@1.1.0(viem@2.30.6(bufferutil@4.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(wagmi@2.15.5(@tanstack/query-core@5.80.2)(@tanstack/react-query@5.80.3(react@19.1.0))(@types/react@19.1.6)(bufferutil@4.1.0)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.30.6(bufferutil@4.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(zod@3.22.4))':
+    dependencies:
+      viem: 2.30.6(bufferutil@4.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4)
+      wagmi: 2.15.5(@tanstack/query-core@5.80.2)(@tanstack/react-query@5.80.3(react@19.1.0))(@types/react@19.1.6)(bufferutil@4.1.0)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.30.6(bufferutil@4.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.22.4))(zod@3.22.4)
+
   abitype@1.0.0(typescript@5.8.3)(zod@3.22.4):
     optionalDependencies:
       typescript: 5.8.3
@@ -7906,6 +7928,8 @@ snapshots:
       csstype: 3.2.3
 
   dotenv@16.6.1: {}
+
+  dotenv@17.2.3: {}
 
   dunder-proto@1.0.1:
     dependencies:
