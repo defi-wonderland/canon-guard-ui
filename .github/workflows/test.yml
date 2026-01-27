@@ -54,24 +54,9 @@ jobs:
           touch .env
           echo "VITE_PUBLIC_PROJECT_ID=${{ secrets.VITE_PUBLIC_PROJECT_ID }}" >> .env
           echo "VITE_PUBLIC_ALCHEMY_KEY=${{ secrets.VITE_PUBLIC_ALCHEMY_KEY }}" >> .env
-          echo "PUBLIC_RPC_URL=${{ secrets.PUBLIC_RPC_URL }}" >> .env
-          echo "IS_PLAYWRIGHT='true'" >> .env
-          echo "SEED_PHRASE=${{ secrets.SEED_PHRASE }}" >> .env
-          echo "PASSWORD=${{ secrets.PASSWORD }}" >> .env
-      - name: Build application
-        run: pnpm build
-      - name: Build cache
-        # xvfb-run is needed due to a known issue (https://docs.synpress.io/docs/known-issues#headless-mode-limitations-on-ci)
-        run: xvfb-run pnpm synpress:cache
-        continue-on-error: true
-      - name: Run Sepolia Fork
-        run: |
-          pnpm test:fork:latest &
-          sleep 5
-          echo "Anvil fork started in background"
-      - name: Run E2E tests (headful)
-        # xvfb-run is needed due to a known issue (https://docs.synpress.io/docs/known-issues#headless-mode-limitations-on-ci)
-        run: xvfb-run pnpm playwright:test:headed
+          echo "VITE_PUBLIC_IS_PLAYWRIGHT='true'" >> .env
+      - name: Run E2E tests
+        run: pnpm playwright:test
       - uses: actions/upload-artifact@v4
         if: always()
         with:
