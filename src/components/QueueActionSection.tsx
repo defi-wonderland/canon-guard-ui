@@ -11,7 +11,7 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
-import { SigningFlowStep } from "../NewAction/steps";
+import { SigningFlowStep } from "./NewAction/steps";
 
 interface QueueActionState {
   actionBuilderAddress: Address;
