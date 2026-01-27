@@ -144,7 +144,7 @@ export const CanonGuardConfigProvider = ({ children }: CanonGuardConfigProviderP
         setEmergencyCaller(callerResult.result as Address);
       }
     } catch (err) {
-      console.error("[CanonGuardConfigContext] Failed to fetch config:", err);
+      console.error("[CanonGuardConfigProvider] Failed to fetch config:", err);
       setError(err instanceof Error ? err : new Error("Failed to fetch config"));
     } finally {
       setIsLoading(false);

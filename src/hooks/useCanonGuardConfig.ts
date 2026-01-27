@@ -1,4 +1,4 @@
-import { useCanonGuardConfigContext, CanonGuardConfigState } from "~/contexts";
+import { useCanonGuardConfigContext, CanonGuardConfigState } from "~/providers/CanonGuardConfigProvider";
 
 // Re-export the type for backwards compatibility
 export type CanonGuardConfig = CanonGuardConfigState;
