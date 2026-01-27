@@ -16,7 +16,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
       - name: Create env file
@@ -39,8 +38,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: "pnpm"
+          node-version: lts/*
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
