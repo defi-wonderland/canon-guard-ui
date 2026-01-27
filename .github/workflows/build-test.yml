@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Check for crypto
         uses: defi-wonderland/check-crypto-action@v1
@@ -24,15 +24,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: "21.4"
+          node-version: 22
           registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
 
