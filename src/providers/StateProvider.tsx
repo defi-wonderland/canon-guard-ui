@@ -55,6 +55,7 @@ interface StateProps {
   children: React.ReactElement;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const StateContext = createContext({} as ContextType);
 
 export const StateProvider = ({ children }: StateProps) => {

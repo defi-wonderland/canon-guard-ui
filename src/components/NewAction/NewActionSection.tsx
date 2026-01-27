@@ -1235,6 +1235,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
       preApprovalAddress,
       reviewCheckboxState.approvalDurationSeconds,
       onQueueCountChange,
+      path,
     ],
   );
 

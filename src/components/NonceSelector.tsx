@@ -146,6 +146,7 @@ const ReadOnlyText = styled(Typography)({
  * Build nonce options from queue items
  * When multiple txs exist for same nonce, picks the one with most signatures (tie-breaker: earliest executableAt)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function buildNonceOptions(
   currentNonce: number,
   recommendedNonce: number,
@@ -202,6 +203,7 @@ export function buildNonceOptions(
  * Finds the first available (empty) nonce starting from currentNonce
  * Only considers items with at least 1 signature as "occupied"
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function calculateRecommendedNonce(currentNonce: number, queueItems: QueueItem[]): number {
   // Get set of occupied nonces (only signed items count as occupying a nonce)
   const occupiedNonces = new Set(queueItems.filter((item) => item.approversCount > 0).map((item) => item.nonce));

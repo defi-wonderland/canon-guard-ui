@@ -175,6 +175,7 @@ export const CanonGuardConfigProvider = ({ children }: CanonGuardConfigProviderP
  * Hook to consume Canon Guard configuration from context.
  * All components using this hook share the same state instance.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCanonGuardConfigContext = (): CanonGuardConfigState => {
   const context = useContext(CanonGuardConfigContext);
   if (context === undefined) {

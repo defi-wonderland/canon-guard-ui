@@ -65,6 +65,7 @@ interface WalletConnectContextType {
 
 const WalletConnectContext = createContext<WalletConnectContextType | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useWalletConnect = () => {
   const context = useContext(WalletConnectContext);
   if (!context) {

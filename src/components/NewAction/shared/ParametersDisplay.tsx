@@ -4,6 +4,7 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import type { TransferFormData, ArbitraryActionFormData, CappedTransferHubFormData } from "../steps";
 
 // Type guard to detect hub form data
+// eslint-disable-next-line react-refresh/only-export-components
 export const isHubFormData = (
   data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
 ): data is CappedTransferHubFormData => {
@@ -11,6 +12,7 @@ export const isHubFormData = (
 };
 
 // Type guard to detect transfer form data
+// eslint-disable-next-line react-refresh/only-export-components
 export const isTransferFormData = (
   data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
 ): data is TransferFormData => {
@@ -18,6 +20,7 @@ export const isTransferFormData = (
 };
 
 // Type guard to detect arbitrary action form data
+// eslint-disable-next-line react-refresh/only-export-components
 export const isArbitraryActionFormData = (
   data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
 ): data is ArbitraryActionFormData => {
