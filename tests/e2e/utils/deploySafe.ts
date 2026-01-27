@@ -101,7 +101,7 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
       method: "eth_accounts",
       params: [],
     });
-    if (!accounts || accounts.length === 0) {
+    if (!accounts || (accounts as Address[]).length === 0) {
       throw new Error("No accounts available from Anvil");
     }
     owners = [accounts[0] as Address];
@@ -165,7 +165,7 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
   return {
     safeAddress,
     transactionHash: hash,
-    owners: deployedOwners,
+    owners: deployedOwners as Address[],
     threshold: Number(deployedThreshold),
   };
 }

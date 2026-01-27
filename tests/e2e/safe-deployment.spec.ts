@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { deployCanonGuard } from "./utils/deployCanonGuard";
 
 test.describe("Canon Guard Setup Flow", () => {
   test("should verify Safe deployment configuration", async ({ deployedSafe }) => {
@@ -22,7 +21,7 @@ test.describe("Canon Guard Setup Flow", () => {
     console.log(`[Test] Using shared Safe: ${safeAddress}`);
   });
 
-  test("should deploy Safe and setup Canon Guard", async ({ page, deployedSafe }) => {
+  test("should deploy Safe and setup Canon Guard", async ({ page, deployedSafe, deployedCanonGuard }) => {
     // Step 1: Safe is already deployed via global setup
     const { safeAddress } = deployedSafe;
     console.log(`[Test] Using deployed Safe: ${safeAddress}`);
@@ -119,20 +118,8 @@ test.describe("Canon Guard Setup Flow", () => {
     // but for e2e testing we deploy directly using viem
     console.log("[Test] Deploying Canon Guard...");
 
-    const guard = await deployCanonGuard({
-      rpcUrl: "http://127.0.0.1:8545",
-      safeAddress: safeAddress,
-      shortTxExecutionDelay: 1n, //3600n, // 1 hour (matches UI default)
-      longTxExecutionDelay: 2n, //604800n, // 7 days (matches UI default)
-      txExpiryDelay: 604800n, // 7 days (matches UI default)
-      maxApprovalDuration: 10368000n, // ~4 months (matches UI default)
-      // Emergency addresses must be non-zero - use Anvil account 0
-      emergencyTrigger: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      emergencyCaller: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    });
-
-    console.log(`[Test] Canon Guard deployed at: ${guard.guardAddress}`);
-    console.log(`[Test] Transaction hash: ${guard.transactionHash}`);
+    console.log(`[Test] Canon Guard deployed at: ${deployedCanonGuard.guardAddress}`);
+    console.log(`[Test] Transaction hash: ${deployedCanonGuard.transactionHash}`);
 
     // Step 8: Paste the Canon Guard address in the "Deployed Canon Guard Address" input
     await expect(page.getByText("Deployed Canon Guard Address")).toBeVisible();
@@ -141,7 +128,7 @@ test.describe("Canon Guard Setup Flow", () => {
     await expect(guardAddressInput).toBeVisible();
 
     // Fill in the deployed guard address
-    await guardAddressInput.fill(guard.guardAddress);
+    await guardAddressInput.fill(deployedCanonGuard.guardAddress);
 
     // Wait for validation to complete (the UI validates the guard address)
     // The validation checks PARENT() and isChild() on the factory
@@ -172,7 +159,7 @@ test.describe("Canon Guard Setup Flow", () => {
 
     // Verify the URL has been updated with the guard address
     const url = new URL(page.url());
-    expect(url.searchParams.get("guardAddress")).toBe(guard.guardAddress);
+    expect(url.searchParams.get("guardAddress")).toBe(deployedCanonGuard.guardAddress);
     expect(url.searchParams.get("safeAddress")).toBe(safeAddress);
     expect(url.searchParams.get("chainId")).toBe("10");
 
