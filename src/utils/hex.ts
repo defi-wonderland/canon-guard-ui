@@ -16,7 +16,7 @@ export function generateZeroHex(bytes: number = 32): Hex {
 /**
  * Zero address (20 bytes of zeros)
  */
-export const ZERO_ADDRESS: Address = generateZeroHex(20);
+export const zeroAddress: Address = generateZeroHex(20);
 
 /**
  * Zero storage slot (32 bytes of zeros)

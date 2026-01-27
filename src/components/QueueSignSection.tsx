@@ -11,7 +11,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Box, CircularProgress, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
-import { Address, Hex, encodeFunctionData } from "viem";
+import { Address, encodeFunctionData } from "viem";
 import { safeAbi } from "~/abis/canonGuard";
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -20,6 +20,7 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
+import { zeroHash } from "~/utils";
 import { SigningFlowStep } from "./NewAction/steps";
 
 interface QueueSignState {
@@ -73,7 +74,7 @@ export const QueueSignSection = ({ onQueueCountChange }: QueueSignSectionProps) 
     const signData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     return [

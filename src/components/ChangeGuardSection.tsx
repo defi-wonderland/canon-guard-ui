@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
-import { Address, Hex, encodeFunctionData } from "viem";
+import { Address, encodeFunctionData } from "viem";
 import { canonGuardAbi, safeAbi } from "~/abis/canonGuard";
 import { changeSafeGuardActionFactoryAbi } from "~/abis/canonGuard";
 import { SigningFlowStep } from "~/components/NewAction/steps/SigningFlowStep";
@@ -11,6 +11,7 @@ import { useStateContext, useNavigateWithParams } from "~/hooks";
 import { useTransactionExecutor } from "~/hooks/useTransactionExecutor";
 import { ClientService, QueueService, type QueueItem } from "~/services";
 import type { TransactionStep } from "~/services/transactionBuilderService";
+import { zeroAddress, zeroHash } from "~/utils";
 
 type ChangeGuardMode = "attach" | "detach";
 
@@ -85,7 +86,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
     if (mode === "attach") {
       return guardAddress as Address;
     }
-    return "0x0000000000000000000000000000000000000000" as Address;
+    return zeroAddress;
   }, [mode, guardAddress]);
 
   // Build the 3-step transaction flow
@@ -114,7 +115,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
     const queueData = encodeFunctionData({
       abi: canonGuardAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address], // Placeholder, will be replaced
+      args: [zeroAddress], // Placeholder, will be replaced
     });
 
     steps.push({
@@ -130,7 +131,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
     const signData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({

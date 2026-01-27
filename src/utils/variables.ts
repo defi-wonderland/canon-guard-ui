@@ -1,6 +1,4 @@
-/*=============================================
-=               Style Variables               =
-=============================================*/
+import { Hex } from "viem";
 
 export const zIndex = {
   HEADER: 100,
@@ -13,3 +11,5 @@ export const DISCLAIMER_HEIGHT = 2.5;
 export const HEADER_HEIGHT = 6; // Header height in rem units
 export const FOOTER_HEIGHT = 4; // Footer height in rem units
 export const SURROUND_HEIGHT = HEADER_HEIGHT + FOOTER_HEIGHT;
+
+export const zeroHash: Hex = `0x${"0".repeat(64)}`;

@@ -1,8 +1,9 @@
-import { createPublicClient, createWalletClient, http, type Address, type Hash, encodeFunctionData } from "viem";
+import { createPublicClient, createWalletClient, http, type Address, type Hash, encodeFunctionData, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { optimism } from "viem/chains";
 import { safeAbi } from "~/abis/safe";
 import { safeProxyFactoryAbi } from "~/abis/safeProxyFactory";
+import { zeroAddress } from "~/utils";
 
 /**
  * Safe v1.4.1 deployment addresses (same across all EVM chains)
@@ -115,12 +116,12 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
     args: [
       owners, // _owners
       BigInt(threshold), // _threshold
-      "0x0000000000000000000000000000000000000000" as Address, // to (no delegate call)
-      "0x" as `0x${string}`, // data (empty)
+      zeroAddress, // to (no delegate call)
+      "0x" as Hex, // data (empty)
       SAFE_ADDRESSES.FALLBACK_HANDLER, // fallbackHandler
-      "0x0000000000000000000000000000000000000000" as Address, // paymentToken (native)
+      zeroAddress, // paymentToken (native)
       0n, // payment
-      "0x0000000000000000000000000000000000000000" as Address, // paymentReceiver
+      zeroAddress, // paymentReceiver
     ],
   });
 

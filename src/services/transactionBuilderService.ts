@@ -8,6 +8,7 @@
  */
 
 import { Address, Hex, encodeFunctionData, parseUnits } from "viem";
+import { zeroAddress, zeroHash } from "~/utils";
 import {
   simpleTransfersFactoryAbi,
   arbitraryActionsFactoryAbi,
@@ -37,7 +38,7 @@ import type {
 } from "../components/NewAction/steps";
 
 // Transaction step status
-export type TransactionStepStatus = "pending" | "waiting" | "signed" | "error";
+export type TransactionStepStatus = "pending" | "waiting" | "signed" | "error" | "success" | "in-progress";
 
 // Transaction step definition
 export interface TransactionStep {
@@ -47,6 +48,7 @@ export interface TransactionStep {
   status: TransactionStepStatus;
   to: Address;
   data: Hex;
+  hash?: Hex;
   value?: bigint;
 }
 
@@ -115,7 +117,7 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
     functionName: "record",
     args: [
       guardAddress, // _canonGuard
-      ["0x0000000000000000000000000000000000000000" as Address], // _entities - placeholder array
+      [zeroAddress], // _entities - placeholder array
       [formData.title || "Untitled Transfer"], // _labels array
     ],
   });
@@ -136,7 +138,7 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
       args: [
-        "0x0000000000000000000000000000000000000000" as Address, // _actionsBuilder - placeholder
+        zeroAddress, // _actionsBuilder - placeholder
       ],
     });
 
@@ -157,7 +159,7 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
       abi: safeAbi,
       functionName: "approveHash",
       args: [
-        "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex, // hash - placeholder
+        zeroHash, // hash - placeholder
       ],
     });
 
@@ -179,7 +181,7 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
       abi: preApproveActionFactoryAbi,
       functionName: "createPreApproveAction",
       args: [
-        "0x0000000000000000000000000000000000000000" as Address, // _actionsBuilder - placeholder (the action to approve)
+        zeroAddress, // _actionsBuilder - placeholder (the action to approve)
         preApprovalDuration, // _approvalDuration (user-provided duration)
       ],
     });
@@ -198,7 +200,7 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
       args: [
-        "0x0000000000000000000000000000000000000000" as Address, // _preApproveAction - placeholder
+        zeroAddress, // _preApproveAction - placeholder
       ],
     });
 
@@ -216,7 +218,7 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
       abi: safeAbi,
       functionName: "approveHash",
       args: [
-        "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex, // hash - placeholder
+        zeroHash, // hash - placeholder
       ],
     });
 
@@ -291,11 +293,7 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
     const recordData = encodeFunctionData({
       abi: canonGuardRegistryAbi,
       functionName: "record",
-      args: [
-        guardAddress,
-        ["0x0000000000000000000000000000000000000000" as Address],
-        [formData.title || "Untitled Arbitrary Action"],
-      ],
+      args: [guardAddress, [zeroAddress], [formData.title || "Untitled Arbitrary Action"]],
     });
 
     steps.push({
@@ -313,7 +311,7 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
     const queueData = encodeFunctionData({
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address],
+      args: [zeroAddress],
     });
 
     steps.push({
@@ -328,7 +326,7 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
     const approveHashData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({
@@ -346,7 +344,7 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
     const deployPreApproveData = encodeFunctionData({
       abi: preApproveActionFactoryAbi,
       functionName: "createPreApproveAction",
-      args: ["0x0000000000000000000000000000000000000000" as Address, preApprovalDuration],
+      args: [zeroAddress, preApprovalDuration],
     });
 
     steps.push({
@@ -361,7 +359,7 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
     const queuePreApproveData = encodeFunctionData({
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address],
+      args: [zeroAddress],
     });
 
     steps.push({
@@ -376,7 +374,7 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
     const signPreApproveData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({
@@ -432,11 +430,7 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
   const recordData = encodeFunctionData({
     abi: canonGuardRegistryAbi,
     functionName: "record",
-    args: [
-      guardAddress,
-      ["0x0000000000000000000000000000000000000000" as Address],
-      [formData.title || "Untitled Claim Allowance"],
-    ],
+    args: [guardAddress, [zeroAddress], [formData.title || "Untitled Claim Allowance"]],
   });
 
   steps.push({
@@ -453,7 +447,7 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
     const queueData = encodeFunctionData({
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address],
+      args: [zeroAddress],
     });
 
     steps.push({
@@ -468,7 +462,7 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
     const approveHashData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({
@@ -486,7 +480,7 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
     const deployPreApproveData = encodeFunctionData({
       abi: preApproveActionFactoryAbi,
       functionName: "createPreApproveAction",
-      args: ["0x0000000000000000000000000000000000000000" as Address, preApprovalDuration],
+      args: [zeroAddress, preApprovalDuration],
     });
 
     steps.push({
@@ -501,7 +495,7 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
     const queuePreApproveData = encodeFunctionData({
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address],
+      args: [zeroAddress],
     });
 
     steps.push({
@@ -516,7 +510,7 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
     const signPreApproveData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({
@@ -585,7 +579,7 @@ export function buildCappedTransferHubSteps(options: BuildCappedTransferHubSteps
   const recordData = encodeFunctionData({
     abi: canonGuardRegistryAbi,
     functionName: "record",
-    args: [guardAddress, ["0x0000000000000000000000000000000000000000" as Address], [formData.title || "Untitled Hub"]],
+    args: [guardAddress, [zeroAddress], [formData.title || "Untitled Hub"]],
   });
 
   steps.push({
@@ -602,7 +596,7 @@ export function buildCappedTransferHubSteps(options: BuildCappedTransferHubSteps
     const deployPreApproveData = encodeFunctionData({
       abi: preApproveActionFactoryAbi,
       functionName: "createPreApproveAction",
-      args: ["0x0000000000000000000000000000000000000000" as Address, preApprovalDuration],
+      args: [zeroAddress, preApprovalDuration],
     });
 
     steps.push({
@@ -617,7 +611,7 @@ export function buildCappedTransferHubSteps(options: BuildCappedTransferHubSteps
     const queuePreApproveData = encodeFunctionData({
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address],
+      args: [zeroAddress],
     });
 
     steps.push({
@@ -632,7 +626,7 @@ export function buildCappedTransferHubSteps(options: BuildCappedTransferHubSteps
     const signPreApproveData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({
@@ -688,11 +682,7 @@ export function buildDeployHubChildSteps(options: BuildDeployHubChildStepsOption
   const recordData = encodeFunctionData({
     abi: canonGuardRegistryAbi,
     functionName: "record",
-    args: [
-      guardAddress,
-      ["0x0000000000000000000000000000000000000000" as Address],
-      [formData.title || "Untitled Transfer"],
-    ],
+    args: [guardAddress, [zeroAddress], [formData.title || "Untitled Transfer"]],
   });
 
   steps.push({
@@ -709,7 +699,7 @@ export function buildDeployHubChildSteps(options: BuildDeployHubChildStepsOption
     const queueData = encodeFunctionData({
       abi: canonGuardEntrypointAbi,
       functionName: "queueTransaction",
-      args: ["0x0000000000000000000000000000000000000000" as Address],
+      args: [zeroAddress],
     });
 
     steps.push({
@@ -724,7 +714,7 @@ export function buildDeployHubChildSteps(options: BuildDeployHubChildStepsOption
     const approveHashData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({

@@ -7,6 +7,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import SignClient from "@walletconnect/sign-client";
 import { getSdkError } from "@walletconnect/utils";
 import { useStateContext } from "~/hooks/useStateContext";
+import { zeroAddress } from "~/utils";
 import type { SessionTypes, SignClientTypes } from "@walletconnect/types";
 
 // Get project ID from environment
@@ -128,7 +129,7 @@ export const WalletConnectProvider = ({ children }: WalletConnectProviderProps) 
             // Build namespaces based on required and optional namespaces
             const namespaces: SessionTypes.Namespaces = {};
             const currentChainId = chainIdRef.current || 1;
-            const currentSafeAddress = safeAddressRef.current || "0x0000000000000000000000000000000000000000";
+            const currentSafeAddress = safeAddressRef.current || zeroAddress;
             const currentChain = `eip155:${currentChainId}`;
             const currentAccount = `${currentChain}:${currentSafeAddress}`;
 

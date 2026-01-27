@@ -30,6 +30,7 @@ import {
   PRE_APPROVE_ACTION_FACTORY,
   CHANGE_SAFE_GUARD_ACTION_FACTORY,
 } from "~/constants/canonGuard";
+import { zeroAddress } from "~/utils";
 import { EPOCH_TIME_MULTIPLIERS } from "~/utils/timeUnits";
 
 /**
@@ -479,7 +480,7 @@ export function useTransactionExecutor() {
       setError(null);
       setTxHash(null);
 
-      const targetAddress = newGuardAddress ?? ("0x0000000000000000000000000000000000000000" as Address);
+      const targetAddress = newGuardAddress ?? zeroAddress;
       const action = newGuardAddress ? "attach" : "detach";
 
       try {

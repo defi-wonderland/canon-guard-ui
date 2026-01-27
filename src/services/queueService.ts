@@ -9,6 +9,7 @@
  */
 
 import { Address, Hash, Hex, PublicClient } from "viem";
+import { zeroAddress, zeroHash } from "~/utils";
 import {
   canonGuardAbi,
   safeAbi,
@@ -173,13 +174,13 @@ export class QueueService {
       } else if (
         factoryInfo.type === ActionFactoryType.CHANGE_SAFE_GUARD &&
         !labelsMap.get(actionBuilder) &&
-        safeGuardAddressMap.get(actionBuilder) === "0x0000000000000000000000000000000000000000"
+        safeGuardAddressMap.get(actionBuilder) === zeroAddress
       ) {
         label = "Remove Safe Guard";
       } else if (
         factoryInfo.type === ActionFactoryType.CHANGE_SAFE_GUARD &&
         !labelsMap.get(actionBuilder) &&
-        safeGuardAddressMap.get(actionBuilder) !== "0x0000000000000000000000000000000000000000"
+        safeGuardAddressMap.get(actionBuilder) !== zeroAddress
       ) {
         label = "Add Guard to Safe";
       } else {
@@ -188,9 +189,7 @@ export class QueueService {
 
       // Get pre-computed best nonce and safeTxHash
       const { bestNonce, approvers } = bestNonceMap.get(actionBuilder) || { bestNonce: currentNonce, approvers: [] };
-      const safeTxHash =
-        safeTxHashMap.get(actionBuilder) ||
-        ("0x0000000000000000000000000000000000000000000000000000000000000000" as Hash);
+      const safeTxHash = safeTxHashMap.get(actionBuilder) || zeroHash;
 
       console.log(
         `[QueueService] Action builder ${actionBuilder}: ${JSON.stringify({
@@ -788,7 +787,7 @@ export class QueueService {
         if (result.status === "success" && result.result) {
           map.set(actionBuilders[i], result.result as Hash);
         } else {
-          map.set(actionBuilders[i], "0x0000000000000000000000000000000000000000000000000000000000000000" as Hash);
+          map.set(actionBuilders[i], zeroHash);
         }
       }
     } catch (error) {

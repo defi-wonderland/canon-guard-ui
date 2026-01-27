@@ -8,6 +8,7 @@
  */
 
 import { Address, PublicClient, Hash, Hex } from "viem";
+import { zeroHash } from "~/utils";
 import { canonGuardEntrypointAbi, actionBuilderAbi } from "../abis";
 import {
   getFactoryType,
@@ -29,7 +30,6 @@ import { ClientService } from "./clientService";
 const SECONDS_TO_MILLISECONDS = 1000;
 const ONE_HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
 const ONE_DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
-const ZERO_HASH = `0x${"0".repeat(64)}`;
 
 const FUNCTION_SELECTORS = {
   ERC20_TRANSFER: "0x" + "a9059cbb",
@@ -311,7 +311,7 @@ export class CanonGuardService {
       }
 
       const hasPartialApprovals = approvers.length > 0 && approvers.length < safeThreshold;
-      const hasValidNonce = safeTxHash && safeTxHash !== ZERO_HASH;
+      const hasValidNonce = safeTxHash && safeTxHash !== zeroHash;
 
       if (hasPartialApprovals && hasValidNonce) {
         preApprovedItems.push({

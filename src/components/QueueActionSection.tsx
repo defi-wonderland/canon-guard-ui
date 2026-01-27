@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Box, CircularProgress, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
-import { Address, Hex, encodeFunctionData } from "viem";
+import { Address, encodeFunctionData } from "viem";
 import { canonGuardAbi, safeAbi, preApproveActionFactoryAbi } from "~/abis/canonGuard";
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -11,6 +11,7 @@ import { useStateContext } from "~/hooks/useStateContext";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
+import { zeroAddress, zeroHash } from "~/utils";
 import { SigningFlowStep } from "./NewAction/steps";
 
 interface QueueActionState {
@@ -100,7 +101,7 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
       const signData = encodeFunctionData({
         abi: safeAbi,
         functionName: "approveHash",
-        args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+        args: [zeroHash],
       });
 
       steps.push({
@@ -142,7 +143,7 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
       const queueData = encodeFunctionData({
         abi: canonGuardAbi,
         functionName: "queueTransaction",
-        args: ["0x0000000000000000000000000000000000000000" as Address], // Placeholder
+        args: [zeroAddress], // Placeholder
       });
 
       steps.push({
@@ -158,7 +159,7 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
       const signData = encodeFunctionData({
         abi: safeAbi,
         functionName: "approveHash",
-        args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+        args: [zeroHash],
       });
 
       steps.push({

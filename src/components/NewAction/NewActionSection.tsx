@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Box, Typography, styled } from "@mui/material";
 import { useLocation, useParams } from "react-router-dom";
-import { Address, Hex, encodeFunctionData } from "viem";
+import { Address, encodeFunctionData } from "viem";
 import { canonGuardAbi, safeAbi } from "~/abis/canonGuard";
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -21,6 +21,7 @@ import {
 } from "~/services/transactionBuilderService";
 import { CappedTokenTransfersHubInfo } from "~/types/canon-guard";
 import { ActionFactoryType } from "~/types/canon-guard";
+import { zeroHash } from "~/utils";
 import { FACTORY_DISPLAY_NAMES, HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
 import {
   SelectFactoryStep,
@@ -257,7 +258,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     const signData = encodeFunctionData({
       abi: safeAbi,
       functionName: "approveHash",
-      args: ["0x0000000000000000000000000000000000000000000000000000000000000000" as Hex],
+      args: [zeroHash],
     });
 
     steps.push({
