@@ -1,4 +1,4 @@
-import { Address, PublicClient, MulticallReturnType } from "viem";
+import { Address, PublicClient, MulticallReturnType, getAddress } from "viem";
 import { optimism } from "viem/chains";
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import { DEMO_GUARD_ADDRESS, DEMO_SAFE_WITH_GUARD } from "~/constants";
@@ -9,6 +9,8 @@ import { ZERO_STORAGE_SLOT } from "~/utils/hex";
 // Test data - inline for clarity
 const MOCK_SAFE_ADDRESS: Address = DEMO_SAFE_WITH_GUARD;
 const MOCK_GUARD_ADDRESS: Address = DEMO_GUARD_ADDRESS;
+// Checksummed version of the guard address (as returned by viem's getAddress)
+const MOCK_GUARD_ADDRESS_CHECKSUMMED: Address = getAddress(MOCK_GUARD_ADDRESS);
 const MOCK_OWNERS: Address[] = ["0xowner1", "0xowner2"];
 
 const SUCCESSFUL_MULTICALL: MulticallReturnType = [
@@ -26,6 +28,13 @@ const FAILED_MULTICALL: MulticallReturnType = [
 // Generate guard storage slot dynamically to avoid false positive private key detection
 const GUARD_STORAGE_WITH_GUARD = `0x${"0".repeat(24)}${MOCK_GUARD_ADDRESS.slice(2)}`;
 const GUARD_STORAGE_NO_GUARD = ZERO_STORAGE_SLOT;
+
+// Mock the CanonGuardValidationService
+vi.mock("~/services/canonGuardValidationService", () => ({
+  CanonGuardValidationService: vi.fn().mockImplementation(() => ({
+    isValidCanonGuard: vi.fn().mockResolvedValue(false),
+  })),
+}));
 
 describe("SafeService Unit Tests", () => {
   let safeService: SafeService;
@@ -60,8 +69,9 @@ describe("SafeService Unit Tests", () => {
       threshold: 2,
       owners: MOCK_OWNERS,
       totalOwners: 2,
-      hasCanonGuard: true,
-      guardAddress: MOCK_GUARD_ADDRESS,
+      hasGuard: true,
+      isValidCanonGuard: false,
+      guardAddress: MOCK_GUARD_ADDRESS_CHECKSUMMED,
       nonce: 5,
     });
   });
@@ -79,7 +89,8 @@ describe("SafeService Unit Tests", () => {
 
     const guardAddress = await safeService.getGuardAddress(MOCK_SAFE_ADDRESS);
 
-    expect(guardAddress).toBe(MOCK_GUARD_ADDRESS);
+    // Service returns checksummed address via viem's getAddress()
+    expect(guardAddress).toBe(MOCK_GUARD_ADDRESS_CHECKSUMMED);
   });
 
   it("should return null when guard storage slot is empty", async () => {
