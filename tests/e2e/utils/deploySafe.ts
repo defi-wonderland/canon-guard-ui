@@ -1,8 +1,8 @@
 import { createPublicClient, createWalletClient, http, type Address, type Hash, encodeFunctionData } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { optimism } from "viem/chains";
-import { safeAbi } from "../../src/abis/safe";
-import { safeProxyFactoryAbi } from "../../src/abis/safeProxyFactory";
+import { safeAbi } from "~/abis/safe";
+import { safeProxyFactoryAbi } from "~/abis/safeProxyFactory";
 
 /**
  * Safe v1.4.1 deployment addresses (same across all EVM chains)

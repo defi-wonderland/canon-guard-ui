@@ -8,7 +8,7 @@ export default defineConfig({
   define: process.env.VITEST ? {} : { global: "window" },
   test: {
     environment: "jsdom",
-    exclude: ["**/tests/**", "**/node_modules/**"],
+    exclude: ["**/tests/e2e/**", "**/node_modules/**"],
   },
   preview: {
     port: 3000,

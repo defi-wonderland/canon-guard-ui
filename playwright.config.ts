@@ -10,10 +10,10 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 export default defineConfig({
-  testDir: "./tests",
+  testDir: "./tests/e2e",
 
   // Global setup: Deploy Safe once before all tests
-  globalSetup: "./tests/global-setup.ts",
+  globalSetup: "./tests/e2e/global-setup.ts",
 
   // Test execution settings
   fullyParallel: true, // Safe is deployed once in global setup, tests can run in parallel
