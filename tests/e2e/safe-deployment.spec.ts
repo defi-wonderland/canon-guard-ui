@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { deployCanonGuard } from "./utils/deployCanonGuard";
 
 test.describe("Canon Guard Setup Flow", () => {
   test("should verify Safe deployment configuration", async ({ deployedSafe }) => {
@@ -80,20 +81,21 @@ test.describe("Canon Guard Setup Flow", () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.waitForTimeout(500);
 
-    // Fill Emergency Trigger address (using zero address as specified)
+    // Fill Emergency Trigger address (using Anvil account 0 - must be non-zero)
     // The inputs are the last two text inputs with placeholder 0x...
     const addressInputs = page.locator('input[placeholder="0x..."]');
     const inputCount = await addressInputs.count();
+    const anvilAccount = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
     // Emergency Trigger is the second-to-last input
     const triggerInput = addressInputs.nth(inputCount - 2);
     await triggerInput.scrollIntoViewIfNeeded();
-    await triggerInput.fill("0x0000000000000000000000000000000000000000");
+    await triggerInput.fill(anvilAccount);
 
     // Emergency Caller is the last input
     const callerInput = addressInputs.nth(inputCount - 1);
     await callerInput.scrollIntoViewIfNeeded();
-    await callerInput.fill("0x0000000000000000000000000000000000000000");
+    await callerInput.fill(anvilAccount);
 
     // Click Continue to go to Deploy step
     await page.getByRole("button", { name: /continue/i }).click();
@@ -112,24 +114,69 @@ test.describe("Canon Guard Setup Flow", () => {
     await expect(page.getByText("_emergencyTrigger")).toBeVisible();
     await expect(page.getByText("_emergencyCaller")).toBeVisible();
 
-    // Step 7: Deploy the Canon Guard
-    // TODO: WIP - Add actual deployment via transaction signing
-    // This would require:
-    // 1. Connecting a wallet (Anvil account)
-    // 2. Calling the Canon Guard Factory
-    // 3. Getting the deployed guard address from the transaction receipt
-    console.log("[Test] WIP: Canon Guard deployment step");
+    // Step 7: Deploy the Canon Guard programmatically
+    // The UI instructs users to deploy via Safe Transaction Builder,
+    // but for e2e testing we deploy directly using viem
+    console.log("[Test] Deploying Canon Guard...");
+
+    const guard = await deployCanonGuard({
+      rpcUrl: "http://127.0.0.1:8545",
+      safeAddress: safeAddress,
+      shortTxExecutionDelay: 1n, //3600n, // 1 hour (matches UI default)
+      longTxExecutionDelay: 2n, //604800n, // 7 days (matches UI default)
+      txExpiryDelay: 604800n, // 7 days (matches UI default)
+      maxApprovalDuration: 10368000n, // ~4 months (matches UI default)
+      // Emergency addresses must be non-zero - use Anvil account 0
+      emergencyTrigger: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      emergencyCaller: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    });
+
+    console.log(`[Test] Canon Guard deployed at: ${guard.guardAddress}`);
+    console.log(`[Test] Transaction hash: ${guard.transactionHash}`);
 
     // Step 8: Paste the Canon Guard address in the "Deployed Canon Guard Address" input
-    // For now, we'll verify the input field exists
     await expect(page.getByText("Deployed Canon Guard Address")).toBeVisible();
 
     const guardAddressInput = page.locator('input[placeholder="0x..."]').last();
     await expect(guardAddressInput).toBeVisible();
 
-    // Example: paste a mock guard address (would be real address after deployment)
-    // await guardAddressInput.fill("0x1234567890123456789012345678901234567890");
+    // Fill in the deployed guard address
+    await guardAddressInput.fill(guard.guardAddress);
+
+    // Wait for validation to complete (the UI validates the guard address)
+    // The validation checks PARENT() and isChild() on the factory
+    await page.waitForTimeout(2000);
+
+    // Step 9: Click Continue to complete the setup
+    const continueButton = page.getByRole("button", { name: /continue/i });
+
+    // Wait for the button to be enabled (validation must pass first)
+    await expect(continueButton).toBeEnabled({ timeout: 10000 });
+
+    await continueButton.click();
+
+    // Step 10: Verify setup completes successfully
+    // After clicking continue, the wizard should complete and show the main Canon Guard App
+    // The main app shows the Queue section with search bar and filters
+
+    // Verify the Queue section is visible (main app loaded)
+    await expect(page.getByPlaceholder("Search by name or 0x...")).toBeVisible({ timeout: 15000 });
+
+    // Verify the Queue title is visible
+    await expect(page.getByText("Queue", { exact: true })).toBeVisible();
+
+    // Verify the filter tabs are visible (use getByRole for more specific selection)
+    await expect(page.getByRole("button", { name: /^ALL \d+$/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^IN REVIEW \d+$/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^SIGNED \d+$/ })).toBeVisible();
+
+    // Verify the URL has been updated with the guard address
+    const url = new URL(page.url());
+    expect(url.searchParams.get("guardAddress")).toBe(guard.guardAddress);
+    expect(url.searchParams.get("safeAddress")).toBe(safeAddress);
+    expect(url.searchParams.get("chainId")).toBe("10");
 
     console.log("[Test] Canon Guard setup flow completed successfully");
+    console.log(`[Test] Final URL: ${page.url()}`);
   });
 });
