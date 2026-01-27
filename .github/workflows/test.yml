@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Configure git to use HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Install dependencies
         run: pnpm install
       - name: Create env file
@@ -40,11 +42,13 @@ jobs:
           standalone: true
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 22
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+      - name: Configure git to use HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Install dependencies
         run: pnpm install
       - name: Install Playwright Browsers
