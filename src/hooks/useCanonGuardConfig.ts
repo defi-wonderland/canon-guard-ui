@@ -1,7 +1,7 @@
 import { useCanonGuardConfigContext, CanonGuardConfigState } from "~/providers/CanonGuardConfigProvider";
 
 // Re-export the type for backwards compatibility
-export type CanonGuardConfig = CanonGuardConfigState;
+type CanonGuardConfig = CanonGuardConfigState;
 
 /**
  * Humanize seconds into a readable duration string.

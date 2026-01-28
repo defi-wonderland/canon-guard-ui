@@ -1,13 +1,9 @@
 import IActionsBuilderABI from "@defi-wonderland/canon-guard-interfaces/abi/IActionsBuilder.json";
-import IApproveActionFactoryABI from "@defi-wonderland/canon-guard-interfaces/abi/IApproveActionFactory.json";
 import ISafeEntrypointABI from "@defi-wonderland/canon-guard-interfaces/abi/ISafeEntrypoint.json";
-import ISimpleActionsFactoryABI from "@defi-wonderland/canon-guard-interfaces/abi/ISimpleActionsFactory.json";
 import { Abi } from "viem";
 
 export const canonGuardEntrypointAbi = ISafeEntrypointABI.abi as Abi;
 export const actionBuilderAbi = IActionsBuilderABI.abi as Abi;
-export const simpleActionsFactoryAbi = ISimpleActionsFactoryABI.abi as Abi;
-export const approveActionFactoryAbi = IApproveActionFactoryABI.abi as Abi;
 
 // Canon Guard ABI for transaction management functions
 export const canonGuardAbi = [

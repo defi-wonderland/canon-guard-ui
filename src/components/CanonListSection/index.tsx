@@ -832,5 +832,3 @@ const PageNumber = styled("button")<{ $active?: boolean }>(({ $active }) => ({
     backgroundColor: canonHeaderTokens.background.layer1,
   },
 }));
-
-export default CanonListSection;

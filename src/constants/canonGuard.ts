@@ -1,10 +1,6 @@
 import { Address } from "viem";
 import { ActionFactoryType, HubFactoryType } from "../types/canon-guard";
 
-// Delay in milliseconds to wait after a transaction is confirmed before refetching data.
-// This gives RPC nodes time to index the new blockchain state.
-export const RPC_INDEXING_DELAY_MS = 2000;
-
 // Core contract addresses (deployed via CREATE2, same across all chains)
 export const CANON_GUARD_REGISTRY: Address = "0x1d6f006964fBDf260B06cA38283Ec952B51f4f84";
 export const PRE_APPROVE_ACTION_FACTORY: Address = "0x2A62b0644BA7F4648179BfAE9a279D63DC44eF4a";
@@ -67,17 +63,15 @@ export const KNOWN_FACTORY_MAPPINGS: Record<Address, { type: ActionFactoryType; 
   },
 };
 
-export const FACTORY_ADDRESSES = Object.keys(KNOWN_FACTORY_MAPPINGS) as Address[];
-
 // Hub factory addresses - entities whose PARENT() returns one of these are hubs
-export const KNOWN_HUB_FACTORIES: Record<Address, { type: HubFactoryType; label: string }> = {
+const KNOWN_HUB_FACTORIES: Record<Address, { type: HubFactoryType; label: string }> = {
   "0x8531f72986374445507c29A0753fcc9cA36468D0": {
     type: HubFactoryType.CAPPED_TOKEN_TRANSFERS_HUB,
     label: "Capped Token Transfers Hub",
   },
 };
 
-export const HUB_FACTORY_ADDRESSES = Object.keys(KNOWN_HUB_FACTORIES) as Address[];
+const HUB_FACTORY_ADDRESSES = Object.keys(KNOWN_HUB_FACTORIES) as Address[];
 
 export const isHubFactory = (parentAddress: Address): boolean => {
   const lowerParent = parentAddress.toLowerCase();
@@ -99,7 +93,7 @@ export const getFactoryType = (actionBuilderAddress: Address): ActionFactoryType
   return mapping?.type || ActionFactoryType.UNKNOWN;
 };
 
-export const FACTORY_TYPE_TO_LABEL: Record<ActionFactoryType, string> = {
+const FACTORY_TYPE_TO_LABEL: Record<ActionFactoryType, string> = {
   [ActionFactoryType.SAFE_ENTRYPOINT]: "Canon Guard Factory",
   [ActionFactoryType.ALLOWANCE_CLAIMOR]: "Allowance Claimor Factory",
   [ActionFactoryType.APPROVE_ACTION]: "Pre-Approve Action Factory",

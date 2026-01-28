@@ -358,11 +358,6 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
   );
 };
 
-// Keep the old export name for backwards compatibility
-export const DetachGuardSection = (props: Omit<ChangeGuardSectionProps, "mode">) => (
-  <ChangeGuardSection mode='detach' {...props} />
-);
-
 // Styled Components
 const LoadingContainer = styled(Box)({
   display: "flex",

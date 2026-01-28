@@ -79,5 +79,3 @@ export function useWallet() {
     isSwitchingChain,
   };
 }
-
-export type UseWalletReturn = ReturnType<typeof useWallet>;

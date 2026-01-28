@@ -23,7 +23,7 @@ const core = {
   },
 };
 
-export const darkTheme = {
+const darkTheme = {
   // ...palette,
   background: {
     default: "#000000",
@@ -40,7 +40,7 @@ export const darkTheme = {
   border: "0.1rem solid rgba(153, 164, 184, 0.1)",
 };
 
-export const lightTheme = {
+const lightTheme = {
   // ...palette,
   background: {
     default: "#ffffff",

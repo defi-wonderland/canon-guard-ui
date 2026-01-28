@@ -4,28 +4,18 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import type { TransferFormData, ArbitraryActionFormData, CappedTransferHubFormData } from "../steps";
 
 // Type guard to detect hub form data
-// eslint-disable-next-line react-refresh/only-export-components
-export const isHubFormData = (
+function isHubFormData(
   data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
-): data is CappedTransferHubFormData => {
+): data is CappedTransferHubFormData {
   return "tokens" in data && Array.isArray(data.tokens) && "epochLength" in data;
-};
-
-// Type guard to detect transfer form data
-// eslint-disable-next-line react-refresh/only-export-components
-export const isTransferFormData = (
-  data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
-): data is TransferFormData => {
-  return "transfers" in data && Array.isArray(data.transfers);
-};
+}
 
 // Type guard to detect arbitrary action form data
-// eslint-disable-next-line react-refresh/only-export-components
-export const isArbitraryActionFormData = (
+function isArbitraryActionFormData(
   data: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData,
-): data is ArbitraryActionFormData => {
+): data is ArbitraryActionFormData {
   return "actions" in data && Array.isArray(data.actions);
-};
+}
 
 interface ParametersDisplayProps {
   formData: TransferFormData | ArbitraryActionFormData | CappedTransferHubFormData;

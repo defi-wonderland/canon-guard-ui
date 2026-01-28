@@ -1,7 +1,5 @@
 // Re-export time unit types from centralized file
 export type { EpochTimeUnit as TimeUnit } from "~/utils/timeUnits";
-export { EPOCH_TIME_MULTIPLIERS } from "~/utils/timeUnits";
-
 import type { EpochTimeUnit } from "~/utils/timeUnits";
 
 export { SelectFactoryStep } from "./SelectFactoryStep";

@@ -34,7 +34,7 @@ export enum SupportedChainId {
 /**
  * Configuration for a supported chain
  */
-export interface ChainConfig {
+interface ChainConfig {
   id: SupportedChainId;
   name: string;
   shortName: string;

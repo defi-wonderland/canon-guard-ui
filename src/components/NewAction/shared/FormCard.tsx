@@ -1,14 +1,6 @@
 import type { ReactNode } from "react";
-import { Box, Typography, styled } from "@mui/material";
+import { Box, styled, Typography } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-
-interface FormCardProps {
-  children: ReactNode;
-}
-
-export const FormCard = ({ children }: FormCardProps) => {
-  return <CardContainer>{children}</CardContainer>;
-};
 
 interface FormSectionProps {
   label: string;
@@ -52,15 +44,6 @@ export const ActionButton = ({ variant, onClick, children, disabled = false }: A
     </SecondaryButton>
   );
 };
-
-const CardContainer = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
-  width: "100%",
-});
 
 const SectionWrapper = styled(Box)({
   display: "flex",

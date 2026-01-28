@@ -300,5 +300,3 @@ const HubFormContainer = styled(Box)({
   overflow: "hidden",
   width: "100%",
 });
-
-export default TestPage;

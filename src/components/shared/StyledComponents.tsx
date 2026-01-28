@@ -1,5 +1,5 @@
-import { styled, Box, Card, Typography, Chip, alpha, Tooltip, tooltipClasses } from "@mui/material";
-import { safeDesignTokens, canonHeaderTokens } from "~/config/themes/safeTheme";
+import { styled, Box, Tooltip, tooltipClasses } from "@mui/material";
+import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import type { TooltipProps } from "@mui/material";
 
 /**
@@ -30,17 +30,6 @@ export const PageContainer = styled(Box)({
   width: "100%",
   backgroundColor: canonHeaderTokens.background.layer0,
 });
-
-// Main content area below header
-export const MainContent = styled(Box)({
-  flex: 1,
-  overflow: "auto",
-  backgroundColor: canonHeaderTokens.background.layer0,
-});
-
-// Legacy exports for backwards compatibility (will be removed in future)
-export const SafePageContainer = PageContainer;
-export const SafeMainContent = MainContent;
 
 // ============================================
 // Setup Flow Layout Components
@@ -92,88 +81,3 @@ export const SetupSectionTitle = styled("h2")({
   padding: "8px",
   margin: 0,
 });
-
-/**
- * Card container for setup screens
- */
-export const SetupCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  borderRadius: "8px",
-  overflow: "hidden",
-  backgroundColor: canonHeaderTokens.background.layer1,
-});
-
-export const SafeActionCard = styled(Card, {
-  shouldForwardProp: (prop) => prop !== "isPreApproved",
-})<{ isPreApproved?: boolean }>(({ theme, isPreApproved = false }) => {
-  const borderColor = isPreApproved
-    ? safeDesignTokens[theme.palette.mode].actionStatus.preApproved.main
-    : safeDesignTokens[theme.palette.mode].actionStatus.notPreApproved.main;
-
-  return {
-    marginBottom: safeDesignTokens.spacing.md,
-    border: `${safeDesignTokens.sizes.card.borderWidth} solid ${borderColor}`,
-    minHeight: "80px",
-    backgroundColor: canonHeaderTokens.background.layer1,
-    [theme.breakpoints.down("sm")]: {
-      marginBottom: safeDesignTokens.spacing.xs,
-      minHeight: "60px",
-    },
-  };
-});
-
-export const SafeCardContent = styled(Box)(({ theme }) => ({
-  padding: `${safeDesignTokens.spacing.md} ${safeDesignTokens.spacing.lg}`,
-  [theme.breakpoints.down("sm")]: {
-    padding: `${safeDesignTokens.spacing.sm} ${safeDesignTokens.spacing.md}`,
-  },
-}));
-
-export const SafeCardTitle = styled(Typography)({
-  ...safeDesignTokens.typography.cardTitle,
-  color: canonHeaderTokens.foreground.accent0,
-  fontSize: "1.125rem",
-  fontWeight: 600,
-  lineHeight: 1.4,
-  marginBottom: safeDesignTokens.spacing.xs,
-});
-
-export const SafeCardBody = styled(Typography)({
-  ...safeDesignTokens.typography.cardBody,
-  color: canonHeaderTokens.foreground.accent10,
-});
-
-export const SafeStatusChip = styled(Chip, {
-  shouldForwardProp: (prop) => prop !== "isPreApproved",
-})<{ isPreApproved?: boolean }>(({ theme, isPreApproved = false }) => {
-  const colors = isPreApproved
-    ? safeDesignTokens[theme.palette.mode].actionStatus.preApproved
-    : safeDesignTokens[theme.palette.mode].actionStatus.notPreApproved;
-
-  return {
-    ...safeDesignTokens.components.chip,
-    backgroundColor: alpha(colors.main, 0.1),
-    color: colors.dark,
-    border: `1px solid ${alpha(colors.main, 0.3)}`,
-    marginLeft: 8,
-    "& .MuiChip-label": {
-      fontWeight: safeDesignTokens.components.chip.fontWeight,
-    },
-  };
-});
-
-export const SafeAddress = styled(Typography)(({ theme }) => ({
-  fontFamily: "monospace",
-  fontSize: "0.875rem",
-  color: canonHeaderTokens.foreground.accent10,
-  cursor: "pointer",
-  padding: `${safeDesignTokens.spacing.xs} ${safeDesignTokens.spacing.sm}`,
-  backgroundColor: alpha(theme.palette.primary.main, 0.04),
-  borderRadius: safeDesignTokens.spacing.xs,
-  transition: "all 0.2s ease-in-out",
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.08),
-    color: canonHeaderTokens.brand.green,
-  },
-}));

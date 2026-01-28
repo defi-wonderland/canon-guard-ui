@@ -14,7 +14,7 @@ const CANON_GUARD_CONFIG_FILE = path.join(TEST_RESULTS_DIR, ".canon-guard-deploy
 /**
  * Test fixtures for accessing the globally deployed Safe and Canon Guard
  */
-export type TestFixtures = {
+type TestFixtures = {
   /**
    * A deployed 1/1 Safe wallet on the Anvil fork
    *

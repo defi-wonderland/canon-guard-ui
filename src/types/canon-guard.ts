@@ -1,4 +1,4 @@
-import { Address, Hash, Hex } from "viem";
+import { Address, Hash } from "viem";
 
 // ================================================================
 // CANON GUARD CORE TYPES
@@ -11,7 +11,6 @@ export enum QueuedTransactionState {
   QUEUED = "queued",
   EXECUTABLE = "executable",
   EXPIRED = "expired",
-  EXECUTED = "executed",
 }
 
 /**
@@ -37,19 +36,6 @@ export enum ActionFactoryType {
  */
 export enum PreApprovedItemType {
   BUILDER = "builder",
-  HUB = "hub",
-}
-
-/**
- * Canon Guard registry containing all factory addresses
- */
-export interface CanonRegistry {
-  safeEntrypointFactory: Address;
-  allowanceClaimorFactory: Address;
-  approveActionFactory: Address;
-  cappedTokenTransfersHubFactory: Address;
-  arbitraryActionsFactory: Address;
-  simpleTransfersFactory: Address;
 }
 
 // ================================================================
@@ -176,87 +162,6 @@ export interface ExecutedTransaction {
   txHash: Hash;
 }
 
-/**
- * Action details for display and execution
- */
-export interface ActionDetails {
-  actionBuilder: Address;
-  target: Address;
-  value: bigint;
-  calldata: Hex;
-  fnSignature?: string; // Function signature like "approve(address,uint256)"
-  decodedParams?: Record<string, unknown>;
-}
-
-/**
- * Arbitrary action structure for building new actions
- */
-export interface ArbitraryAction {
-  target: Address;
-  fnSignature?: string; // Optional function signature like "transfer(address,uint256)"
-  data: Hex; // Full calldata including selector
-  value: bigint;
-}
-
-/**
- * Token transfer action structure
- */
-export interface TransferAction {
-  token: Address;
-  to: Address;
-  amount: bigint;
-}
-
-// ================================================================
-// UI STATE TYPES
-// ================================================================
-
-/**
- * UI tab types for navigation (matches Figma header design)
- */
-export enum TabType {
-  QUEUE = "queue",
-  CANON_LIST = "canon-list",
-  CREATE = "create",
-}
-
-// ================================================================
-// CANON GUARD UTILITIES TYPES
-// ================================================================
-
-/**
- * Canon Guard entrypoint configuration
- */
-export interface EntrypointConfiguration {
-  shortTxExecutionDelay: bigint;
-  longTxExecutionDelay: bigint;
-  txExpiryDelay: bigint;
-  maxApprovalDuration: bigint;
-}
-
-/**
- * Transaction details from Canon Guard
- */
-export interface TransactionDetails {
-  actionsData: Hex;
-  executableAt: bigint;
-  expiresAt: bigint;
-  safeTxHash: Hash;
-  approvalExpiry: bigint;
-}
-
-/**
- * Batched transaction details with approvers
- */
-export interface BatchedTransactionDetails {
-  actionsData: Hex;
-  executableAt: bigint;
-  expiresAt: bigint;
-  safeTxHash: Hash;
-  approvalExpiry: bigint;
-  approvers: Address[];
-}
-
 // ================================================================
 // HUB TYPES
 // ================================================================
@@ -286,14 +191,4 @@ export interface CappedTokenTransfersHubInfo {
   recipient: Address;
   epochLength: bigint;
   tokens: HubTokenConfig[];
-}
-
-/**
- * Information about a hub child entity in the Canon List
- */
-export interface HubChildInfo {
-  parentHubAddress: Address;
-  token: Address;
-  amount: bigint;
-  recipient: Address;
 }

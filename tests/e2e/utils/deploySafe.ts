@@ -8,7 +8,7 @@ import { zeroAddress } from "~/utils";
 /**
  * Safe v1.4.1 deployment addresses (same across all EVM chains)
  */
-export const SAFE_ADDRESSES = {
+const SAFE_ADDRESSES = {
   SAFE_PROXY_FACTORY: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67" as Address,
   SAFE_SINGLETON: "0x41675C099F32341bf84BFc5382aF534df5C7461a" as Address,
   FALLBACK_HANDLER: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4" as Address,

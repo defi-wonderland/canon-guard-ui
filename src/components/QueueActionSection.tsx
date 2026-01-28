@@ -386,5 +386,3 @@ const LoadingContainer = styled(Box)({
   justifyContent: "center",
   height: "400px",
 });
-
-export default QueueActionSection;

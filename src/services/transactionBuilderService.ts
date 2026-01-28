@@ -729,12 +729,3 @@ export function buildDeployHubChildSteps(options: BuildDeployHubChildStepsOption
 
   return { steps };
 }
-
-/**
- * Get human-readable summary of transaction steps
- */
-export function getTransactionSummary(steps: TransactionStep[]): string {
-  const signed = steps.filter((s) => s.status === "signed").length;
-  const total = steps.length;
-  return `${signed}/${total} transactions signed`;
-}

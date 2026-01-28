@@ -13,7 +13,7 @@ import { QueueItem } from "~/services/queueService";
 /**
  * Represents a nonce option in the dropdown
  */
-export interface NonceOption {
+interface NonceOption {
   nonce: number;
   label?: string; // Label of the transaction at this nonce (if any)
   isRecommended: boolean;
@@ -146,8 +146,8 @@ const ReadOnlyText = styled(Typography)({
  * Build nonce options from queue items
  * When multiple txs exist for same nonce, picks the one with most signatures (tie-breaker: earliest executableAt)
  */
-// eslint-disable-next-line react-refresh/only-export-components
-export function buildNonceOptions(
+
+function buildNonceOptions(
   currentNonce: number,
   recommendedNonce: number,
   queueItems: QueueItem[],
@@ -312,5 +312,3 @@ export function NonceSelector({
     </Container>
   );
 }
-
-export default NonceSelector;

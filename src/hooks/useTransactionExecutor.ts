@@ -1126,5 +1126,3 @@ function parseChangeSafeGuardActionAddress(
   }
   return null;
 }
-
-export type UseTransactionExecutorReturn = ReturnType<typeof useTransactionExecutor>;

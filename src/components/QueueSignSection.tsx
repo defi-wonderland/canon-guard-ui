@@ -249,5 +249,3 @@ const LoadingContainer = styled(Box)({
   justifyContent: "center",
   minHeight: "400px",
 });
-
-export default QueueSignSection;

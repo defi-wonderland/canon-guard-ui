@@ -22,7 +22,7 @@ const APP_METADATA: SignClientTypes.Metadata = {
 };
 
 // Transaction request from WalletConnect
-export interface WalletConnectTransaction {
+interface WalletConnectTransaction {
   from: string;
   to: string;
   data: string;

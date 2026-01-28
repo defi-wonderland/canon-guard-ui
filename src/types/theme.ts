@@ -47,5 +47,3 @@ export interface CustomThemes {
   getMui: Theme;
   rainbow: RainbowTheme;
 }
-
-export type ThemeMode = "light" | "dark" | "system" | undefined;

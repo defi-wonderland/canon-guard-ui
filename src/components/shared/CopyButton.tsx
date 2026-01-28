@@ -60,9 +60,6 @@ export const CopyableText = ({
   );
 };
 
-// Keep CopyButton as alias for backward compatibility
-export const CopyButton = CopyableText;
-
 const fadeIn = keyframes`
   from {
     opacity: 0;
