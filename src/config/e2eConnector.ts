@@ -5,6 +5,7 @@ import { Wallet, WalletDetailsParams } from "@rainbow-me/rainbowkit";
 import { e2eConnector as createE2EConnector } from "@wonderland/walletless";
 import { createConnector } from "wagmi";
 import { mainnet, optimism } from "wagmi/chains";
+import { TEST_RPC_URLS } from "./chains";
 
 export const e2eWallet = (): Wallet => ({
   id: "e2e-test-wallet",
@@ -16,10 +17,7 @@ export const e2eWallet = (): Wallet => ({
   createConnector: (walletDetails: WalletDetailsParams) => {
     const connector = createE2EConnector({
       chains: [mainnet, optimism],
-      rpcUrls: {
-        [mainnet.id]: "http://127.0.0.1:8546",
-        [optimism.id]: "http://127.0.0.1:8545",
-      },
+      rpcUrls: TEST_RPC_URLS,
     });
 
     return createConnector((config) => ({

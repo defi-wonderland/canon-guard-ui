@@ -40,12 +40,8 @@ export const config = createConfig({
     storage: cookieStorage,
   }),
   transports: {
-    [mainnet.id]: IS_PLAYWRIGHT
-      ? http("http://127.0.0.1:8546")
-      : http(SUPPORTED_CHAINS[SupportedChainId.ETHEREUM].rpcUrl),
-    [optimism.id]: IS_PLAYWRIGHT
-      ? http("http://127.0.0.1:8545")
-      : http(SUPPORTED_CHAINS[SupportedChainId.OPTIMISM].rpcUrl),
+    [mainnet.id]: http(SUPPORTED_CHAINS[SupportedChainId.ETHEREUM].rpcUrl),
+    [optimism.id]: http(SUPPORTED_CHAINS[SupportedChainId.OPTIMISM].rpcUrl),
   },
   batch: { multicall: true },
   connectors,

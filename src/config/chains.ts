@@ -15,6 +15,15 @@ import { getEnv } from "./env";
 const { IS_PLAYWRIGHT } = getEnv();
 
 /**
+ * Test RPC URLs for Playwright/Anvil testing
+ * These point to local Anvil instances for each chain
+ */
+export const TEST_RPC_URLS = {
+  [optimism.id]: "http://127.0.0.1:8545",
+  [mainnet.id]: "http://127.0.0.1:8546",
+} as const;
+
+/**
  * Enum of supported chain IDs for type safety
  */
 export enum SupportedChainId {
@@ -30,17 +39,17 @@ export interface ChainConfig {
   name: string;
   shortName: string;
   chain: Chain;
-  rpcUrl: string;
+  rpcUrl: string | undefined; // undefined allows viem's http() to use public fallback
   blockExplorerUrl: string;
   iconColor: string; // For UI display
 }
 
 /**
- * Get RPC URL from environment variables with fallback
+ * Get RPC URL from environment variables
+ * Falls back to undefined which allows viem's http() transport to use public RPCs
  */
-const getRpcUrl = (envVar: string, fallback: string): string => {
-  const url = import.meta.env[envVar];
-  return url || fallback;
+const getRpcUrl = (envVar: string): string | undefined => {
+  return import.meta.env[envVar] || undefined;
 };
 
 /**
@@ -52,9 +61,7 @@ export const SUPPORTED_CHAINS: Record<SupportedChainId, ChainConfig> = {
     name: "Ethereum Mainnet",
     shortName: "Ethereum",
     chain: mainnet,
-    rpcUrl: IS_PLAYWRIGHT
-      ? "http://127.0.0.1:8546"
-      : getRpcUrl("VITE_RPC_ETHEREUM", "https://eth-mainnet.g.alchemy.com/v2/J9qI8VqN68cHHr4-b4wB2"),
+    rpcUrl: IS_PLAYWRIGHT ? TEST_RPC_URLS[mainnet.id] : getRpcUrl("VITE_RPC_ETHEREUM"),
     blockExplorerUrl: "https://etherscan.io",
     iconColor: "#627EEA",
   },
@@ -63,9 +70,7 @@ export const SUPPORTED_CHAINS: Record<SupportedChainId, ChainConfig> = {
     name: "OP Mainnet",
     shortName: "OP Mainnet",
     chain: optimism,
-    rpcUrl: IS_PLAYWRIGHT
-      ? "http://127.0.0.1:8545"
-      : getRpcUrl("VITE_RPC_OPTIMISM", "https://opt-mainnet.g.alchemy.com/v2/J9qI8VqN68cHHr4-b4wB2"),
+    rpcUrl: IS_PLAYWRIGHT ? TEST_RPC_URLS[optimism.id] : getRpcUrl("VITE_RPC_OPTIMISM"),
     blockExplorerUrl: "https://optimistic.etherscan.io",
     iconColor: "#FF0420",
   },
@@ -91,7 +96,7 @@ export const getChainConfig = (chainId: SupportedChainId): ChainConfig => {
 /**
  * Get RPC URL for a chain
  */
-export const getRpcUrlForChain = (chainId: SupportedChainId): string => {
+export const getRpcUrlForChain = (chainId: SupportedChainId): string | undefined => {
   return SUPPORTED_CHAINS[chainId].rpcUrl;
 };
 
