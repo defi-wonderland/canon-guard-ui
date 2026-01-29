@@ -4,21 +4,7 @@ import { optimism } from "viem/chains";
 import { safeAbi } from "~/abis/safe";
 import { safeProxyFactoryAbi } from "~/abis/safeProxyFactory";
 import { zeroAddress } from "~/utils";
-
-/**
- * Safe v1.4.1 deployment addresses (same across all EVM chains)
- */
-const SAFE_ADDRESSES = {
-  SAFE_PROXY_FACTORY: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67" as Address,
-  SAFE_SINGLETON: "0x41675C099F32341bf84BFc5382aF534df5C7461a" as Address,
-  FALLBACK_HANDLER: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4" as Address,
-} as const;
-
-/**
- * Anvil's well-known private key for account 0
- * Public address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
- */
-const ANVIL_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
+import { ANVIL_PRIVATE_KEY, ANVIL_RPC_URL, SAFE_ADDRESSES } from "../constants";
 
 /**
  * Configuration for deploying a Safe
@@ -71,12 +57,7 @@ export interface DeploySafeResult {
  * ```
  */
 export async function deploySafe(options: DeploySafeOptions = {}): Promise<DeploySafeResult> {
-  const {
-    rpcUrl = "http://127.0.0.1:8545",
-    owners: providedOwners,
-    threshold = 1,
-    saltNonce = BigInt(Date.now()),
-  } = options;
+  const { rpcUrl = ANVIL_RPC_URL, owners: providedOwners, threshold = 1, saltNonce = BigInt(Date.now()) } = options;
 
   // Step 1: Create clients
   const account = privateKeyToAccount(ANVIL_PRIVATE_KEY);

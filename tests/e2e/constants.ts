@@ -1,0 +1,72 @@
+/**
+ * E2E Test Constants
+ *
+ * Centralized constants for E2E tests to avoid duplication
+ */
+
+import type { Address } from "viem";
+
+/**
+ * Anvil's well-known private key for account 0
+ * Public address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+ */
+export const ANVIL_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
+
+/**
+ * Anvil account 0 address (derived from ANVIL_PRIVATE_KEY)
+ */
+export const ANVIL_ACCOUNT_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" as Address;
+
+/**
+ * Vitalik's address - used for test transactions
+ */
+export const VITALIK_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as Address;
+
+/**
+ * Default Anvil RPC URL
+ */
+export const ANVIL_RPC_URL = "http://127.0.0.1:8545";
+
+/**
+ * Chain configuration
+ */
+export const CHAIN_CONFIG = {
+  OP_MAINNET: {
+    id: 10,
+    name: "OP Mainnet",
+    label: "OP Mainnet",
+  },
+} as const;
+
+/**
+ * Safe v1.4.1 deployment addresses (same across all EVM chains)
+ */
+export const SAFE_ADDRESSES = {
+  SAFE_PROXY_FACTORY: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67" as Address,
+  SAFE_SINGLETON: "0x41675C099F32341bf84BFc5382aF534df5C7461a" as Address,
+  FALLBACK_HANDLER: "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4" as Address,
+} as const;
+
+/**
+ * Test timeouts (in milliseconds)
+ */
+export const TEST_TIMEOUTS = {
+  SHORT: 5000,
+  MEDIUM: 10000,
+  LONG: 15000,
+  TRANSACTION: 20000,
+} as const;
+
+/**
+ * Canon Guard default configuration for tests
+ */
+export const CANON_GUARD_CONFIG = {
+  /** Short execution delay in seconds (1 second for fast testing) */
+  shortTxExecutionDelay: 1n,
+  /** Long execution delay in seconds (2 seconds for fast testing) */
+  longTxExecutionDelay: 2n,
+  /** Transaction expiry delay in seconds (7 days) */
+  txExpiryDelay: 604800n,
+  /** Max approval duration in seconds (~4 months) */
+  maxApprovalDuration: 10368000n,
+} as const;

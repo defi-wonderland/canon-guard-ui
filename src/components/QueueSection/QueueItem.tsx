@@ -193,7 +193,11 @@ export const QueueItem = ({
                 disableHoverListener={!executeDisableReason}
               >
                 <span>
-                  <ExecuteButton onClick={onExecute} disabled={!!executeDisableReason || isLoading}>
+                  <ExecuteButton
+                    onClick={onExecute}
+                    disabled={!!executeDisableReason || isLoading}
+                    data-testid='execute-button'
+                  >
                     {isLoading ? (
                       <CircularProgress size={14} sx={{ color: canonHeaderTokens.background.layer0 }} />
                     ) : (
@@ -204,7 +208,7 @@ export const QueueItem = ({
               </StyledTooltip>
             )}
             {showSignButton && (
-              <SignButton onClick={onSign} disabled={isSignLoading}>
+              <SignButton onClick={onSign} disabled={isSignLoading} data-testid='sign-button'>
                 {isSignLoading ? (
                   <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent10 }} />
                 ) : (

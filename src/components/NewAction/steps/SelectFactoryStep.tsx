@@ -9,12 +9,21 @@ import type { FactoryType } from "./index";
 interface FactoryOption {
   id: FactoryType;
   label: string;
+  testId: string;
 }
 
 const FACTORY_OPTIONS: FactoryOption[] = [
-  { id: "arbitrary-action", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.ARBITRARY_ACTIONS]! },
-  { id: "transfer", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.SIMPLE_TRANSFERS]! },
-  { id: "claim-allowance", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.ALLOWANCE_CLAIMOR]! },
+  {
+    id: "arbitrary-action",
+    label: FACTORY_DISPLAY_NAMES[ActionFactoryType.ARBITRARY_ACTIONS]!,
+    testId: "arbitrary-action-option",
+  },
+  { id: "transfer", label: FACTORY_DISPLAY_NAMES[ActionFactoryType.SIMPLE_TRANSFERS]!, testId: "transfer-option" },
+  {
+    id: "claim-allowance",
+    label: FACTORY_DISPLAY_NAMES[ActionFactoryType.ALLOWANCE_CLAIMOR]!,
+    testId: "claim-allowance-option",
+  },
 ];
 
 interface SelectFactoryStepProps {
@@ -28,10 +37,10 @@ export const SelectFactoryStep = ({ onSelectFactory, onNavigateToCreate }: Selec
       <ContentWrapper>
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action' />
 
-        <FormSection label='SELECT CANON FACTORY'>
+        <FormSection label='SELECT CANON FACTORY' data-testid='select-factory-title'>
           <FactoryList>
             {FACTORY_OPTIONS.map((option) => (
-              <FactoryItem key={option.id} onClick={() => onSelectFactory(option.id)}>
+              <FactoryItem key={option.id} onClick={() => onSelectFactory(option.id)} data-testid={option.testId}>
                 <LeftContent>
                   <BoxIcon size={16} color={canonHeaderTokens.foreground.accent20} />
                   <FactoryLabel>{option.label}</FactoryLabel>

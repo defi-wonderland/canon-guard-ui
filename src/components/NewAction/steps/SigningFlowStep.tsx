@@ -264,8 +264,15 @@ export const SigningFlowStep = ({
                 </SuccessContent>
                 <SuccessButtonSection>
                   <SuccessButtonRow>
-                    <OutlineButton onClick={() => navigateWithParams("/canon-list")}>VIEW CANON LIST</OutlineButton>
-                    <GreenButton onClick={() => navigateWithParams("/queue")}>VIEW QUEUE</GreenButton>
+                    <OutlineButton
+                      onClick={() => navigateWithParams("/canon-list")}
+                      data-testid='view-canon-list-button'
+                    >
+                      VIEW CANON LIST
+                    </OutlineButton>
+                    <GreenButton onClick={() => navigateWithParams("/queue")} data-testid='view-queue-button'>
+                      VIEW QUEUE
+                    </GreenButton>
                   </SuccessButtonRow>
                 </SuccessButtonSection>
               </SuccessCardWrapper>
@@ -495,7 +502,9 @@ export const SigningFlowStep = ({
                         Waiting for wallet...
                       </WaitingButton>
                     ) : (
-                      <SignButton onClick={handleSignClick}>SIGN</SignButton>
+                      <SignButton onClick={handleSignClick} data-testid='sign-button'>
+                        SIGN
+                      </SignButton>
                     )}
                   </SignButtonWrapper>
                 </SignItemDetailsCard>

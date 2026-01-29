@@ -161,7 +161,7 @@ export const ArbitraryActionFormStep = ({
           </FactorySelector>
 
           {/* Transaction Title Card */}
-          <TransactionTitleCard>
+          <TransactionTitleCard data-testid='transaction-title-label'>
             <CardContent>
               <FormInputWrapper>
                 <FormInput
@@ -169,6 +169,7 @@ export const ArbitraryActionFormStep = ({
                   placeholder='Eg. Deposit 1 ETH to Vault...'
                   value={formData.title}
                   onChange={updateTitle}
+                  data-testid='transaction-title-input'
                 />
                 <PublicBadge>Public</PublicBadge>
               </FormInputWrapper>
@@ -203,6 +204,7 @@ export const ArbitraryActionFormStep = ({
                     value={action.target}
                     onChange={(value) => updateAction(index, "target", value)}
                     error={errors[index]?.target}
+                    data-testid={index === 0 ? "target-address-input" : undefined}
                   />
                   <FormInput
                     label='Calldata'
@@ -210,6 +212,7 @@ export const ArbitraryActionFormStep = ({
                     value={action.data}
                     onChange={(value) => updateAction(index, "data", value)}
                     error={errors[index]?.data}
+                    data-testid={index === 0 ? "calldata-input" : undefined}
                   />
                   <FormInput
                     label='Function Signature (optional)'
@@ -217,6 +220,7 @@ export const ArbitraryActionFormStep = ({
                     value={action.signature}
                     onChange={(value) => updateAction(index, "signature", value)}
                     error={errors[index]?.signature}
+                    data-testid={index === 0 ? "signature-input" : undefined}
                   />
                   <FormInput
                     label='Value (wei)'
@@ -224,6 +228,7 @@ export const ArbitraryActionFormStep = ({
                     value={action.value}
                     onChange={(value) => updateAction(index, "value", value)}
                     error={errors[index]?.value}
+                    data-testid={index === 0 ? "value-input" : undefined}
                   />
                 </ItemFieldsSection>
               </ItemSection>
@@ -239,10 +244,15 @@ export const ArbitraryActionFormStep = ({
             {/* Action Buttons Row */}
             <ActionButtonRow>
               <ButtonsContainer>
-                <ActionButton variant='secondary' onClick={onBack}>
+                <ActionButton variant='secondary' onClick={onBack} data-testid='form-back-button'>
                   BACK
                 </ActionButton>
-                <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
+                <ActionButton
+                  variant='primary'
+                  onClick={onContinue}
+                  disabled={!isValid}
+                  data-testid='form-continue-button'
+                >
                   CONTINUE
                 </ActionButton>
               </ButtonsContainer>

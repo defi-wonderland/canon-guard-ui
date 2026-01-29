@@ -65,7 +65,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
       </SetupHeader>
 
       <SetupContentArea>
-        <SetupFormWrapper>
+        <SetupFormWrapper data-testid='setup-form'>
           <SetupSectionTitle>Add New Safe Account</SetupSectionTitle>
 
           <FormCard>
@@ -86,6 +86,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
                   }}
                   disabled={isLoading}
                   error={errors.safeAddress}
+                  data-testid='safe-address-input'
                 />
 
                 <FormInput
@@ -98,6 +99,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
                     value: chain.id.toString(),
                   }))}
                   disabled={isLoading}
+                  data-testid='chain-selector'
                 />
               </InputsContainer>
             </FormSection>

@@ -5,11 +5,12 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 interface FormSectionProps {
   label: string;
   children: ReactNode;
+  "data-testid"?: string;
 }
 
-export const FormSection = ({ label, children }: FormSectionProps) => {
+export const FormSection = ({ label, children, "data-testid": testId }: FormSectionProps) => {
   return (
-    <SectionWrapper>
+    <SectionWrapper data-testid={testId}>
       <SectionLabelWrapper>
         <SectionLabel>{label}</SectionLabel>
       </SectionLabelWrapper>
@@ -31,15 +32,22 @@ interface ActionButtonProps {
   onClick: () => void;
   children: ReactNode;
   disabled?: boolean;
+  "data-testid"?: string;
 }
 
-export const ActionButton = ({ variant, onClick, children, disabled = false }: ActionButtonProps) => {
+export const ActionButton = ({
+  variant,
+  onClick,
+  children,
+  disabled = false,
+  "data-testid": testId,
+}: ActionButtonProps) => {
   return variant === "primary" ? (
-    <PrimaryButton onClick={onClick} disabled={disabled}>
+    <PrimaryButton onClick={onClick} disabled={disabled} data-testid={testId}>
       {children}
     </PrimaryButton>
   ) : (
-    <SecondaryButton onClick={onClick} disabled={disabled}>
+    <SecondaryButton onClick={onClick} disabled={disabled} data-testid={testId}>
       {children}
     </SecondaryButton>
   );

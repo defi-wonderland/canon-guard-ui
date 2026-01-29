@@ -25,10 +25,10 @@ export const DeploymentModesPanel = ({ isOpen, onClose, isDetached }: Deployment
   return (
     <>
       <DrawerOverlay $isOpen={isOpen} onClick={onClose} />
-      <DrawerPanel $isOpen={isOpen}>
+      <DrawerPanel $isOpen={isOpen} data-testid='deployment-modes-panel'>
         <PanelContent>
           {/* Close button */}
-          <CloseButton onClick={onClose}>
+          <CloseButton onClick={onClose} data-testid='close-panel-button'>
             <XIcon size={16} color={canonHeaderTokens.foreground.accent0} />
           </CloseButton>
 
@@ -63,7 +63,11 @@ export const DeploymentModesPanel = ({ isOpen, onClose, isDetached }: Deployment
             </DescriptionText>
 
             {/* Attach button - only shown when in detached mode */}
-            {isDetached && <AttachButton onClick={handleAttachGuard}>Attach Canon Guard</AttachButton>}
+            {isDetached && (
+              <AttachButton onClick={handleAttachGuard} data-testid='attach-guard-button'>
+                Attach Canon Guard
+              </AttachButton>
+            )}
           </InnerWrapper>
         </PanelContent>
       </DrawerPanel>

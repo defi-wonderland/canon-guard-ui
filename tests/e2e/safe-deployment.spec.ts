@@ -1,3 +1,4 @@
+import { ANVIL_ACCOUNT_ADDRESS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
 
 test.describe("Canon Guard Setup Flow", () => {
@@ -6,7 +7,7 @@ test.describe("Canon Guard Setup Flow", () => {
     expect(deployedSafe.safeAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
     expect(deployedSafe.owners).toHaveLength(1);
     expect(deployedSafe.threshold).toBe(1);
-    expect(deployedSafe.owners[0].toLowerCase()).toBe("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266");
+    expect(deployedSafe.owners[0].toLowerCase()).toBe(ANVIL_ACCOUNT_ADDRESS.toLowerCase());
 
     console.log(`[Test] Safe deployed at: ${deployedSafe.safeAddress}`);
   });
@@ -36,19 +37,18 @@ test.describe("Canon Guard Setup Flow", () => {
     await page.waitForLoadState("networkidle");
 
     // Verify setup form is visible
-    await expect(page.getByText("Add New Safe Account")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
     // Step 3: Paste the Safe address
-    const safeAddressInput = page.locator('input[placeholder="0x..."]').first();
-    await safeAddressInput.fill(safeAddress);
+    await page.getByTestId("safe-address-input").fill(safeAddress);
 
     // Step 4: Switch network from Ethereum to Optimism
     // The default is Ethereum Mainnet, we need to select OP Mainnet
-    const chainSelector = page.locator("select");
-    await chainSelector.selectOption({ label: "OP Mainnet" });
+    const chainSelector = page.getByTestId("chain-selector");
+    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
 
     // Verify Optimism is selected
-    await expect(chainSelector).toHaveValue("10");
+    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
 
     // Step 5: Click Continue button
     await page.getByTestId("continue-button").click();
@@ -57,15 +57,15 @@ test.describe("Canon Guard Setup Flow", () => {
     await page.waitForTimeout(3000);
 
     // After continue, Safe without guard should show the choice screen
-    await expect(page.getByText("doesn't have a Canon Guard set")).toBeVisible({
-      timeout: 15000,
+    await expect(page.getByTestId("no-guard-message")).toBeVisible({
+      timeout: TEST_TIMEOUTS.LONG,
     });
 
     // Step 6: Click "Deploy New Canon Guard"
-    await page.getByText("Deploy New Canon Guard").click();
+    await page.getByTestId("deploy-new-guard-button").click();
 
     // Should now be on the Guard Setup Wizard - Configure step
-    await expect(page.getByText("Setup Canon Guard")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Setup Canon Guard")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     // Step indicator shows "Configure" label
     await expect(page.getByText("Configure", { exact: true })).toBeVisible();
 
@@ -84,23 +84,22 @@ test.describe("Canon Guard Setup Flow", () => {
     // The inputs are the last two text inputs with placeholder 0x...
     const addressInputs = page.locator('input[placeholder="0x..."]');
     const inputCount = await addressInputs.count();
-    const anvilAccount = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
     // Emergency Trigger is the second-to-last input
     const triggerInput = addressInputs.nth(inputCount - 2);
     await triggerInput.scrollIntoViewIfNeeded();
-    await triggerInput.fill(anvilAccount);
+    await triggerInput.fill(ANVIL_ACCOUNT_ADDRESS);
 
     // Emergency Caller is the last input
     const callerInput = addressInputs.nth(inputCount - 1);
     await callerInput.scrollIntoViewIfNeeded();
-    await callerInput.fill(anvilAccount);
+    await callerInput.fill(ANVIL_ACCOUNT_ADDRESS);
 
     // Click Continue to go to Deploy step
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Should now be on step 2 - Deploy
-    await expect(page.getByText("Deployment Parameters")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Deployment Parameters")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByText("Function Arguments")).toBeVisible();
 
     // Verify the parameters are displayed correctly
@@ -138,7 +137,7 @@ test.describe("Canon Guard Setup Flow", () => {
     const continueButton = page.getByRole("button", { name: /continue/i });
 
     // Wait for the button to be enabled (validation must pass first)
-    await expect(continueButton).toBeEnabled({ timeout: 10000 });
+    await expect(continueButton).toBeEnabled({ timeout: TEST_TIMEOUTS.MEDIUM });
 
     await continueButton.click();
 
@@ -147,21 +146,21 @@ test.describe("Canon Guard Setup Flow", () => {
     // The main app shows the Queue section with search bar and filters
 
     // Verify the Queue section is visible (main app loaded)
-    await expect(page.getByPlaceholder("Search by name or 0x...")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
 
     // Verify the Queue title is visible
-    await expect(page.getByText("Queue", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("queue-title")).toBeVisible();
 
-    // Verify the filter tabs are visible (use getByRole for more specific selection)
-    await expect(page.getByRole("button", { name: /^ALL \d+$/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^IN REVIEW \d+$/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^SIGNED \d+$/ })).toBeVisible();
+    // Verify the filter tabs are visible
+    await expect(page.getByTestId("filter-all")).toBeVisible();
+    await expect(page.getByTestId("filter-in-review")).toBeVisible();
+    await expect(page.getByTestId("filter-signed")).toBeVisible();
 
     // Verify the URL has been updated with the guard address
     const url = new URL(page.url());
     expect(url.searchParams.get("guardAddress")).toBe(deployedCanonGuard.guardAddress);
     expect(url.searchParams.get("safeAddress")).toBe(safeAddress);
-    expect(url.searchParams.get("chainId")).toBe("10");
+    expect(url.searchParams.get("chainId")).toBe(CHAIN_CONFIG.OP_MAINNET.id.toString());
 
     console.log("[Test] Canon Guard setup flow completed successfully");
     console.log(`[Test] Final URL: ${page.url()}`);

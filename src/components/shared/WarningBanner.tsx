@@ -4,6 +4,7 @@ import { Box, styled } from "@mui/material";
 interface WarningBannerProps {
   backgroundColor: string;
   children: ReactNode;
+  "data-testid"?: string;
 }
 
 /**
@@ -11,9 +12,9 @@ interface WarningBannerProps {
  * Used for emergency mode and detached mode warnings.
  * Accepts children for flexible content including inline links.
  */
-export const WarningBanner = ({ backgroundColor, children }: WarningBannerProps) => {
+export const WarningBanner = ({ backgroundColor, children, "data-testid": testId }: WarningBannerProps) => {
   return (
-    <BannerContainer style={{ backgroundColor }}>
+    <BannerContainer style={{ backgroundColor }} data-testid={testId}>
       <BannerContent>{children}</BannerContent>
     </BannerContainer>
   );

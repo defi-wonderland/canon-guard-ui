@@ -239,7 +239,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
         {/* Title Section */}
         <TitleSection>
           <TitleRow>
-            <Title>Queue</Title>
+            <Title data-testid='queue-title'>Queue</Title>
             <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
           </TitleRow>
         </TitleSection>
@@ -253,20 +253,29 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
               placeholder='Search by name or 0x...'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              data-testid='queue-search-input'
             />
           </SearchSection>
           <FilterDivider />
-          <FilterTab $isActive={activeFilter === "all"} onClick={() => setActiveFilter("all")}>
+          <FilterTab $isActive={activeFilter === "all"} onClick={() => setActiveFilter("all")} data-testid='filter-all'>
             <FilterLabel $isActive={activeFilter === "all"}>ALL</FilterLabel>
             <FilterCount $isActive={activeFilter === "all"}>{allCount}</FilterCount>
           </FilterTab>
           <FilterDivider />
-          <FilterTab $isActive={activeFilter === "in-review"} onClick={() => setActiveFilter("in-review")}>
+          <FilterTab
+            $isActive={activeFilter === "in-review"}
+            onClick={() => setActiveFilter("in-review")}
+            data-testid='filter-in-review'
+          >
             <FilterLabel $isActive={activeFilter === "in-review"}>IN REVIEW</FilterLabel>
             <FilterCount $isActive={activeFilter === "in-review"}>{inReviewCount}</FilterCount>
           </FilterTab>
           <FilterDivider />
-          <FilterTab $isActive={activeFilter === "signed"} onClick={() => setActiveFilter("signed")}>
+          <FilterTab
+            $isActive={activeFilter === "signed"}
+            onClick={() => setActiveFilter("signed")}
+            data-testid='filter-signed'
+          >
             <FilterLabel $isActive={activeFilter === "signed"}>SIGNED</FilterLabel>
             <FilterCount $isActive={activeFilter === "signed"}>{signedCount}</FilterCount>
           </FilterTab>
@@ -276,7 +285,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
         <QueueItemsContainer>
           {/* Missing Nonce (0 signatures at current nonce) */}
           {missingNonce.length > 0 && (
-            <SectionGroup>
+            <SectionGroup data-testid='missing-nonce-section'>
               <SectionHeader>
                 <SectionTitle>MISSING NONCE</SectionTitle>
               </SectionHeader>
@@ -303,7 +312,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
 
           {/* Ready to Execute (fully signed) */}
           {readyToExecute.length > 0 && (
-            <SectionGroup>
+            <SectionGroup data-testid='ready-to-execute-section'>
               <SectionHeader>
                 <SectionTitle>READY TO EXECUTE</SectionTitle>
               </SectionHeader>
@@ -330,7 +339,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
 
           {/* Waiting for Approval (some signatures but not fully signed) */}
           {waitingForApproval.length > 0 && (
-            <SectionGroup>
+            <SectionGroup data-testid='waiting-approval-section'>
               <SectionHeader>
                 <SectionTitle>WAITING FOR APPROVAL</SectionTitle>
               </SectionHeader>

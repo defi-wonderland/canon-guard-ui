@@ -36,13 +36,13 @@ export const NoGuardChoiceScreen = ({ safeInfo, onDeployNew, onUseExisting, onBa
           {/* Choice Card */}
           <ChoiceCard>
             <InfoSection>
-              <InfoText>
+              <InfoText data-testid='no-guard-message'>
                 It looks like your Safe doesn't have a Canon Guard set. Choose how you'd like to proceed:
               </InfoText>
             </InfoSection>
 
             <OptionsSection>
-              <OptionButton onClick={onDeployNew}>
+              <OptionButton onClick={onDeployNew} data-testid='deploy-new-guard-button'>
                 <OptionIconWrapper>
                   <CircleFadingPlusIcon size={20} color={canonHeaderTokens.foreground.accent0} />
                 </OptionIconWrapper>
@@ -54,7 +54,7 @@ export const NoGuardChoiceScreen = ({ safeInfo, onDeployNew, onUseExisting, onBa
                 </OptionContent>
               </OptionButton>
 
-              <OptionButton onClick={onUseExisting}>
+              <OptionButton onClick={onUseExisting} data-testid='use-existing-guard-button'>
                 <OptionIconWrapper>
                   <Link2Icon size={20} color={canonHeaderTokens.foreground.accent0} />
                 </OptionIconWrapper>

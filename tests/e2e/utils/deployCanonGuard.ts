@@ -11,17 +11,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { optimism } from "viem/chains";
 import { CANON_GUARD_FACTORY, MULTI_SEND_CALL_ONLY } from "~/constants/addresses";
-
-/**
- * Anvil's well-known private key for account 0
- * Public address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
- */
-const ANVIL_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
-
-/**
- * Anvil account 0 address (derived from ANVIL_PRIVATE_KEY)
- */
-const ANVIL_ACCOUNT_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" as Address;
+import { ANVIL_ACCOUNT_ADDRESS, ANVIL_PRIVATE_KEY, ANVIL_RPC_URL, CANON_GUARD_CONFIG } from "../constants";
 
 /**
  * Canon Guard Factory ABI for createCanonGuard function
@@ -179,12 +169,12 @@ export interface DeployCanonGuardResult {
  */
 export async function deployCanonGuard(options: DeployCanonGuardOptions): Promise<DeployCanonGuardResult> {
   const {
-    rpcUrl = "http://127.0.0.1:8545",
+    rpcUrl = ANVIL_RPC_URL,
     safeAddress,
-    shortTxExecutionDelay = 3600n, // 1 hour
-    longTxExecutionDelay = 604800n, // 7 days
-    txExpiryDelay = 604800n, // 7 days
-    maxApprovalDuration = 10368000n, // ~4 months
+    shortTxExecutionDelay = CANON_GUARD_CONFIG.shortTxExecutionDelay,
+    longTxExecutionDelay = CANON_GUARD_CONFIG.longTxExecutionDelay,
+    txExpiryDelay = CANON_GUARD_CONFIG.txExpiryDelay,
+    maxApprovalDuration = CANON_GUARD_CONFIG.maxApprovalDuration,
     emergencyTrigger = ANVIL_ACCOUNT_ADDRESS, // Must be non-zero
     emergencyCaller = ANVIL_ACCOUNT_ADDRESS, // Must be non-zero
   } = options;

@@ -112,7 +112,7 @@ export const ReviewDeployStep = ({
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action' />
 
         {/* Preview Action Section */}
-        <FormSection label='PREVIEW ACTION'>
+        <FormSection label='PREVIEW ACTION' data-testid='preview-action-title'>
           <ActionPreviewCard>
             <PreviewHeader>
               <ActionTitle>{formData.title || "Untitled Transaction"}</ActionTitle>
@@ -348,10 +348,15 @@ export const ReviewDeployStep = ({
             )}
 
             <ButtonRow>
-              <ActionButton variant='secondary' onClick={onBack}>
+              <ActionButton variant='secondary' onClick={onBack} data-testid='review-back-button'>
                 BACK
               </ActionButton>
-              <ActionButton variant='primary' onClick={handleInitiate} disabled={proposePreApproval && !isValid}>
+              <ActionButton
+                variant='primary'
+                onClick={handleInitiate}
+                disabled={proposePreApproval && !isValid}
+                data-testid='initiate-button'
+              >
                 INITIATE
               </ActionButton>
             </ButtonRow>

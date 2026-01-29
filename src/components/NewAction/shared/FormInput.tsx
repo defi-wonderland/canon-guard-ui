@@ -15,6 +15,7 @@ interface FormInputProps {
   disabled?: boolean;
   error?: string;
   warning?: string;
+  "data-testid"?: string;
 }
 
 export const FormInput = ({
@@ -29,6 +30,7 @@ export const FormInput = ({
   disabled = false,
   error,
   warning,
+  "data-testid": testId,
 }: FormInputProps) => {
   const hasError = Boolean(error);
   const hasWarning = Boolean(warning) && !hasError;
@@ -43,7 +45,12 @@ export const FormInput = ({
       <InputContainer hasError={hasError} hasWarning={hasWarning}>
         {type === "select" ? (
           <SelectWrapper>
-            <StyledSelect value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}>
+            <StyledSelect
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={disabled}
+              data-testid={testId}
+            >
               <option value='' disabled>
                 Select
               </option>
@@ -64,6 +71,7 @@ export const FormInput = ({
             onChange={(e) => onChange(e.target.value)}
             type={type}
             disabled={disabled}
+            data-testid={testId}
           />
         )}
       </InputContainer>

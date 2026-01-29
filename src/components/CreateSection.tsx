@@ -13,11 +13,12 @@ interface ActionTypeCardProps {
   title: string;
   description: string;
   onClick?: () => void;
+  "data-testid"?: string;
 }
 
-const ActionTypeCard = ({ icon, title, description, onClick }: ActionTypeCardProps) => {
+const ActionTypeCard = ({ icon, title, description, onClick, "data-testid": testId }: ActionTypeCardProps) => {
   return (
-    <CardContainer onClick={onClick}>
+    <CardContainer onClick={onClick} data-testid={testId}>
       <IconArea>{icon}</IconArea>
       <ContentArea>
         <CardTitle>{title}</CardTitle>
@@ -47,7 +48,7 @@ const CreateMain = () => {
       <ContentWrapper>
         {/* Page Title */}
         <TitleSection>
-          <PageTitle>Create transaction</PageTitle>
+          <PageTitle data-testid='create-page-title'>Create transaction</PageTitle>
           <HelpIconWrapper>
             <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
           </HelpIconWrapper>
@@ -62,6 +63,7 @@ const CreateMain = () => {
               title='New Action'
               description='Build a single onchain transaction with your chosen target, data, and value...'
               onClick={() => handleActionClick("new-action")}
+              data-testid='new-action-button'
             />
             <ActionTypeCard
               icon={<VectorSquareIcon size={24} color={canonHeaderTokens.foreground.accent20} />}

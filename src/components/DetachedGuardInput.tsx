@@ -107,13 +107,14 @@ export const DetachedGuardInput = ({ safeInfo, onContinue, onBack, onReset }: De
 
             <InputSection>
               <InputGroup>
-                <InputLabel>Canon Guard Address</InputLabel>
+                <InputLabel data-testid='guard-address-label'>Canon Guard Address</InputLabel>
                 <InputWrapper $hasError={!!showError} $isValid={isValidInput}>
                   <StyledInput
                     type='text'
                     placeholder='0x...'
                     value={guardAddress}
                     onChange={(e) => setGuardAddress(e.target.value)}
+                    data-testid='guard-address-input'
                   />
                   {validationState === "validating" && (
                     <ValidationIcon>
@@ -131,8 +132,10 @@ export const DetachedGuardInput = ({ safeInfo, onContinue, onBack, onReset }: De
             </InputSection>
 
             <ButtonSection>
-              <BackButton onClick={onBack}>BACK</BackButton>
-              <ContinueButton onClick={handleContinue} disabled={!isValidInput}>
+              <BackButton onClick={onBack} data-testid='guard-back-button'>
+                BACK
+              </BackButton>
+              <ContinueButton onClick={handleContinue} disabled={!isValidInput} data-testid='guard-continue-button'>
                 CONTINUE
               </ContinueButton>
             </ButtonSection>

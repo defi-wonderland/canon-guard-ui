@@ -50,7 +50,11 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig }: He
       )}
 
       {/* Right section: CREATE | Safe | Wallet with dividers */}
-      <CreateButton $isActive={isCreateActive} onClick={() => navigateWithParams("/create")}>
+      <CreateButton
+        $isActive={isCreateActive}
+        onClick={() => navigateWithParams("/create")}
+        data-testid='create-button'
+      >
         CREATE
       </CreateButton>
       <HeaderSafeDropdown

@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { ANVIL_ACCOUNT_ADDRESS, ANVIL_RPC_URL, CANON_GUARD_CONFIG } from "./constants";
 import { deployCanonGuard } from "./utils/deployCanonGuard";
 import { deploySafe } from "./utils/deploySafe";
 
@@ -19,7 +20,7 @@ async function globalSetup() {
   try {
     // Step 1: Deploy Safe
     const safe = await deploySafe({
-      rpcUrl: "http://127.0.0.1:8545",
+      rpcUrl: ANVIL_RPC_URL,
       threshold: 1,
     });
 
@@ -46,14 +47,14 @@ async function globalSetup() {
     console.log("[Global Setup] Deploying Canon Guard...");
 
     const guard = await deployCanonGuard({
-      rpcUrl: "http://127.0.0.1:8545",
+      rpcUrl: ANVIL_RPC_URL,
       safeAddress: safe.safeAddress,
-      shortTxExecutionDelay: 1n, // 1 second for testing
-      longTxExecutionDelay: 2n, // 2 seconds for testing
-      txExpiryDelay: 604800n, // 7 days
-      maxApprovalDuration: 10368000n, // ~4 months
-      emergencyTrigger: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      emergencyCaller: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      shortTxExecutionDelay: CANON_GUARD_CONFIG.shortTxExecutionDelay,
+      longTxExecutionDelay: CANON_GUARD_CONFIG.longTxExecutionDelay,
+      txExpiryDelay: CANON_GUARD_CONFIG.txExpiryDelay,
+      maxApprovalDuration: CANON_GUARD_CONFIG.maxApprovalDuration,
+      emergencyTrigger: ANVIL_ACCOUNT_ADDRESS,
+      emergencyCaller: ANVIL_ACCOUNT_ADDRESS,
     });
 
     console.log(`[Global Setup] Canon Guard deployed at: ${guard.guardAddress}`);

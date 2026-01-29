@@ -15,8 +15,11 @@ export const DetachedModeBanner = ({ isActive, onLearnMore }: DetachedModeBanner
   if (!isActive) return null;
 
   return (
-    <WarningBanner backgroundColor={canonHeaderTokens.status.amber}>
-      Canon Guard is detached and not securing this Safe. <BannerLink onClick={onLearnMore}>Learn more</BannerLink>
+    <WarningBanner backgroundColor={canonHeaderTokens.status.amber} data-testid='detached-mode-banner'>
+      Canon Guard is detached and not securing this Safe.{" "}
+      <BannerLink onClick={onLearnMore} data-testid='learn-more-link'>
+        Learn more
+      </BannerLink>
     </WarningBanner>
   );
 };
