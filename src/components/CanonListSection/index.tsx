@@ -334,7 +334,7 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
         <HeaderSection>
           <TitleRow>
             <TitleGroup>
-              <PageTitle>Canon list</PageTitle>
+              <PageTitle data-testid='canon-list-title'>Canon list</PageTitle>
               <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
             </TitleGroup>
           </TitleRow>

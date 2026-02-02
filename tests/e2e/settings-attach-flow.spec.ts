@@ -267,4 +267,95 @@ test.describe.serial("Settings Attach Flow", () => {
 
     console.log("[Test] Transfer action created and executed successfully");
   });
+
+  test("should queue and execute a transfer from Canon List", async ({ page, deployedSafe }) => {
+    const { safeAddress } = deployedSafe;
+
+    console.log(`[Test] Using Safe: ${safeAddress}`);
+
+    // Step 1: Navigate to the app
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
+    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(2000);
+
+    // Wait for the main app to load (Queue section should be visible since guard is attached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    console.log("[Test] App loaded successfully");
+
+    // Step 3: Click 'CANON LIST' in the header to navigate to saved actions
+    await page.getByTestId("canon-list-button").click();
+    await page.waitForTimeout(1000);
+
+    // Verify we're on the Canon List page by checking the page title
+    await expect(page.getByTestId("canon-list-title")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    console.log("[Test] Navigated to Canon List");
+
+    // Wait for the list to load
+    await page.waitForTimeout(2000);
+
+    // Step 4: Find the saved "Test USDC Transfer" action and click QUEUE
+    // The action from the previous test should be visible
+    await expect(page.getByText("Test USDC Transfer")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    console.log("[Test] Found 'Test USDC Transfer' in Canon List");
+
+    // Click the QUEUE button on the first action item
+    await page.getByTestId("canon-list-queue-button").first().click();
+    console.log("[Test] Clicked QUEUE button");
+
+    await page.waitForTimeout(1000);
+
+    // Step 5: We should now be on the Queue Action flow
+    // Sign the queue transaction (2 steps: Queue + Sign)
+    console.log("[Test] Signing transaction 1/2: Queue Transaction");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText("1/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 1/2 signed");
+
+    // Sign transaction 2/2
+    console.log("[Test] Signing transaction 2/2: Sign Transaction");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText("2/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 2/2 signed");
+
+    console.log("[Test] All 2 transactions signed successfully");
+    await page.waitForTimeout(2000);
+
+    // Step 6: Click 'View Queue' to navigate to the queue
+    await page.getByTestId("view-queue-button").click();
+    console.log("[Test] Navigating to queue");
+
+    // Wait for the queue page to load
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("queue-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    console.log("[Test] On Queue page");
+
+    // Step 7: Look for the item in "Ready to Execute" section and click Execute
+    await expect(page.getByTestId("ready-to-execute-section")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    console.log("[Test] Found 'Ready to Execute' section");
+
+    // Find and click the Execute button
+    await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("execute-button").click();
+    console.log("[Test] Clicked Execute button");
+
+    // Wait for execution to complete
+    await page.waitForTimeout(3000);
+
+    console.log("[Test] Transfer from Canon List queued and executed successfully");
+  });
 });

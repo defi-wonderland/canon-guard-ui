@@ -124,7 +124,7 @@ export const ActionItem = ({
             </ChildrenButton>
           ) : (
             /* Both regular actions and hub children show QUEUE button */
-            <QueueButton onClick={isHubChild ? onAddToQueue : onQueue}>
+            <QueueButton onClick={isHubChild ? onAddToQueue : onQueue} data-testid='canon-list-queue-button'>
               <ButtonText>QUEUE</ButtonText>
               <PlusIcon size={14} color={canonHeaderTokens.foreground.accent10} />
             </QueueButton>
