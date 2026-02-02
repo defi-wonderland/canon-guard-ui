@@ -70,6 +70,7 @@ const CreateMain = () => {
               title='New Action from Hub'
               description='Set up a policy hub that manages related actions. Hubs help organize and verify ...'
               onClick={() => handleActionClick("new-action-hub")}
+              data-testid='new-action-hub-button'
             />
             <ActionTypeCard
               icon={<FileJsonIcon size={24} color={canonHeaderTokens.foreground.accent20} />}

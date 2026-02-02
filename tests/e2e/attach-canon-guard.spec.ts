@@ -1,4 +1,4 @@
-import { CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
+import { ANVIL_ACCOUNT_ADDRESS, CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
 import { test, expect } from "./fixtures";
 
 // Use serial execution to ensure tests run in order (attach must run before arbitrary action)
@@ -253,5 +253,168 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.waitForTimeout(3000);
 
     console.log("[Test] Arbitrary action created and executed successfully");
+  });
+
+  test("should create a hub action with pre-approval and execute it", async ({ page, deployedSafe }) => {
+    const { safeAddress } = deployedSafe;
+
+    console.log(`[Test] Using Safe: ${safeAddress}`);
+
+    // USDC address on Optimism
+    const USDC_OPTIMISM = "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85";
+
+    // Step 1: Navigate to the app
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
+    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(2000);
+
+    // Wait for the main app to load (Queue section should be visible since guard is attached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    console.log("[Test] App loaded successfully");
+
+    // Step 3: Click 'CREATE' in the header
+    await page.getByTestId("create-button").click();
+    await page.waitForTimeout(1000);
+
+    // Verify we're on the Create page
+    await expect(page.getByTestId("create-page-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    console.log("[Test] Navigated to Create page");
+
+    // Step 4: Click 'New Action from Hub'
+    await page.getByTestId("new-action-hub-button").click();
+    await page.waitForTimeout(1000);
+
+    // Verify we're on the Select Hub Type page
+    await expect(page.getByTestId("select-hub-type-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    console.log("[Test] On Select Hub Type page");
+
+    // Step 5: Click 'Hub: Cap Transfer' option
+    await page.getByTestId("capped-transfer-hub-option").click();
+    await page.waitForTimeout(1000);
+
+    // Verify we're on the Capped Transfer Hub form
+    await expect(page.getByTestId("hub-title-card")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    console.log("[Test] On Capped Transfer Hub form");
+
+    // Step 6: Fill in the form fields
+    // Title
+    await page.getByTestId("hub-title-input").fill("salary");
+
+    // Recipient address - use the connected address (Anvil account 0)
+    await page.getByTestId("hub-recipient-input").fill(ANVIL_ACCOUNT_ADDRESS);
+
+    // Epoch length - select "1 month" by setting the input to 1 and selecting "Months"
+    await page.getByTestId("hub-epoch-length-input").fill("1");
+    await page.getByTestId("hub-epoch-unit-select").selectOption({ label: "Months" });
+
+    // Token address (USDC on Optimism)
+    await page.getByTestId("hub-token-address-input").fill(USDC_OPTIMISM);
+
+    // Token amount
+    await page.getByTestId("hub-token-amount-input").fill("100");
+
+    console.log("[Test] Filled hub form with test data");
+
+    // Step 7: Click Continue
+    await page.getByTestId("hub-form-continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Verify we're on the Hub Review page
+    await expect(page.getByTestId("hub-preview-section")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    console.log("[Test] On Hub Review page");
+
+    // Step 8: Select pre-approval and click Initiate
+    await page.getByTestId("hub-pre-approval-checkbox").click();
+    await page.waitForTimeout(500);
+
+    await page.getByTestId("hub-initiate-button").click();
+    await page.waitForTimeout(1000);
+
+    console.log("[Test] Starting signing flow");
+
+    // Step 9: Sign all the transactions
+    // The hub flow with pre-approval has multiple transactions
+    // Transaction 1: Deploy Hub
+    console.log("[Test] Signing transaction 1: Deploy Hub");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText(/1\/\d+/)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 1 signed");
+
+    // Transaction 2: Save to Canon List
+    console.log("[Test] Signing transaction 2: Save to Canon List");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText(/2\/\d+/)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 2 signed");
+
+    // Transaction 3: Deploy Pre-Approval
+    console.log("[Test] Signing transaction 3: Deploy Pre-Approval");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText(/3\/\d+/)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 3 signed");
+
+    // Transaction 4: Queue Pre-Approval
+    console.log("[Test] Signing transaction 4: Queue Pre-Approval");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText(/4\/\d+/)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 4 signed");
+
+    // Transaction 5: Sign Pre-Approval
+    console.log("[Test] Signing transaction 5: Sign Pre-Approval");
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText(/5\/\d+/)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+    console.log("[Test] Transaction 5 signed");
+
+    console.log("[Test] All transactions signed successfully");
+    await page.waitForTimeout(2000);
+
+    // Step 10: Click 'View Queue'
+    await page.getByTestId("view-queue-button").click();
+    console.log("[Test] Navigating to queue");
+
+    // Wait for the queue page to load
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("queue-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    console.log("[Test] On Queue page");
+
+    // Step 11: Click Execute
+    await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("execute-button").click();
+    console.log("[Test] Clicked Execute button");
+
+    // Wait for execution to complete
+    await page.waitForTimeout(3000);
+
+    // Step 12: Click 'Canon List' in the header to navigate to the list of actions
+    await page.getByTestId("canon-list-button").click();
+    console.log("[Test] Navigating to Canon List");
+
+    // Wait for Canon List page to load
+    await expect(page.getByText("Canon list")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.waitForTimeout(2000);
+
+    // Step 13: Verify the saved transaction has the deployed hub with the "fast-path" tag
+    // The hub should be saved with a "fast-path" indicator since we enabled pre-approval
+    await expect(page.getByTestId("fast-path-indicator")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    console.log("[Test] Found fast-path indicator on Canon List");
+
+    console.log("[Test] Hub action created and executed successfully with fast-path enabled");
   });
 });

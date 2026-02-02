@@ -114,7 +114,7 @@ export const HubReviewStep = ({
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action from Hub' />
 
         {/* Preview Hub Section */}
-        <FormSection label='PREVIEW HUB'>
+        <FormSection label='PREVIEW HUB' data-testid='hub-preview-section'>
           <HubPreviewCard>
             <PreviewHeader>
               <HubTitle>{formData.title || "Untitled Hub"}</HubTitle>
@@ -242,7 +242,11 @@ export const HubReviewStep = ({
             {/* Propose Pre-Approval */}
             <CheckboxRow style={{ borderBottom: proposePreApproval ? "none" : "none" }}>
               <CheckboxLeft>
-                <Checkbox checked={proposePreApproval} onClick={() => setProposePreApproval(!proposePreApproval)}>
+                <Checkbox
+                  checked={proposePreApproval}
+                  onClick={() => setProposePreApproval(!proposePreApproval)}
+                  data-testid='hub-pre-approval-checkbox'
+                >
                   {proposePreApproval && <CheckIcon size={12} color={canonHeaderTokens.background.layer0} />}
                 </Checkbox>
                 <CheckboxLabel>Propose Pre-Approval</CheckboxLabel>
@@ -281,10 +285,15 @@ export const HubReviewStep = ({
             )}
 
             <ButtonRow>
-              <ActionButton variant='secondary' onClick={onBack}>
+              <ActionButton variant='secondary' onClick={onBack} data-testid='hub-review-back-button'>
                 BACK
               </ActionButton>
-              <ActionButton variant='primary' onClick={handleInitiate} disabled={proposePreApproval && !isValid}>
+              <ActionButton
+                variant='primary'
+                onClick={handleInitiate}
+                disabled={proposePreApproval && !isValid}
+                data-testid='hub-initiate-button'
+              >
                 INITIATE
               </ActionButton>
             </ButtonRow>

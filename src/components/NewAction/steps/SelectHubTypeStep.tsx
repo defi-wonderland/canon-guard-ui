@@ -9,10 +9,15 @@ import type { HubType } from "./index";
 interface HubOption {
   id: HubType;
   label: string;
+  testId: string;
 }
 
 const HUB_OPTIONS: HubOption[] = [
-  { id: "capped-transfer-hub", label: `HUB: ${HUB_DISPLAY_NAMES[ActionFactoryType.CAPPED_TOKEN_TRANSFERS]}` },
+  {
+    id: "capped-transfer-hub",
+    label: `HUB: ${HUB_DISPLAY_NAMES[ActionFactoryType.CAPPED_TOKEN_TRANSFERS]}`,
+    testId: "capped-transfer-hub-option",
+  },
 ];
 
 interface SelectHubTypeStepProps {
@@ -26,10 +31,10 @@ export const SelectHubTypeStep = ({ onSelectHub, onNavigateToCreate }: SelectHub
       <ContentWrapper>
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action from Hub' />
 
-        <FormSection label='SELECT HUB TYPE'>
+        <FormSection label='SELECT HUB TYPE' data-testid='select-hub-type-title'>
           <HubList>
             {HUB_OPTIONS.map((option) => (
-              <HubItem key={option.id} onClick={() => onSelectHub(option.id)}>
+              <HubItem key={option.id} onClick={() => onSelectHub(option.id)} data-testid={option.testId}>
                 <LeftContent>
                   <Layers2Icon size={16} color={canonHeaderTokens.foreground.accent20} />
                   <HubLabel>{option.label}</HubLabel>

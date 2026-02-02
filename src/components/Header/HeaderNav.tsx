@@ -21,7 +21,11 @@ export const HeaderNav = ({ queueCount = 0 }: HeaderNavProps) => {
         QUEUE
         {queueCount > 0 && <QueueBadge>{queueCount}</QueueBadge>}
       </NavItem>
-      <NavItem $isActive={isCanonListActive} onClick={() => navigateWithParams("/canon-list")}>
+      <NavItem
+        $isActive={isCanonListActive}
+        onClick={() => navigateWithParams("/canon-list")}
+        data-testid='canon-list-button'
+      >
         CANON LIST
       </NavItem>
     </NavContainer>

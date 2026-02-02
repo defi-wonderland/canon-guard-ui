@@ -129,7 +129,7 @@ export const CappedTransferHubFormStep = ({
           </HubSelector>
 
           {/* Transaction Title Card */}
-          <TransactionTitleCard>
+          <TransactionTitleCard data-testid='hub-title-card'>
             <CardContent>
               <FormInputWrapper>
                 <FormInput
@@ -137,6 +137,7 @@ export const CappedTransferHubFormStep = ({
                   placeholder='Eg. Transfer 300 USDC to John...'
                   value={formData.title}
                   onChange={(value) => updateField("title", value)}
+                  data-testid='hub-title-input'
                 />
                 <PublicBadge>Public</PublicBadge>
               </FormInputWrapper>
@@ -161,6 +162,7 @@ export const CappedTransferHubFormStep = ({
                 value={formData.recipientAddress}
                 onChange={(value) => updateField("recipientAddress", value)}
                 error={errors.recipientAddress}
+                data-testid='hub-recipient-input'
               />
               <EpochRow>
                 <EpochInputWrapper>
@@ -171,6 +173,7 @@ export const CappedTransferHubFormStep = ({
                     onChange={(value) => updateField("epochLength", value)}
                     error={errors.epochLength}
                     type='number'
+                    data-testid='hub-epoch-length-input'
                   />
                 </EpochInputWrapper>
                 <UnitSelectWrapper>
@@ -179,6 +182,7 @@ export const CappedTransferHubFormStep = ({
                     onChange={(value) => updateField("epochUnit", value as TimeUnit)}
                     type='select'
                     selectOptions={TIME_UNIT_OPTIONS}
+                    data-testid='hub-epoch-unit-select'
                   />
                 </UnitSelectWrapper>
               </EpochRow>
@@ -206,6 +210,7 @@ export const CappedTransferHubFormStep = ({
                     value={token.address}
                     onChange={(value) => updateToken(index, "address", value)}
                     error={errors.tokens[index]?.address}
+                    data-testid={index === 0 ? "hub-token-address-input" : undefined}
                   />
                   <FormInput
                     label='Token Amount'
@@ -213,6 +218,7 @@ export const CappedTransferHubFormStep = ({
                     value={token.amount}
                     onChange={(value) => updateToken(index, "amount", value)}
                     error={errors.tokens[index]?.amount}
+                    data-testid={index === 0 ? "hub-token-amount-input" : undefined}
                   />
                 </TokenFieldsSection>
               </TokenSection>
@@ -233,10 +239,15 @@ export const CappedTransferHubFormStep = ({
             {/* Action Buttons Row */}
             <ActionButtonRow>
               <ButtonsContainer>
-                <ActionButton variant='secondary' onClick={onBack}>
+                <ActionButton variant='secondary' onClick={onBack} data-testid='hub-form-back-button'>
                   BACK
                 </ActionButton>
-                <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
+                <ActionButton
+                  variant='primary'
+                  onClick={onContinue}
+                  disabled={!isValid}
+                  data-testid='hub-form-continue-button'
+                >
                   CONTINUE
                 </ActionButton>
               </ButtonsContainer>

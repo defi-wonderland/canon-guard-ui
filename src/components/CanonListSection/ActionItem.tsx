@@ -152,7 +152,10 @@ export const ActionItem = ({
         {/* Hub children don't show Fast/Slow path - only hubs and regular actions show that */}
         {!isHubChild && (
           <ActionsBottom>
-            <PathIndicator $isFastPath={isFastPath}>
+            <PathIndicator
+              $isFastPath={isFastPath}
+              data-testid={isFastPath ? "fast-path-indicator" : "slow-path-indicator"}
+            >
               {isFastPath ? (
                 <>
                   <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
