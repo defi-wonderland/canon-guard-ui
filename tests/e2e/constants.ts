@@ -23,6 +23,17 @@ export const ANVIL_ACCOUNT_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 export const VITALIK_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" as Address;
 
 /**
+ * USDC token address on Optimism
+ */
+export const USDC_OPTIMISM = "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85" as Address;
+
+/**
+ * USDC whale address on Optimism - used for funding Safes in tests
+ * This is the USDC token contract itself which holds a large balance
+ */
+export const USDC_WHALE_OPTIMISM = "0xf89d7b9c864f589bbF53a82105107622B35EaA40" as Address;
+
+/**
  * Default Anvil RPC URL
  */
 export const ANVIL_RPC_URL = "http://127.0.0.1:8545";

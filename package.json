@@ -25,8 +25,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:headed": "playwright test --headed",
-    "test:fork:op": "anvil --fork-url ${RPC_URL_OPTIMISM:-https://mainnet.optimism.io} --chain-id 10 --no-storage-caching --port 8545",
-    "test:fork:eth": "anvil --fork-url ${RPC_URL_ETHEREUM:-https://eth.llamarpc.com} --chain-id 1 --no-storage-caching --port 8546",
+    "test:fork:op": "anvil --fork-url ${RPC_URL_OPTIMISM:-https://mainnet.optimism.io} --chain-id 10 --no-storage-caching --port 8545 --auto-impersonate",
+    "test:fork:eth": "anvil --fork-url ${RPC_URL_ETHEREUM:-https://eth.llamarpc.com} --chain-id 1 --no-storage-caching --port 8546 --auto-impersonate",
     "playwright:install": "playwright install",
     "playwright:test": "playwright test --reporter=list"
   },

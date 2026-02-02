@@ -105,7 +105,7 @@ export const TransferFormStep = ({
           </FactorySelector>
 
           {/* Transaction Title Card */}
-          <TransactionTitleCard>
+          <TransactionTitleCard data-testid='transfer-title-card'>
             <CardContent>
               <FormInputWrapper>
                 <FormInput
@@ -113,6 +113,7 @@ export const TransferFormStep = ({
                   placeholder='Eg. Transfer 300 USDC to John...'
                   value={formData.title}
                   onChange={updateTitle}
+                  data-testid='transfer-title-input'
                 />
                 <PublicBadge>Public</PublicBadge>
               </FormInputWrapper>
@@ -147,6 +148,7 @@ export const TransferFormStep = ({
                     value={transfer.tokenAddress}
                     onChange={(value) => updateTransfer(index, "tokenAddress", value)}
                     error={errors[index]?.tokenAddress}
+                    data-testid={index === 0 ? "transfer-token-address-input" : undefined}
                   />
                   <FormInput
                     label='Recipient Address'
@@ -154,6 +156,7 @@ export const TransferFormStep = ({
                     value={transfer.recipientAddress}
                     onChange={(value) => updateTransfer(index, "recipientAddress", value)}
                     error={errors[index]?.recipientAddress}
+                    data-testid={index === 0 ? "transfer-recipient-address-input" : undefined}
                   />
                   <FormInput
                     label='Amount'
@@ -161,6 +164,7 @@ export const TransferFormStep = ({
                     value={transfer.amount}
                     onChange={(value) => updateTransfer(index, "amount", value)}
                     error={errors[index]?.amount}
+                    data-testid={index === 0 ? "transfer-amount-input" : undefined}
                   />
                 </ItemFieldsSection>
               </ItemSection>
@@ -176,10 +180,15 @@ export const TransferFormStep = ({
             {/* Action Buttons Row */}
             <ActionButtonRow>
               <ButtonsContainer>
-                <ActionButton variant='secondary' onClick={onBack}>
+                <ActionButton variant='secondary' onClick={onBack} data-testid='transfer-form-back-button'>
                   BACK
                 </ActionButton>
-                <ActionButton variant='primary' onClick={onContinue} disabled={!isValid}>
+                <ActionButton
+                  variant='primary'
+                  onClick={onContinue}
+                  disabled={!isValid}
+                  data-testid='transfer-form-continue-button'
+                >
                   CONTINUE
                 </ActionButton>
               </ButtonsContainer>
