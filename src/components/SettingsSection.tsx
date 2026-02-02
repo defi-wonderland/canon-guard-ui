@@ -191,11 +191,11 @@ export const SettingsSection = () => {
               </SettingInfo>
             </SettingCardLeft>
             {isDetached ? (
-              <OutlineButton $width='108px' onClick={handleAttachGuard}>
+              <OutlineButton $width='108px' onClick={handleAttachGuard} data-testid='settings-attach-button'>
                 ATTACH
               </OutlineButton>
             ) : (
-              <OutlineButton $width='108px' onClick={handleDetachGuard}>
+              <OutlineButton $width='108px' onClick={handleDetachGuard} data-testid='settings-detach-button'>
                 DETACH
               </OutlineButton>
             )}

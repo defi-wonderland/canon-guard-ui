@@ -1,6 +1,9 @@
 import { ANVIL_ACCOUNT_ADDRESS, CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
 import { test, expect } from "./fixtures";
 
+// Use deployment index 0 - this allows other test files to use different indices for parallel execution
+test.use({ deploymentIndex: 0 });
+
 // Use serial execution to ensure tests run in order (attach must run before arbitrary action)
 test.describe.serial("Canon Guard E2E Flow", () => {
   test("should attach an existing Canon Guard to a Safe through the UI", async ({

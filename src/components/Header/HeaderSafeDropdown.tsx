@@ -65,7 +65,7 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
 
   return (
     <DropdownWrapper>
-      <DropdownButton onClick={handleButtonClick}>
+      <DropdownButton onClick={handleButtonClick} data-testid='safe-dropdown-button'>
         <DropdownContent>
           <DropdownRow>
             <DropdownLabel>Safe</DropdownLabel>
@@ -104,7 +104,7 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
         <MenuDivider />
 
         {/* Settings */}
-        <MenuItem onClick={handleSettingsClick}>
+        <MenuItem onClick={handleSettingsClick} data-testid='settings-menu-item'>
           <MenuItemLeft>
             <ChevronRightIcon size={16} color={canonHeaderTokens.foreground.accent0} />
             <MenuItemLabel>Settings</MenuItemLabel>
