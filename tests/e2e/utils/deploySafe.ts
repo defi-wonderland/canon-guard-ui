@@ -12,12 +12,14 @@ import { ANVIL_PRIVATE_KEY, ANVIL_RPC_URL, SAFE_ADDRESSES } from "../constants";
 export interface DeploySafeOptions {
   /** RPC URL for the Anvil fork (default: http://127.0.0.1:8545) */
   rpcUrl?: string;
-  /** Owner addresses for the Safe (default: [Anvil account 0]) */
+  /** Owner addresses for the Safe (default: derived from ownerPrivateKey or [Anvil account 0]) */
   owners?: Address[];
   /** Multisig threshold (default: 1) */
   threshold?: number;
   /** Salt nonce for deterministic deployment (default: timestamp) */
   saltNonce?: bigint;
+  /** Private key for the deployer/owner account (default: Anvil account 0) */
+  ownerPrivateKey?: Hex;
 }
 
 /**
@@ -57,10 +59,16 @@ export interface DeploySafeResult {
  * ```
  */
 export async function deploySafe(options: DeploySafeOptions = {}): Promise<DeploySafeResult> {
-  const { rpcUrl = ANVIL_RPC_URL, owners: providedOwners, threshold = 1, saltNonce = BigInt(Date.now()) } = options;
+  const {
+    rpcUrl = ANVIL_RPC_URL,
+    owners: providedOwners,
+    threshold = 1,
+    saltNonce = BigInt(Date.now()),
+    ownerPrivateKey = ANVIL_PRIVATE_KEY,
+  } = options;
 
   // Step 1: Create clients
-  const account = privateKeyToAccount(ANVIL_PRIVATE_KEY);
+  const account = privateKeyToAccount(ownerPrivateKey);
 
   const publicClient = createPublicClient({
     chain: optimism,
@@ -73,20 +81,14 @@ export async function deploySafe(options: DeploySafeOptions = {}): Promise<Deplo
     transport: http(rpcUrl),
   });
 
-  // Step 2: Determine owners (fetch from Anvil if not provided)
+  // Step 2: Determine owners
+  // If owners are provided, use them. Otherwise, use the account derived from ownerPrivateKey.
   let owners: Address[];
   if (providedOwners && providedOwners.length > 0) {
     owners = providedOwners;
   } else {
-    // Fetch accounts from Anvil
-    const accounts = await publicClient.request({
-      method: "eth_accounts",
-      params: [],
-    });
-    if (!accounts || (accounts as Address[]).length === 0) {
-      throw new Error("No accounts available from Anvil");
-    }
-    owners = [accounts[0] as Address];
+    // Use the account address derived from the private key as the owner
+    owners = [account.address];
   }
 
   // Step 3: Encode Safe setup initializer

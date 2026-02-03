@@ -1,4 +1,4 @@
-import { ANVIL_ACCOUNT_ADDRESS, CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
+import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
 import { test, expect } from "./fixtures";
 
 // Use deployment index 0 - this allows other test files to use different indices for parallel execution
@@ -10,6 +10,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     page,
     deployedSafe,
     deployedCanonGuard,
+    setSigningAccountForDeployment,
   }) => {
     const { safeAddress } = deployedSafe;
     const { guardAddress } = deployedCanonGuard;
@@ -17,6 +18,9 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await setSigningAccountForDeployment();
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -107,12 +111,19 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.waitForTimeout(1000);
   });
 
-  test("should create an arbitrary action and execute it from the queue", async ({ page, deployedSafe }) => {
+  test("should create an arbitrary action and execute it from the queue", async ({
+    page,
+    deployedSafe,
+    setSigningAccountForDeployment,
+  }) => {
     const { safeAddress } = deployedSafe;
 
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await setSigningAccountForDeployment();
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -214,7 +225,12 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.waitForTimeout(3000);
   });
 
-  test("should create a hub action with pre-approval and execute it", async ({ page, deployedSafe }) => {
+  test("should create a hub action with pre-approval and execute it", async ({
+    page,
+    deployedSafe,
+    ownerIndex,
+    setSigningAccountForDeployment,
+  }) => {
     const { safeAddress } = deployedSafe;
 
     // USDC address on Optimism
@@ -223,6 +239,9 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await setSigningAccountForDeployment();
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -267,7 +286,8 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("hub-title-input").fill("salary");
 
     // Recipient address - use the connected address (Anvil account 0)
-    await page.getByTestId("hub-recipient-input").fill(ANVIL_ACCOUNT_ADDRESS);
+    // Use the correct owner address for this deployment as the recipient
+    await page.getByTestId("hub-recipient-input").fill(ANVIL_ACCOUNTS[ownerIndex].address);
 
     // Epoch length - select "1 month" by setting the input to 1 and selecting "Months"
     await page.getByTestId("hub-epoch-length-input").fill("1");

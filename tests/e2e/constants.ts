@@ -4,18 +4,41 @@
  * Centralized constants for E2E tests to avoid duplication
  */
 
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 
 /**
- * Anvil's well-known private key for account 0
+ * Anvil's well-known accounts (same as @wonderland/walletless ANVIL_ACCOUNTS)
+ * Each deployment index uses a different account to avoid nonce conflicts in parallel tests
+ */
+export const ANVIL_ACCOUNTS = [
+  {
+    address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" as Address,
+    privateKey: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as Hex,
+  },
+  {
+    address: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" as Address,
+    privateKey: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" as Hex,
+  },
+  {
+    address: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" as Address,
+    privateKey: "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a" as Hex,
+  },
+  {
+    address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906" as Address,
+    privateKey: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" as Hex,
+  },
+] as const;
+
+/**
+ * Anvil's well-known private key for account 0 (for backwards compatibility)
  * Public address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
  */
-export const ANVIL_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
+export const ANVIL_PRIVATE_KEY = ANVIL_ACCOUNTS[0].privateKey;
 
 /**
- * Anvil account 0 address (derived from ANVIL_PRIVATE_KEY)
+ * Anvil account 0 address (for backwards compatibility)
  */
-export const ANVIL_ACCOUNT_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266" as Address;
+export const ANVIL_ACCOUNT_ADDRESS = ANVIL_ACCOUNTS[0].address;
 
 /**
  * Vitalik's address - used for test transactions

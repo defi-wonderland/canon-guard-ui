@@ -133,6 +133,8 @@ export interface DeployCanonGuardOptions {
   emergencyTrigger?: Address;
   /** Emergency caller address (default: zero address) */
   emergencyCaller?: Address;
+  /** Private key for the deployer account (must be a Safe owner) */
+  deployerPrivateKey?: `0x${string}`;
 }
 
 /**
@@ -177,10 +179,11 @@ export async function deployCanonGuard(options: DeployCanonGuardOptions): Promis
     maxApprovalDuration = CANON_GUARD_CONFIG.maxApprovalDuration,
     emergencyTrigger = ANVIL_ACCOUNT_ADDRESS, // Must be non-zero
     emergencyCaller = ANVIL_ACCOUNT_ADDRESS, // Must be non-zero
+    deployerPrivateKey = ANVIL_PRIVATE_KEY,
   } = options;
 
   // Step 1: Create clients
-  const account = privateKeyToAccount(ANVIL_PRIVATE_KEY);
+  const account = privateKeyToAccount(deployerPrivateKey);
 
   const publicClient = createPublicClient({
     chain: optimism,

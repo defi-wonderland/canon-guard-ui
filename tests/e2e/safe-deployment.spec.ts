@@ -1,13 +1,14 @@
-import { ANVIL_ACCOUNT_ADDRESS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
+import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
 
 test.describe("Canon Guard Setup Flow", () => {
-  test("should verify Safe deployment configuration", async ({ deployedSafe }) => {
+  test("should verify Safe deployment configuration", async ({ deployedSafe, ownerIndex }) => {
     // Verify the Safe was deployed correctly in global setup
     expect(deployedSafe.safeAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
     expect(deployedSafe.owners).toHaveLength(1);
     expect(deployedSafe.threshold).toBe(1);
-    expect(deployedSafe.owners[0].toLowerCase()).toBe(ANVIL_ACCOUNT_ADDRESS.toLowerCase());
+    // The owner should be the Anvil account for this deployment's owner index
+    expect(deployedSafe.owners[0].toLowerCase()).toBe(ANVIL_ACCOUNTS[ownerIndex].address.toLowerCase());
   });
 
   test("all tests share the same deployed Safe", async ({ deployedSafe }) => {
@@ -18,7 +19,13 @@ test.describe("Canon Guard Setup Flow", () => {
     expect(safeAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
   });
 
-  test("should deploy Safe and setup Canon Guard", async ({ page, deployedSafe, deployedCanonGuard }) => {
+  test("should deploy Safe and setup Canon Guard", async ({
+    page,
+    deployedSafe,
+    deployedCanonGuard,
+    ownerIndex,
+    setSigningAccountForDeployment,
+  }) => {
     // Step 1: Safe is already deployed via global setup
     const { safeAddress } = deployedSafe;
 
@@ -30,6 +37,9 @@ test.describe("Canon Guard Setup Flow", () => {
     // Step 2: Open the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await setSigningAccountForDeployment();
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -80,15 +90,15 @@ test.describe("Canon Guard Setup Flow", () => {
     const addressInputs = page.locator('input[placeholder="0x..."]');
     const inputCount = await addressInputs.count();
 
-    // Emergency Trigger is the second-to-last input
+    // Emergency Trigger is the second-to-last input - use the owner address for this deployment
     const triggerInput = addressInputs.nth(inputCount - 2);
     await triggerInput.scrollIntoViewIfNeeded();
-    await triggerInput.fill(ANVIL_ACCOUNT_ADDRESS);
+    await triggerInput.fill(ANVIL_ACCOUNTS[ownerIndex].address);
 
-    // Emergency Caller is the last input
+    // Emergency Caller is the last input - use the owner address for this deployment
     const callerInput = addressInputs.nth(inputCount - 1);
     await callerInput.scrollIntoViewIfNeeded();
-    await callerInput.fill(ANVIL_ACCOUNT_ADDRESS);
+    await callerInput.fill(ANVIL_ACCOUNTS[ownerIndex].address);
 
     // Click Continue to go to Deploy step
     await page.getByRole("button", { name: /continue/i }).click();

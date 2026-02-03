@@ -1,4 +1,4 @@
-import { test as base } from "@playwright/test";
+import { test as base, Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -10,6 +10,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const TEST_RESULTS_DIR = path.join(__dirname, "../../test-results");
 const DEPLOYMENTS_CONFIG_FILE = path.join(TEST_RESULTS_DIR, ".deployments.json");
+
+/**
+ * Helper to switch the e2e provider's signing account based on the deployment's owner index.
+ * This must be called AFTER the page has navigated and the app has loaded.
+ * The e2eProvider and setSigningAccount are exposed on window by the app.
+ */
+async function switchSigningAccount(page: Page, ownerIndex: number): Promise<void> {
+  await page.evaluate((index) => {
+    // The app exposes these on window when IS_PLAYWRIGHT is true
+    const win = window as typeof window & {
+      __e2eProvider?: unknown;
+      __setSigningAccount?: (provider: unknown, index: number) => void;
+    };
+    if (win.__e2eProvider && win.__setSigningAccount) {
+      win.__setSigningAccount(win.__e2eProvider, index);
+    }
+  }, ownerIndex);
+}
 
 /**
  * Worker-scoped options for configuring which deployment to use
@@ -30,7 +48,7 @@ type TestFixtures = {
    * A deployed 1/1 Safe wallet on the Anvil fork
    *
    * The Safe is deployed ONCE in global setup and shared by all tests using the same deploymentIndex.
-   * Owner: Anvil account #0 (0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266)
+   * Each deployment uses a different Anvil account as owner to avoid nonce conflicts.
    *
    * @example
    * ```typescript
@@ -58,6 +76,27 @@ type TestFixtures = {
    * ```
    */
   deployedCanonGuard: DeployCanonGuardResult;
+
+  /**
+   * The Anvil account index used as the owner for this deployment.
+   * Use this with setSigningAccountForDeployment to switch the wallet.
+   */
+  ownerIndex: number;
+
+  /**
+   * Switch the e2e provider's signing account to match this deployment's owner.
+   * Call this AFTER page.goto() and BEFORE any wallet interactions.
+   *
+   * @example
+   * ```typescript
+   * test('should interact', async ({ page, setSigningAccountForDeployment }) => {
+   *   await page.goto('/');
+   *   await setSigningAccountForDeployment();
+   *   // Now the wallet will sign with the correct account
+   * });
+   * ```
+   */
+  setSigningAccountForDeployment: () => Promise<void>;
 };
 
 /**
@@ -103,6 +142,21 @@ export const test = base.extend<TestFixtures, WorkerOptions>({
     console.log(`[Fixture] Using deployment ${deploymentIndex} - Canon Guard: ${guard.guardAddress}`);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(guard);
+  },
+
+  ownerIndex: async ({ deploymentIndex }, use) => {
+    const deployment = loadDeployment(deploymentIndex);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(deployment.ownerIndex);
+  },
+
+  setSigningAccountForDeployment: async ({ page, ownerIndex }, use) => {
+    const helper = async () => {
+      console.log(`[Fixture] Switching signing account to Anvil account ${ownerIndex}`);
+      await switchSigningAccount(page, ownerIndex);
+    };
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(helper);
   },
 });
 

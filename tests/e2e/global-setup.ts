@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { ANVIL_ACCOUNT_ADDRESS, ANVIL_RPC_URL, CANON_GUARD_CONFIG } from "./constants";
+import { ANVIL_ACCOUNTS, ANVIL_RPC_URL, CANON_GUARD_CONFIG } from "./constants";
 import { deployCanonGuard, DeployCanonGuardResult } from "./utils/deployCanonGuard";
 import { deploySafe, DeploySafeResult } from "./utils/deploySafe";
 
@@ -21,6 +21,8 @@ const NUM_DEPLOYMENTS = 2;
  */
 export interface Deployment {
   index: number;
+  /** The Anvil account index used as the owner for this deployment */
+  ownerIndex: number;
   safe: DeploySafeResult;
   canonGuard: DeployCanonGuardResult;
 }
@@ -47,17 +49,22 @@ async function globalSetup() {
     const deployments: Deployment[] = [];
 
     for (let i = 0; i < NUM_DEPLOYMENTS; i++) {
-      console.log(`\n[Global Setup] === Deployment ${i} ===`);
+      // Use a different Anvil account for each deployment to avoid nonce conflicts
+      const ownerIndex = i % ANVIL_ACCOUNTS.length;
+      const ownerAccount = ANVIL_ACCOUNTS[ownerIndex];
 
-      // Step 1: Deploy Safe
-      console.log(`[Global Setup] Deploying Safe ${i}...`);
+      console.log(`\n[Global Setup] === Deployment ${i} (Owner: Account ${ownerIndex}) ===`);
+
+      // Step 1: Deploy Safe with the specific owner
+      console.log(`[Global Setup] Deploying Safe ${i} with owner ${ownerAccount.address}...`);
       const safe = await deploySafe({
         rpcUrl: ANVIL_RPC_URL,
         threshold: 1,
+        ownerPrivateKey: ownerAccount.privateKey,
       });
       console.log(`[Global Setup] Safe ${i} deployed at: ${safe.safeAddress}`);
 
-      // Step 2: Deploy Canon Guard
+      // Step 2: Deploy Canon Guard using the same owner
       console.log(`[Global Setup] Deploying Canon Guard ${i}...`);
       const guard = await deployCanonGuard({
         rpcUrl: ANVIL_RPC_URL,
@@ -66,13 +73,15 @@ async function globalSetup() {
         longTxExecutionDelay: CANON_GUARD_CONFIG.longTxExecutionDelay,
         txExpiryDelay: CANON_GUARD_CONFIG.txExpiryDelay,
         maxApprovalDuration: CANON_GUARD_CONFIG.maxApprovalDuration,
-        emergencyTrigger: ANVIL_ACCOUNT_ADDRESS,
-        emergencyCaller: ANVIL_ACCOUNT_ADDRESS,
+        emergencyTrigger: ownerAccount.address,
+        emergencyCaller: ownerAccount.address,
+        deployerPrivateKey: ownerAccount.privateKey,
       });
       console.log(`[Global Setup] Canon Guard ${i} deployed at: ${guard.guardAddress}`);
 
       deployments.push({
         index: i,
+        ownerIndex,
         safe,
         canonGuard: guard,
       });
