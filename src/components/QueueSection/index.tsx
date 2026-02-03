@@ -161,15 +161,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
             // Build the new URL with safe params
             const params = new URLSearchParams();
             if (safeAddress) params.set("safeAddress", safeAddress);
-            if (guardAddress) {
-              // After attach: don't include guardAddress (guard is now attached to Safe)
-              // After detach: include guardAddress (guard is now in detached mode)
-              // We can determine this by checking the current isDetached state:
-              // - If currently detached, we just attached (so don't include guardAddress)
-              // - If currently attached, we just detached (so include guardAddress)
-              // For now, we'll use a simpler approach: just navigate with safe params
-              // and let SafeVault re-fetch and determine the correct state
-            }
+
             const chainIdParam = new URLSearchParams(window.location.search).get("chainId");
             if (chainIdParam) params.set("chainId", chainIdParam);
 
