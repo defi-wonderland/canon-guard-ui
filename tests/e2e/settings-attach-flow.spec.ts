@@ -15,9 +15,6 @@ test.describe.serial("Settings Attach Flow", () => {
     const { safeAddress } = deployedSafe;
     const { guardAddress } = deployedCanonGuard;
 
-    console.log(`[Test] Using Safe: ${safeAddress}`);
-    console.log(`[Test] Using Canon Guard: ${guardAddress}`);
-
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
@@ -56,15 +53,12 @@ test.describe.serial("Settings Attach Flow", () => {
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await expect(page.getByTestId("detached-mode-banner")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
-    console.log("[Test] App loaded in detached mode");
-
     // Step 9: Click on the Safe dropdown in the header
     await page.getByTestId("safe-dropdown-button").click();
     await page.waitForTimeout(500);
 
     // Step 10: Click on "Settings" in the dropdown menu
     await page.getByTestId("settings-menu-item").click();
-    console.log("[Test] Navigating to Settings page");
 
     // Step 11: Wait for Settings page to load
     await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -72,69 +66,53 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Step 12: Click "ATTACH" button in the Canon Guard section
     await page.getByTestId("settings-attach-button").click();
-    console.log("[Test] Clicked Attach button in Settings");
 
     // Step 13: Wait for the attach flow page to load
     await page.waitForTimeout(1000);
 
     // Step 14: Sign the first transaction (Deploy Attach Action)
-    console.log("[Test] Signing transaction 1/3: Deploy Attach Action");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
 
     // Wait for the first transaction to complete
     await expect(page.getByText("1/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 1/3 signed");
 
     // Step 15: Sign the second transaction (Queue Attach Action)
-    console.log("[Test] Signing transaction 2/3: Queue Attach Action");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
 
     await expect(page.getByText("2/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 2/3 signed");
 
     // Step 16: Sign the third transaction (Sign Attach Action)
-    console.log("[Test] Signing transaction 3/3: Sign Attach Action");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
 
     await expect(page.getByText("3/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 3/3 signed");
-    console.log("[Test] All 3 transactions signed successfully");
 
     await page.waitForTimeout(3000);
 
     // Step 17: Click "View Queue" to go back to the queue
     await page.getByTestId("view-queue-button").click();
-    console.log("[Test] Navigating to queue");
 
     // Wait for the queue page to load
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
     // Step 18: The transaction needs to be executed
-    console.log("[Test] Looking for execute button on queue item");
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
 
     // Wait for the execution to complete
     await page.waitForTimeout(1000);
-
-    console.log("[Test] Attach Canon Guard via Settings flow completed - guard should now be attached");
   });
 
   test("should create and execute a transfer action", async ({ page, deployedSafe }) => {
     const { safeAddress } = deployedSafe;
 
-    console.log(`[Test] Using Safe: ${safeAddress}`);
-
     // Step 1: Fund the Safe with USDC before the test
-    console.log("[Test] Funding Safe with USDC...");
     await fundSafe({
       safeAddress: safeAddress as `0x${string}`,
       amount: "1000", // 1000 USDC
     });
-    console.log("[Test] Safe funded with 1000 USDC");
 
     // Step 2: Navigate to the app
     await page.goto("/");
@@ -156,7 +134,6 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Wait for the main app to load (Queue section should be visible since guard is attached)
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
-    console.log("[Test] App loaded successfully");
 
     // Step 4: Click 'CREATE' in the header
     await page.getByTestId("create-button").click();
@@ -164,7 +141,6 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Verify we're on the Create page
     await expect(page.getByTestId("create-page-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
-    console.log("[Test] Navigated to Create page");
 
     // Step 5: Click 'New Action'
     await page.getByTestId("new-action-button").click();
@@ -172,7 +148,6 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Verify we're on the Select Factory page
     await expect(page.getByTestId("select-factory-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
-    console.log("[Test] On Select Factory page");
 
     // Step 6: Click 'Transfer' option
     await page.getByTestId("transfer-option").click();
@@ -180,7 +155,6 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Verify we're on the Transfer form
     await expect(page.getByTestId("transfer-title-card")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
-    console.log("[Test] On Transfer form");
 
     // Step 7: Fill in the form fields
     // Title
@@ -195,8 +169,6 @@ test.describe.serial("Settings Attach Flow", () => {
     // Amount (10 USDC - in smallest unit)
     await page.getByTestId("transfer-amount-input").fill("10");
 
-    console.log("[Test] Filled transfer form with test data");
-
     // Step 8: Click Continue
     await page.getByTestId("transfer-form-continue-button").click();
     await page.waitForTimeout(1000);
@@ -204,74 +176,54 @@ test.describe.serial("Settings Attach Flow", () => {
     // Verify we're on the Review page
     await expect(page.getByTestId("preview-action-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
     await expect(page.getByText("Test USDC Transfer")).toBeVisible();
-    console.log("[Test] On Review page");
 
     // Step 9: Click Initiate
     await page.getByTestId("initiate-button").click();
     await page.waitForTimeout(1000);
 
-    console.log("[Test] Starting signing flow");
-
     // Step 10: Sign the four transactions
     // Transaction 1/4: Deploy Transfer Action
-    console.log("[Test] Signing transaction 1/4: Deploy Transfer Action");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("1/4")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 1/4 signed");
 
     // Transaction 2/4: Save to Canon List
-    console.log("[Test] Signing transaction 2/4: Save to Canon List");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("2/4")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 2/4 signed");
 
     // Transaction 3/4: Queue Transaction
-    console.log("[Test] Signing transaction 3/4: Queue Transaction");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("3/4")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 3/4 signed");
 
     // Transaction 4/4: Sign Transaction
-    console.log("[Test] Signing transaction 4/4: Sign Transaction");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("4/4")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 4/4 signed");
 
-    console.log("[Test] All 4 transactions signed successfully");
     await page.waitForTimeout(2000);
 
     // Step 11: Click 'View Queue'
     await page.getByTestId("view-queue-button").click();
-    console.log("[Test] Navigating to queue");
 
     // Wait for the queue page to load
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByTestId("queue-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
-    console.log("[Test] On Queue page");
 
     // Step 12: Look for the item in "Ready to Execute" section and click Execute
     await expect(page.getByTestId("ready-to-execute-section")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    console.log("[Test] Found 'Ready to Execute' section");
 
     // Find and click the Execute button
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("execute-button").click();
-    console.log("[Test] Clicked Execute button");
 
     // Wait for execution to complete
     await page.waitForTimeout(3000);
-
-    console.log("[Test] Transfer action created and executed successfully");
   });
 
   test("should queue and execute a transfer from Canon List", async ({ page, deployedSafe }) => {
     const { safeAddress } = deployedSafe;
-
-    console.log(`[Test] Using Safe: ${safeAddress}`);
 
     // Step 1: Navigate to the app
     await page.goto("/");
@@ -293,7 +245,6 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Wait for the main app to load (Queue section should be visible since guard is attached)
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
-    console.log("[Test] App loaded successfully");
 
     // Step 3: Click 'CANON LIST' in the header to navigate to saved actions
     await page.getByTestId("canon-list-button").click();
@@ -301,7 +252,6 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Verify we're on the Canon List page by checking the page title
     await expect(page.getByTestId("canon-list-title")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    console.log("[Test] Navigated to Canon List");
 
     // Wait for the list to load
     await page.waitForTimeout(2000);
@@ -309,53 +259,40 @@ test.describe.serial("Settings Attach Flow", () => {
     // Step 4: Find the saved "Test USDC Transfer" action and click QUEUE
     // The action from the previous test should be visible
     await expect(page.getByText("Test USDC Transfer")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    console.log("[Test] Found 'Test USDC Transfer' in Canon List");
 
     // Click the QUEUE button on the first action item
     await page.getByTestId("canon-list-queue-button").first().click();
-    console.log("[Test] Clicked QUEUE button");
 
     await page.waitForTimeout(1000);
 
     // Step 5: We should now be on the Queue Action flow
     // Sign the queue transaction (2 steps: Queue + Sign)
-    console.log("[Test] Signing transaction 1/2: Queue Transaction");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("1/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 1/2 signed");
 
     // Sign transaction 2/2
-    console.log("[Test] Signing transaction 2/2: Sign Transaction");
     await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("2/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
-    console.log("[Test] Transaction 2/2 signed");
 
-    console.log("[Test] All 2 transactions signed successfully");
     await page.waitForTimeout(2000);
 
     // Step 6: Click 'View Queue' to navigate to the queue
     await page.getByTestId("view-queue-button").click();
-    console.log("[Test] Navigating to queue");
 
     // Wait for the queue page to load
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByTestId("queue-title")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
-    console.log("[Test] On Queue page");
 
     // Step 7: Look for the item in "Ready to Execute" section and click Execute
     await expect(page.getByTestId("ready-to-execute-section")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    console.log("[Test] Found 'Ready to Execute' section");
 
     // Find and click the Execute button
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await page.getByTestId("execute-button").click();
-    console.log("[Test] Clicked Execute button");
 
     // Wait for execution to complete
     await page.waitForTimeout(3000);
-
-    console.log("[Test] Transfer from Canon List queued and executed successfully");
   });
 });

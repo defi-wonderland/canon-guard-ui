@@ -8,8 +8,6 @@ test.describe("Canon Guard Setup Flow", () => {
     expect(deployedSafe.owners).toHaveLength(1);
     expect(deployedSafe.threshold).toBe(1);
     expect(deployedSafe.owners[0].toLowerCase()).toBe(ANVIL_ACCOUNT_ADDRESS.toLowerCase());
-
-    console.log(`[Test] Safe deployed at: ${deployedSafe.safeAddress}`);
   });
 
   test("all tests share the same deployed Safe", async ({ deployedSafe }) => {
@@ -18,14 +16,11 @@ test.describe("Canon Guard Setup Flow", () => {
 
     expect(safeAddress).toBeDefined();
     expect(safeAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
-
-    console.log(`[Test] Using shared Safe: ${safeAddress}`);
   });
 
   test("should deploy Safe and setup Canon Guard", async ({ page, deployedSafe, deployedCanonGuard }) => {
     // Step 1: Safe is already deployed via global setup
     const { safeAddress } = deployedSafe;
-    console.log(`[Test] Using deployed Safe: ${safeAddress}`);
 
     // Verify Safe was deployed correctly
     expect(safeAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
@@ -115,10 +110,6 @@ test.describe("Canon Guard Setup Flow", () => {
     // Step 7: Deploy the Canon Guard programmatically
     // The UI instructs users to deploy via Safe Transaction Builder,
     // but for e2e testing we deploy directly using viem
-    console.log("[Test] Deploying Canon Guard...");
-
-    console.log(`[Test] Canon Guard deployed at: ${deployedCanonGuard.guardAddress}`);
-    console.log(`[Test] Transaction hash: ${deployedCanonGuard.transactionHash}`);
 
     // Step 8: Paste the Canon Guard address in the "Deployed Canon Guard Address" input
     await expect(page.getByText("Deployed Canon Guard Address")).toBeVisible();
@@ -161,8 +152,5 @@ test.describe("Canon Guard Setup Flow", () => {
     expect(url.searchParams.get("guardAddress")).toBe(deployedCanonGuard.guardAddress);
     expect(url.searchParams.get("safeAddress")).toBe(safeAddress);
     expect(url.searchParams.get("chainId")).toBe(CHAIN_CONFIG.OP_MAINNET.id.toString());
-
-    console.log("[Test] Canon Guard setup flow completed successfully");
-    console.log(`[Test] Final URL: ${page.url()}`);
   });
 });
