@@ -58,7 +58,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await expect(page.getByTestId("detached-mode-banner")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
     // Step 9: Click on the Safe dropdown in the header
-    await page.getByTestId("safe-dropdown-button").click();
+    await page.getByTestId("header-safe-dropdown-button").click();
     await page.waitForTimeout(500);
 
     // Step 10: Click on "Settings" in the dropdown menu

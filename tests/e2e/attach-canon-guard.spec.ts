@@ -99,16 +99,40 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     // Step 15: Click "View Queue" to go back to the queue
     await page.getByTestId("view-queue-button").click();
 
-    // Wait for the queue page to load
+    // Step 15: Verify we're on the home page with queue list visible
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
+    // Verify CREATE button is visible in the header (indicating we're on the main app)
+    await expect(page.getByTestId("create-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
     // Step 16: The transaction needs to be signed to reach threshold (shows "Signed 0/1")
-    // Click "SIGN" button on the queue item
+    // Click "Execute" button on the queue item
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
 
-    // Wait for the signing to complete
+    // Wait for execution to complete
+    await page.waitForTimeout(3000);
+
+    // Step 17: Verify we're still on the home page after execution
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("create-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 18: Navigate to Settings via the Safe dropdown and verify guard is attached
+    // Click on the Safe dropdown button in the header
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await page.waitForTimeout(500);
+
+    // Click Settings in the dropdown
+    await page.getByTestId("settings-menu-item").click();
     await page.waitForTimeout(1000);
+
+    // Verify we're on the Settings page
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Verify the Canon Guard shows as "Attached" (not "Detached")
+    await expect(page.getByTestId("canon-guard-status-label")).toHaveText("Attached", {
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
   });
 
   test("should create an arbitrary action and execute it from the queue", async ({

@@ -54,7 +54,7 @@ export default defineConfig({
   webServer: [
     // 1. Start Anvil fork of Optimism
     {
-      command: "pnpm test:fork:op",
+      command: "pnpm fork:op",
       url: "http://127.0.0.1:8545",
       reuseExistingServer: !process.env.CI,
       timeout: 120000, // 2 minutes for fork to initialize

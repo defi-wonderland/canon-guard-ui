@@ -16,13 +16,27 @@ import { SafeInfo } from "~/types";
 
 type ViewState = "setup" | "loading" | "error" | "ready" | "no-guard-choice" | "detached-input" | "deploy-wizard";
 
+// Helper to determine initial view state based on URL params
+const getInitialViewState = (searchParams: URLSearchParams): ViewState => {
+  const safeAddressParam = searchParams.get("safeAddress");
+  const chainIdParam = searchParams.get("chainId");
+
+  // If we have valid URL params, start in loading state to avoid flicker
+  if (safeAddressParam && isAddress(safeAddressParam) && parseChainId(chainIdParam)) {
+    return "loading";
+  }
+
+  return "setup";
+};
+
 export const SafeVault = () => {
   const { setSafeAddress, setChainId, setGuardAddress, setIsDetached, clearConfig } = useStateContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
-  const [viewState, setViewState] = useState<ViewState>("setup");
+  // Initialize viewState based on URL params to avoid flicker
+  const [viewState, setViewState] = useState<ViewState>(() => getInitialViewState(searchParams));
 
   // Track if we've initialized from URL params
   const initializedRef = useRef(false);
