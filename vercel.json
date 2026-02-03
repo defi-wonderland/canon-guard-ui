@@ -1,4 +1,5 @@
 {
+  "installCommand": "pnpm install --ignore-scripts",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }],
   "github": {
     "enabled": true
