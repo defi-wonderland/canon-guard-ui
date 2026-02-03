@@ -1,167 +1,294 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Box, Typography, CircularProgress, styled } from "@mui/material";
-import { Address } from "viem";
-import { QueueSection } from "~/components/QueueSection";
-import { SafeSidebar } from "~/components/SafeSidebar";
+import { flushSync } from "react-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { Address, isAddress } from "viem";
+import { CanonGuardApp } from "~/components/CanonGuardApp";
+import { DetachedGuardInput } from "~/components/DetachedGuardInput";
+import { ErrorState } from "~/components/ErrorState";
+import { GuardSetupWizard } from "~/components/GuardSetupWizard";
+import { NoGuardChoiceScreen } from "~/components/NoGuardChoiceScreen";
 import { VaultSetupModal } from "~/components/VaultSetupModal";
-import { SafePageContainer, SafeMainContent } from "~/components/shared/StyledComponents";
+import { SupportedChainId, parseChainId, getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { useStateContext } from "~/hooks/useStateContext";
-import { canonGuardService } from "~/services/canonGuardService";
-import { VaultData, TabType } from "~/types/canon-guard";
+import { ClientService, SafeService, CanonGuardValidationService } from "~/services";
+import { SafeInfo } from "~/types";
 
-const TAB_CONTENT_MAP = {
-  [TabType.QUEUE]: (vaultData: VaultData) => (
-    <QueueSection
-      queuedActions={vaultData.queuedTransactions}
-      waitingForApprovalActions={vaultData.queuedTransactions.filter((tx) => tx.approversCount < tx.requiredApprovals)}
-    />
-  ),
-  [TabType.PRE_APPROVED]: () => <ComingSoonMessage>Pre-approved actions coming soon...</ComingSoonMessage>,
-  [TabType.HISTORY]: () => <ComingSoonMessage>History coming soon...</ComingSoonMessage>,
-  [TabType.CONFIGURATION]: () => <ComingSoonMessage>Configuration coming soon...</ComingSoonMessage>,
-  [TabType.ACTIONS]: () => <ComingSoonMessage>Action creation coming soon...</ComingSoonMessage>,
-};
+type ViewState = "setup" | "loading" | "error" | "ready" | "no-guard-choice" | "detached-input" | "deploy-wizard";
 
-interface VaultContentProps {
-  vaultData: VaultData;
-  activeTab: TabType;
-}
+export const SafeVault = () => {
+  const { setSafeAddress, setChainId, setGuardAddress, setIsDetached, clearConfig } = useStateContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-const VaultContent = ({ vaultData, activeTab }: VaultContentProps) => {
-  if (!vaultData.vaultInfo.hasCanonGuard) {
-    return (
-      <ErrorContainer>
-        <ErrorMessage>This address is not a Canon Vault, please set it up and try again.</ErrorMessage>
-      </ErrorContainer>
-    );
-  }
+  const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
+  const [viewState, setViewState] = useState<ViewState>("setup");
 
-  const renderTabContent = TAB_CONTENT_MAP[activeTab];
-  return renderTabContent ? renderTabContent(vaultData) : null;
-};
+  // Track if we've initialized from URL params
+  const initializedRef = useRef(false);
 
-interface SafeVaultProps {
-  safeData?: VaultData;
-}
-
-export const SafeVault = ({ safeData }: SafeVaultProps) => {
-  const { vaultAddress, rpcUrl, isVaultConfigured, setVaultAddress, setRpcUrl, loading, setLoading } =
-    useStateContext();
-
-  const [currentVaultData, setCurrentVaultData] = useState<VaultData | null>(safeData || null);
-  const [activeTab, setActiveTab] = useState<TabType>(TabType.QUEUE);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-
-  const loadVaultData = useCallback(async () => {
-    if (!vaultAddress || !rpcUrl) return;
-
-    try {
-      setLoading(true);
-      const vaultData = await canonGuardService.getVaultData(vaultAddress);
-      setCurrentVaultData(vaultData);
-    } catch (error) {
-      console.error("Failed to load vault data:", error);
-      setCurrentVaultData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [vaultAddress, rpcUrl, setLoading]);
-
+  // Initialize from URL params on mount only
   useEffect(() => {
-    if (isVaultConfigured) {
-      loadVaultData();
+    if (initializedRef.current) return;
+
+    const safeAddressParam = searchParams.get("safeAddress");
+    const chainIdParam = searchParams.get("chainId");
+    const guardAddressParam = searchParams.get("guardAddress");
+
+    if (safeAddressParam && isAddress(safeAddressParam)) {
+      const parsedChainId = parseChainId(chainIdParam);
+
+      if (parsedChainId) {
+        initializedRef.current = true;
+        setSafeAddress(safeAddressParam as Address);
+        setChainId(parsedChainId);
+        setViewState("loading");
+
+        // Create a fresh service for the correct chain to avoid stale closure issues
+        const loadWithCorrectChain = async () => {
+          try {
+            const rpcUrl = getRpcUrlForChain(parsedChainId);
+            const chain = getViemChain(parsedChainId);
+            const clientService = new ClientService(rpcUrl, chain);
+            const freshSafeService = new SafeService(clientService);
+
+            const info = await freshSafeService.getSafeInfo(safeAddressParam as Address);
+            setSafeInfo(info);
+
+            // Case D: URL has guardAddress param - validate and use detached mode
+            if (guardAddressParam && isAddress(guardAddressParam) && !info.hasGuard) {
+              const validationService = new CanonGuardValidationService(clientService.getClient());
+              const isValid = await validationService.isValidCanonGuard(guardAddressParam as Address);
+
+              if (isValid) {
+                setGuardAddress(guardAddressParam as Address);
+                setIsDetached(true);
+                setViewState("ready");
+                return;
+              }
+              // If invalid, fall through to normal flow
+            }
+
+            // Case A: Safe has valid attached guard
+            if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
+              setGuardAddress(info.guardAddress);
+              setIsDetached(false);
+              setViewState("ready");
+              return;
+            }
+
+            // Case B: Safe has invalid guard (not Canon Guard)
+            if (info.hasGuard && !info.isValidCanonGuard) {
+              setViewState("error");
+              return;
+            }
+
+            // Case C: Safe has no guard - show choice screen
+            if (!info.hasGuard) {
+              setViewState("no-guard-choice");
+              return;
+            }
+
+            setViewState("ready");
+          } catch (error) {
+            console.error("Failed to load Safe info:", error);
+            setSafeInfo(null);
+            setViewState("error");
+          }
+        };
+
+        loadWithCorrectChain();
+      }
     }
-  }, [isVaultConfigured, loadVaultData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleSetupSubmit = (address: Address, rpc: string) => {
-    setVaultAddress(address);
-    setRpcUrl(rpc);
-  };
+  const handleSetupSubmit = useCallback(
+    async (address: Address, selectedChainId: SupportedChainId) => {
+      // Create a fresh service for the selected chain to avoid stale closure issues
+      try {
+        const rpcUrl = getRpcUrlForChain(selectedChainId);
+        const chain = getViemChain(selectedChainId);
+        const clientService = new ClientService(rpcUrl, chain);
+        const freshSafeService = new SafeService(clientService);
 
-  if (!isVaultConfigured) {
+        const info = await freshSafeService.getSafeInfo(address);
+
+        // Only update state after successful fetch - VaultSetupModal shows loading on button
+        setSafeAddress(address);
+        setChainId(selectedChainId);
+        setSearchParams({
+          safeAddress: address,
+          chainId: String(selectedChainId),
+        });
+        setSafeInfo(info);
+
+        // Case A: Safe has valid attached guard
+        if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
+          setGuardAddress(info.guardAddress);
+          setIsDetached(false);
+          setViewState("ready");
+          return;
+        }
+
+        // Case B: Safe has invalid guard (not Canon Guard)
+        if (info.hasGuard && !info.isValidCanonGuard) {
+          setViewState("error");
+          return;
+        }
+
+        // Case C: Safe has no guard - show choice screen
+        if (!info.hasGuard) {
+          setViewState("no-guard-choice");
+          return;
+        }
+
+        setViewState("ready");
+      } catch (error) {
+        console.error("Failed to load Safe info:", error);
+        setSafeInfo(null);
+        setViewState("error");
+      }
+    },
+    [setSafeAddress, setChainId, setSearchParams, setGuardAddress, setIsDetached],
+  );
+
+  const handleClearConfig = useCallback(() => {
+    // Reset everything and go back to setup
+    initializedRef.current = false;
+
+    // Use flushSync to ensure state updates happen synchronously
+    flushSync(() => {
+      clearConfig();
+      setSafeInfo(null);
+      setViewState("setup");
+    });
+
+    // Navigate to root using React Router to ensure proper state sync
+    navigate("/", { replace: true });
+  }, [clearConfig, navigate]);
+
+  // Handle choice: Deploy New Guard
+  const handleDeployNew = useCallback(() => {
+    setViewState("deploy-wizard");
+  }, []);
+
+  // Handle choice: Use Existing Guard (detached mode)
+  const handleUseExisting = useCallback(() => {
+    setViewState("detached-input");
+  }, []);
+
+  // Handle detached guard input continue
+  const handleDetachedContinue = useCallback(
+    (guardAddr: Address) => {
+      if (!safeInfo) return;
+
+      // Save to URL params
+      setSearchParams({
+        safeAddress: safeInfo.address,
+        chainId: String(safeInfo.chainId),
+        guardAddress: guardAddr,
+      });
+
+      // Set in context
+      setGuardAddress(guardAddr);
+      setIsDetached(true);
+      setViewState("ready");
+    },
+    [safeInfo, setSearchParams, setGuardAddress, setIsDetached],
+  );
+
+  // Handle back from choice/input screens
+  const handleBackToChoice = useCallback(() => {
+    setViewState("no-guard-choice");
+  }, []);
+
+  // Show setup modal
+  if (viewState === "setup") {
     return <VaultSetupModal open onSubmit={handleSetupSubmit} />;
   }
 
-  if (loading) {
+  // Show loading state
+  if (viewState === "loading") {
     return (
       <LoadingContainer>
-        <CircularProgress size={48} />
-        <LoadingText>Loading vault data...</LoadingText>
+        <CircularProgress />
+        <LoadingText variant='h6'>Loading Safe info...</LoadingText>
       </LoadingContainer>
     );
   }
 
-  if (!currentVaultData) {
+  // Handle error - couldn't connect to Safe or invalid guard
+  if (viewState === "error" || !safeInfo) {
+    // Check if it's an invalid guard error
+    if (safeInfo?.hasGuard && !safeInfo.isValidCanonGuard) {
+      return (
+        <ErrorState
+          title='Unsupported Guard'
+          message={`This Safe has a guard attached (${safeInfo.guardAddress}), but it was not deployed from a supported Canon Guard Factory. Canon Guard UI only works with guards deployed from the official factory. Please remove the current guard before using Canon Guard.`}
+          onChangeSetup={handleClearConfig}
+        />
+      );
+    }
+
     return (
-      <ErrorContainer>
-        <ErrorMessage>Failed to load vault data, please try again.</ErrorMessage>
-      </ErrorContainer>
+      <ErrorState
+        title='Invalid Safe'
+        message='The address provided is not a valid Safe on this network.'
+        onChangeSetup={handleClearConfig}
+      />
     );
   }
 
-  if (!currentVaultData.vaultInfo.hasCanonGuard) {
+  // Case C: Safe has no guard - show choice screen
+  if (viewState === "no-guard-choice") {
     return (
-      <ErrorContainer>
-        <ErrorMessage>This address is not a Canon Vault, please set it up and try again.</ErrorMessage>
-      </ErrorContainer>
+      <NoGuardChoiceScreen
+        safeInfo={safeInfo}
+        onDeployNew={handleDeployNew}
+        onUseExisting={handleUseExisting}
+        onBack={handleClearConfig}
+      />
     );
   }
 
-  return (
-    <SafePageContainer>
-      {currentVaultData && (
-        <>
-          <SafeSidebar
-            safeInfo={currentVaultData.vaultInfo}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-          <SafeMainContent sidebarCollapsed={sidebarCollapsed}>
-            <VaultContent vaultData={currentVaultData} activeTab={activeTab} />
-          </SafeMainContent>
-        </>
-      )}
-    </SafePageContainer>
-  );
+  // Deploy new guard wizard
+  if (viewState === "deploy-wizard") {
+    return (
+      <GuardSetupWizard
+        safeInfo={safeInfo}
+        onBack={handleBackToChoice}
+        onReset={handleClearConfig}
+        onComplete={handleDetachedContinue}
+      />
+    );
+  }
+
+  // Detached guard input
+  if (viewState === "detached-input") {
+    return (
+      <DetachedGuardInput
+        safeInfo={safeInfo}
+        onContinue={handleDetachedContinue}
+        onBack={handleBackToChoice}
+        onReset={handleClearConfig}
+      />
+    );
+  }
+
+  // Everything is good - show the main Canon Guard App UI
+  return <CanonGuardApp safeInfo={safeInfo} onClearConfig={handleClearConfig} />;
 };
 
-const LoadingContainer = styled(Box)(() => ({
+const LoadingContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   height: "100vh",
   flexDirection: "column",
-  gap: 16,
+  gap: theme.spacing(2),
 }));
 
 const LoadingText = styled(Typography)(({ theme }) => ({
-  variant: "h6",
   color: theme.palette.text.secondary,
-}));
-
-const ErrorContainer = styled(Box)(() => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "100vh",
-  padding: 32,
-}));
-
-const ErrorMessage = styled(Typography)(({ theme }) => ({
-  variant: "h6",
-  color: theme.palette.error.main,
-  textAlign: "center",
-  maxWidth: 600,
-}));
-
-const ComingSoonMessage = styled(Typography)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "400px",
-  fontSize: "1.25rem",
-  color: theme.palette.text.secondary,
-  fontStyle: "italic",
 }));

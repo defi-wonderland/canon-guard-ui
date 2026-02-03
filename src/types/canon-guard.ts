@@ -1,4 +1,4 @@
-import { Address, Hash, Hex } from "viem";
+import { Address, Hash } from "viem";
 
 // ================================================================
 // CANON GUARD CORE TYPES
@@ -11,18 +11,24 @@ export enum QueuedTransactionState {
   QUEUED = "queued",
   EXECUTABLE = "executable",
   EXPIRED = "expired",
-  EXECUTED = "executed",
 }
 
 /**
  * Types of action factories available in the Canon Guard system
  */
 export enum ActionFactoryType {
-  SIMPLE_ACTIONS = "simple_actions",
+  SAFE_ENTRYPOINT = "safe_entrypoint",
+  ARBITRARY_ACTIONS = "arbitrary_actions",
   SIMPLE_TRANSFERS = "simple_transfers",
   CAPPED_TOKEN_TRANSFERS = "capped_token_transfers",
   ALLOWANCE_CLAIMOR = "allowance_claimor",
   APPROVE_ACTION = "approve_action",
+  CHANGE_SAFE_GUARD = "change_safe_guard",
+  SET_EMERGENCY_CALLER = "set_emergency_caller",
+  SET_EMERGENCY_TRIGGER = "set_emergency_trigger",
+  EVERCLEAR_TOKEN_CONVERSION = "everclear_token_conversion",
+  OPX_ACTION = "opx_action",
+  UNKNOWN = "unknown",
 }
 
 /**
@@ -30,19 +36,6 @@ export enum ActionFactoryType {
  */
 export enum PreApprovedItemType {
   BUILDER = "builder",
-  HUB = "hub",
-}
-
-/**
- * Canon Guard registry containing all factory addresses
- */
-export interface CanonRegistry {
-  safeEntrypointFactory: Address;
-  allowanceClaimorFactory: Address;
-  approveActionFactory: Address;
-  cappedTokenTransfersHubFactory: Address;
-  simpleActionsFactory: Address;
-  simpleTransfersFactory: Address;
 }
 
 // ================================================================
@@ -55,7 +48,8 @@ export interface CanonRegistry {
 export interface ActionBuilder {
   address: Address;
   factoryType: ActionFactoryType;
-  factoryAddress: Address;
+  actionBuilderAddress: Address;
+  factoryLabel: string;
   createdAt: Date;
   isApproved: boolean;
   approvalExpiresAt?: Date;
@@ -67,7 +61,7 @@ export interface ActionBuilder {
  */
 export interface ActionHub {
   address: Address;
-  factoryAddress: Address;
+  actionBuilderAddress: Address;
   type: ActionFactoryType;
   isApproved: boolean;
   approvalExpiresAt?: Date;
@@ -91,7 +85,7 @@ export interface QueuedTransaction {
 }
 
 /**
- * Pre-approved action builder or hub
+ * Pre-approved action builder or hub -  represents Safe transactions waiting for approval
  */
 export interface PreApprovedItem {
   address: Address;
@@ -99,7 +93,13 @@ export interface PreApprovedItem {
   factoryType?: ActionFactoryType;
   approvedAt: Date;
   expiresAt: Date;
-  approvalDuration: number; // in seconds
+  approvalDuration: number;
+
+  // Safe transaction specific fields for "Waiting for Approval" column
+  safeTxHash?: Hash;
+  approversCount?: number;
+  requiredApprovals?: number;
+  approvers?: Address[];
 }
 
 // ================================================================
@@ -107,40 +107,37 @@ export interface PreApprovedItem {
 // ================================================================
 
 /**
- * Canon Guard configuration for a specific vault
+ * Canon Guard configuration for a specific Safe
  */
 export interface CanonGuardConfiguration {
-  vaultAddress: string;
-  entrypointAddress: string;
-  shortTxExecutionDelay: number; // in seconds
-  longTxExecutionDelay: number; // in seconds
-  txExpiryDelay: number; // in seconds
-  maxApprovalDuration: number; // in seconds
-  emergencyTriggerAddress: string;
-  emergencyCallerAddress: string;
+  safeAddress: Address;
+  entrypointAddress: Address;
+  shortTxExecutionDelay: number;
+  longTxExecutionDelay: number;
+  txExpiryDelay: number;
+  maxApprovalDuration: number;
+  emergencyTriggerAddress: Address;
+  emergencyCallerAddress: Address;
   isEmergencyMode: boolean;
 }
 
-/**
- * Information about a Safe vault with Canon Guard
- */
-export interface VaultInfo {
-  address: string;
+export interface SafeInfo {
+  address: Address;
   chainId: number;
   network: string;
   threshold: number;
-  owners: string[];
+  owners: Address[];
   totalOwners: number;
-  hasCanonGuard: boolean;
-  guardAddress?: string;
+  /** Whether the Safe has any guard attached */
+  hasGuard: boolean;
+  /** Whether the attached guard is a valid Canon Guard (deployed from supported factory) */
+  isValidCanonGuard: boolean;
+  guardAddress?: Address;
   nonce: number;
 }
 
-/**
- * Complete vault data including configuration and actions
- */
-export interface VaultData {
-  vaultInfo: VaultInfo;
+export interface CanonGuardData {
+  safeInfo: SafeInfo;
   configuration?: CanonGuardConfiguration;
   queuedTransactions: QueuedTransaction[];
   preApprovedItems: PreApprovedItem[];
@@ -165,72 +162,33 @@ export interface ExecutedTransaction {
   txHash: Hash;
 }
 
-/**
- * Action details for display and execution
- */
-export interface ActionDetails {
-  actionBuilder: Address;
-  target: Address;
-  value: string; // in wei
-  calldata: Hex;
-  fnSignature?: string; // Function signature like "approve(address,uint256)"
-  decodedParams?: Record<string, unknown>;
-}
-
-/**
- * Simple action structure for building new actions
- */
-export interface SimpleAction {
-  target: Address;
-  fnSignature: string; // Function signature like "transfer(address,uint256)"
-  data: Hex; // ABI-encoded parameters
-  value: string; // in wei
-}
-
-/**
- * Token transfer action structure
- */
-export interface TransferAction {
-  token: Address;
-  to: Address;
-  amount: string; // in token units
-}
-
 // ================================================================
-// UI STATE TYPES
+// HUB TYPES
 // ================================================================
 
 /**
- * UI tab types for navigation
+ * Types of hub factories available in the Canon Guard system
  */
-export enum TabType {
-  QUEUE = "queue",
-  PRE_APPROVED = "pre-approved",
-  HISTORY = "history",
-  CONFIGURATION = "configuration",
-  ACTIONS = "actions",
+export enum HubFactoryType {
+  CAPPED_TOKEN_TRANSFERS_HUB = "capped_token_transfers_hub",
 }
 
 /**
- * Action creation wizard steps
+ * Token configuration for a CappedTokenTransfersHub
  */
-export enum ActionWizardStep {
-  SELECT_TYPE = "select-type",
-  CONFIGURE_ACTION = "configure-action",
-  REVIEW = "review",
-  DEPLOY = "deploy",
-  QUEUE = "queue",
+export interface HubTokenConfig {
+  address: Address;
+  cap: bigint;
+  capLeft: bigint;
+  decimals: number;
 }
 
 /**
- * Filter options for transaction lists
+ * Hub information for CappedTokenTransfersHub
  */
-export interface TransactionFilters {
-  state?: QueuedTransactionState[];
-  factoryType?: ActionFactoryType[];
-  dateRange?: {
-    from: Date;
-    to: Date;
-  };
-  hasHub?: boolean;
+export interface CappedTokenTransfersHubInfo {
+  address: Address;
+  recipient: Address;
+  epochLength: bigint;
+  tokens: HubTokenConfig[];
 }

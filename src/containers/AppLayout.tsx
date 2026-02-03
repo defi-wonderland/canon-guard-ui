@@ -1,10 +1,12 @@
 import { CssBaseline, styled } from "@mui/material";
 import { Outlet } from "react-router-dom";
+import { WalletConnectNavigator } from "~/components/WalletConnect";
 
 export const AppLayout = () => {
   return (
     <>
       <CssBaseline />
+      <WalletConnectNavigator />
       <MainContent>
         <NoScriptMessage>
           <p>This website requires JavaScript to function properly.</p>

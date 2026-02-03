@@ -1,126 +1,175 @@
 import { useState } from "react";
-import { Modal, Box, Typography, Switch, FormControlLabel, Button, TextField } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { Box, Typography, Button, styled, CircularProgress } from "@mui/material";
 import { Address, isAddress } from "viem";
-import { safeDesignTokens } from "~/config/themes/safeTheme";
-import { DEMO_SAFE_WITH_GUARD, OPTIMISM_MAINNET_RPC } from "~/constants/addresses";
-
-const DEMO_DATA = {
-  vaultAddress: DEMO_SAFE_WITH_GUARD,
-  rpcUrl: OPTIMISM_MAINNET_RPC,
-};
+import { SupportedChainId, SUPPORTED_CHAINS_LIST, DEFAULT_CHAIN_ID } from "~/config/chains";
+import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { HeaderLogo } from "./Header";
+import { FormInput } from "./NewAction/shared/FormInput";
+import {
+  PageContainer,
+  SetupHeader,
+  SetupContentArea,
+  SetupFormWrapper,
+  SetupSectionTitle,
+} from "./shared/StyledComponents";
 
 interface VaultSetupModalProps {
   open: boolean;
-  onSubmit: (vaultAddress: Address, rpcUrl: string) => void;
+  onSubmit: (safeAddress: Address, chainId: SupportedChainId) => Promise<void>;
 }
 
 export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
-  const [vaultAddress, setVaultAddress] = useState("");
-  const [rpcUrl, setRpcUrl] = useState("");
-  const [demoMode, setDemoMode] = useState(false);
+  const [safeAddress, setSafeAddress] = useState("");
+  const [chainId, setChainId] = useState<SupportedChainId>(DEFAULT_CHAIN_ID);
+  const [errors, setErrors] = useState<{ safeAddress?: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleDemoModeToggle = (checked: boolean) => {
-    setDemoMode(checked);
-    if (checked) {
-      setVaultAddress(DEMO_DATA.vaultAddress);
-      setRpcUrl(DEMO_DATA.rpcUrl);
-    } else {
-      setVaultAddress("");
-      setRpcUrl("");
+  const validateInputs = (): boolean => {
+    const newErrors: { safeAddress?: string } = {};
+
+    if (!safeAddress) {
+      newErrors.safeAddress = "Safe address is required";
+    } else if (!isAddress(safeAddress)) {
+      newErrors.safeAddress = "Invalid Ethereum address";
     }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (!vaultAddress || !rpcUrl || !isAddress(vaultAddress)) {
+  const handleSubmit = async () => {
+    if (!validateInputs() || isLoading) {
       return;
     }
 
-    onSubmit(vaultAddress as Address, rpcUrl);
+    setIsLoading(true);
+    try {
+      await onSubmit(safeAddress as Address, chainId);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  if (!open) return null;
+
   return (
-    <StyledModal open={open} disableEscapeKeyDown keepMounted={false}>
-      <SetupModalContainer>
-        <SetupModalContent>
-          <SetupModalHeader>
-            <SetupModalTitle>Setup Canon Vault</SetupModalTitle>
-            <SetupModalSubtitle>Enter your Canon Vault address and RPC endpoint to get started</SetupModalSubtitle>
-          </SetupModalHeader>
+    <PageContainer>
+      <SetupHeader>
+        <HeaderLogo
+          onClick={() => {
+            setSafeAddress("");
+            setChainId(DEFAULT_CHAIN_ID);
+            setErrors({});
+          }}
+        />
+      </SetupHeader>
 
-          <Box display='flex' justifyContent='center'>
-            <FormControlLabel
-              control={<Switch checked={demoMode} onChange={(e) => handleDemoModeToggle(e.target.checked)} />}
-              label='Demo Mode (Use example Canon Guard Safe)'
-            />
-          </Box>
+      <SetupContentArea>
+        <SetupFormWrapper data-testid='setup-form'>
+          <SetupSectionTitle>Add New Safe Account</SetupSectionTitle>
 
-          <Box display='flex' flexDirection='column' gap={3}>
-            <TextField
-              fullWidth
-              label='Canon Vault Address'
-              placeholder='0x...'
-              value={vaultAddress}
-              onChange={(e) => setVaultAddress(e.target.value)}
-              disabled={demoMode}
-              data-testid='vault-address-input'
-            />
+          <FormCard>
+            <FormSection>
+              <InfoText>
+                Canon Guard sits on top of a Safe Account, so before starting, ensure that you have a Safe Account
+                already deployed on-chain.
+              </InfoText>
 
-            <TextField
-              fullWidth
-              label='RPC URL'
-              placeholder='https://...'
-              value={rpcUrl}
-              onChange={(e) => setRpcUrl(e.target.value)}
-              disabled={demoMode}
-              data-testid='rpc-url-input'
-            />
-          </Box>
+              <InputsContainer>
+                <FormInput
+                  label='Safe Address'
+                  placeholder='0x...'
+                  value={safeAddress}
+                  onChange={(value) => {
+                    setSafeAddress(value);
+                    if (errors.safeAddress) setErrors((prev) => ({ ...prev, safeAddress: undefined }));
+                  }}
+                  disabled={isLoading}
+                  error={errors.safeAddress}
+                  data-testid='safe-address-input'
+                />
 
-          <Box display='flex' justifyContent='center'>
-            <Button variant='contained' onClick={handleSubmit} fullWidth data-testid='continue-to-vault-button'>
-              Continue to Vault
-            </Button>
-          </Box>
-        </SetupModalContent>
-      </SetupModalContainer>
-    </StyledModal>
+                <FormInput
+                  label='Chain'
+                  type='select'
+                  value={chainId.toString()}
+                  onChange={(value) => setChainId(Number(value) as SupportedChainId)}
+                  selectOptions={SUPPORTED_CHAINS_LIST.map((chain) => ({
+                    label: chain.name,
+                    value: chain.id.toString(),
+                  }))}
+                  disabled={isLoading}
+                  data-testid='chain-selector'
+                />
+              </InputsContainer>
+            </FormSection>
+
+            <ButtonSection>
+              <ContinueButton onClick={handleSubmit} disabled={isLoading} data-testid='continue-button'>
+                {isLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "CONTINUE"}
+              </ContinueButton>
+            </ButtonSection>
+          </FormCard>
+        </SetupFormWrapper>
+      </SetupContentArea>
+    </PageContainer>
   );
 };
 
-const StyledModal = styled(Modal)({
-  zIndex: 2000,
-});
-
-const SetupModalContainer = styled(Box)(() => ({
-  position: "relative",
-  width: "100%",
-  maxWidth: "500px",
-  margin: safeDesignTokens.spacing.lg,
-}));
-
-const SetupModalContent = styled(Box)(({ theme }) => ({
+// Form card
+const FormCard = styled(Box)({
   display: "flex",
   flexDirection: "column",
-  gap: safeDesignTokens.spacing.md,
-  backgroundColor: safeDesignTokens[theme.palette.mode].surfaces.primary,
-  padding: safeDesignTokens.spacing.xxl,
-  boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-  border: `1px solid ${safeDesignTokens[theme.palette.mode].borders.primary}`,
-}));
+  borderRadius: "8px",
+  overflow: "hidden",
+  backgroundColor: canonHeaderTokens.background.layer1,
+});
 
-const SetupModalHeader = styled(Box)(() => ({
-  textAlign: "center",
-  marginBottom: safeDesignTokens.spacing.xl,
-}));
+const FormSection = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "32px",
+  padding: "24px",
+});
 
-const SetupModalTitle = styled(Typography)(({ theme }) => ({
-  ...safeDesignTokens.typography.sectionTitle,
-  color: theme.palette.text.primary,
-  marginBottom: safeDesignTokens.spacing.sm,
-}));
+const InfoText = styled(Typography)({
+  fontSize: "13px",
+  lineHeight: "20px",
+  color: canonHeaderTokens.foreground.accent10,
+});
 
-const SetupModalSubtitle = styled(Typography)(({ theme }) => ({
-  ...safeDesignTokens.typography.cardBody,
-  color: theme.palette.text.secondary,
-}));
+const InputsContainer = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "20px",
+});
+
+// Button section
+const ButtonSection = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  padding: "24px",
+  borderTop: `1px dashed ${canonHeaderTokens.background.layer0}`,
+});
+
+const ContinueButton = styled(Button)({
+  width: "100%",
+  height: "36px",
+  backgroundColor: canonHeaderTokens.brand.green,
+  color: "#ffffff",
+  fontSize: "12px",
+  fontWeight: 600,
+  letterSpacing: "0.6px",
+  textTransform: "uppercase",
+  borderRadius: "100px",
+  border: "none",
+  cursor: "pointer",
+  "&:hover": {
+    backgroundColor: "#129035",
+  },
+  "&:disabled": {
+    backgroundColor: canonHeaderTokens.brand.green,
+    opacity: 0.8,
+    cursor: "not-allowed",
+  },
+});

@@ -4,12 +4,13 @@
  * Responsibilities:
  * - Read Safe configuration (owners, threshold, nonce)
  * - Detect guard contracts via storage slot reading
+ * - Validate Canon Guard deployment via factory check
  */
 
-import { Address, keccak256, toHex, PublicClient } from "viem";
-import { ZERO_ADDRESS } from "~/utils/hex";
+import { Address, keccak256, toHex, PublicClient, getAddress, zeroAddress } from "viem";
 import { safeAbi } from "../abis/safe";
-import { VaultInfo } from "../types";
+import { SafeInfo } from "../types";
+import { CanonGuardValidationService } from "./canonGuardValidationService";
 import { ClientService } from "./clientService";
 
 export class SafeService {
@@ -42,10 +43,13 @@ export class SafeService {
       if (!rawGuardData) return null;
 
       // Extract the address from the last 20 bytes (40 hex chars) of the storage slot
-      const guardAddress = `0x${rawGuardData.slice(-40)}` as Address;
+      const rawAddress = `0x${rawGuardData.slice(-40)}` as Address;
+
+      // Normalize to checksummed address
+      const guardAddress = getAddress(rawAddress);
 
       // If the extracted address is the zero address, no guard is set
-      if (guardAddress === ZERO_ADDRESS) return null;
+      if (guardAddress === zeroAddress) return null;
 
       return guardAddress;
     } catch (error) {
@@ -55,17 +59,33 @@ export class SafeService {
   }
 
   /**
-   * Validate Canon Guard entrypoint
+   * Validate that a guard address was deployed from a supported CanonGuardFactory
+   * This ensures the guard is a legitimate Canon Guard and not an arbitrary contract.
+   *
+   * Uses 3-step validation:
+   * 1. Call PARENT() on the guard - must not fail
+   * 2. PARENT() result must be a known factory address
+   * 3. Factory.isChild(guardAddress) must return true
    */
-  async isValidCanonGuardEntrypoint(): Promise<boolean> {
-    // TODO: Implement this by checking if the guard address is a valid Canon Guard entrypoint
-    return true;
+  async isValidCanonGuard(guardAddress: Address): Promise<boolean> {
+    if (!guardAddress || guardAddress === zeroAddress) {
+      return false;
+    }
+
+    try {
+      const validationService = new CanonGuardValidationService(this.client);
+      return await validationService.isValidCanonGuard(guardAddress);
+    } catch (error) {
+      console.error("Failed to validate Canon Guard:", error);
+      return false;
+    }
   }
 
   /**
-   * Get complete vault information using multicall for efficiency
+   * Get complete Safe information using multicall for efficiency
+   * Returns info about the Safe and its guard status
    */
-  async getVaultInfo(safe: Address): Promise<VaultInfo> {
+  async getSafeInfo(safe: Address): Promise<SafeInfo> {
     const [multicallResults, guardAddress] = await Promise.all([
       this.client.multicall({
         contracts: [
@@ -105,6 +125,15 @@ export class SafeService {
     const threshold = Number(thresholdResult.result);
     const nonce = Number(nonceResult.result);
     const chain = this.clientService.getChain();
+
+    // Determine guard status
+    const hasGuard = guardAddress !== null;
+    let isValidCanonGuard = false;
+
+    if (hasGuard && guardAddress) {
+      isValidCanonGuard = await this.isValidCanonGuard(guardAddress);
+    }
+
     return {
       address: safe,
       chainId: chain.id,
@@ -112,10 +141,17 @@ export class SafeService {
       threshold,
       owners,
       totalOwners: owners.length,
-      // TODO: Verify that the guard address is a valid Canon Guard entrypoint
-      hasCanonGuard: guardAddress !== null,
+      hasGuard,
+      isValidCanonGuard,
       guardAddress: guardAddress || undefined,
       nonce,
     };
+  }
+
+  /**
+   * @deprecated Use getSafeInfo instead
+   */
+  async getVaultInfo(safe: Address): Promise<SafeInfo> {
+    return this.getSafeInfo(safe);
   }
 }

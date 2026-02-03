@@ -8,3 +8,5 @@ export const getConfig = (): Config => ({
   constants: getConstants(),
   customThemes: getCustomThemes(),
 });
+
+export * from "./chains";

@@ -9,14 +9,14 @@ import { Address, Hex } from "viem";
  * @param bytes - Number of bytes (default 32 for storage slots, 20 for addresses)
  * @returns Zero-filled hex string with 0x prefix
  */
-export function generateZeroHex(bytes: number = 32): Hex {
+function generateZeroHex(bytes: number = 32): Hex {
   return `0x${"00".repeat(bytes)}` as Hex;
 }
 
 /**
  * Zero address (20 bytes of zeros)
  */
-export const ZERO_ADDRESS: Address = generateZeroHex(20);
+export const zeroAddress: Address = generateZeroHex(20);
 
 /**
  * Zero storage slot (32 bytes of zeros)

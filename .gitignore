@@ -32,3 +32,6 @@ dist-ssr
 /playwright/.cache/
 .cache-synpress/
 .env.keys
+
+# E2E test artifacts
+tests/e2e/.safe-deployment.json
