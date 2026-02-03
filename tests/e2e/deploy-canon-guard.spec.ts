@@ -145,9 +145,10 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     // Verify we're on the Settings page
     await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
-    // Verify the Canon Guard shows as "Attached"
+    // Wait for Canon Guard status to reflect attachment
+    await expect(page.getByTestId("settings-detach-button")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
     await expect(page.getByTestId("canon-guard-status-label")).toHaveText("Attached", {
-      timeout: TEST_TIMEOUTS.SHORT,
+      timeout: TEST_TIMEOUTS.TRANSACTION,
     });
   });
 });
