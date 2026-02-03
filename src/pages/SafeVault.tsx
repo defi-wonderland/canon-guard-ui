@@ -3,6 +3,7 @@ import { Box, Typography, CircularProgress, styled } from "@mui/material";
 import { flushSync } from "react-dom";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Address, isAddress } from "viem";
+import { useSwitchChain } from "wagmi";
 import { CanonGuardApp } from "~/components/CanonGuardApp";
 import { DetachedGuardInput } from "~/components/DetachedGuardInput";
 import { ErrorState } from "~/components/ErrorState";
@@ -32,6 +33,7 @@ const getInitialViewState = (searchParams: URLSearchParams): ViewState => {
 export const SafeVault = () => {
   const { setSafeAddress, setChainId, setGuardAddress, setIsDetached, clearConfig } = useStateContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { switchChainAsync } = useSwitchChain();
   const navigate = useNavigate();
 
   const [safeInfo, setSafeInfo] = useState<SafeInfo | null>(null);
@@ -125,6 +127,7 @@ export const SafeVault = () => {
         const chain = getViemChain(selectedChainId);
         const clientService = new ClientService(rpcUrl, chain);
         const freshSafeService = new SafeService(clientService);
+        await switchChainAsync({ chainId: selectedChainId });
 
         const info = await freshSafeService.getSafeInfo(address);
 

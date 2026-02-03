@@ -22,7 +22,6 @@ test.describe("Canon Guard Setup Flow", () => {
   test("should deploy Safe and setup Canon Guard", async ({
     page,
     deployedSafe,
-    deployedCanonGuard,
     ownerIndex,
     setSigningAccountForDeployment,
   }) => {
@@ -103,47 +102,29 @@ test.describe("Canon Guard Setup Flow", () => {
     // Click Continue to go to Deploy step
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Should now be on step 2 - Deploy
-    await expect(page.getByText("Deployment Parameters")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    await expect(page.getByText("Function Arguments")).toBeVisible();
+    // Should now be on step 2 - Deploy (in-app deployment)
+    await expect(page.getByText("Configuration Summary")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
-    // Verify the parameters are displayed correctly
-    await expect(page.getByText("_safe")).toBeVisible();
-    await expect(page.getByText("_multiSendCallOnly")).toBeVisible();
-    await expect(page.getByText("_shortTxExecutionDelay")).toBeVisible();
-    await expect(page.getByText("_longTxExecutionDelay")).toBeVisible();
-    await expect(page.getByText("_txExpiryDelay")).toBeVisible();
-    await expect(page.getByText("_maxApprovalDuration")).toBeVisible();
-    await expect(page.getByText("_emergencyTrigger")).toBeVisible();
-    await expect(page.getByText("_emergencyCaller")).toBeVisible();
+    // Verify the configuration summary is displayed correctly
+    await expect(page.getByText("Short Execution Delay")).toBeVisible();
+    await expect(page.getByText("Long Execution Delay")).toBeVisible();
+    await expect(page.getByText("Transaction Expiry")).toBeVisible();
+    await expect(page.getByText("Max Approval Duration")).toBeVisible();
+    await expect(page.getByText("Emergency Trigger")).toBeVisible();
+    await expect(page.getByText("Emergency Caller")).toBeVisible();
 
-    // Step 7: Deploy the Canon Guard programmatically
-    // The UI instructs users to deploy via Safe Transaction Builder,
-    // but for e2e testing we deploy directly using viem
+    // Step 7: Click Deploy Canon Guard button
+    const deployButton = page.getByTestId("deploy-guard-button");
+    await expect(deployButton).toBeVisible();
+    await deployButton.click();
 
-    // Step 8: Paste the Canon Guard address in the "Deployed Canon Guard Address" input
-    await expect(page.getByText("Deployed Canon Guard Address")).toBeVisible();
+    // Step 8: Wait for deployment to complete
+    await expect(page.getByTestId("deploy-success-message")).toBeVisible({
+      timeout: TEST_TIMEOUTS.TRANSACTION,
+    });
 
-    const guardAddressInput = page.locator('input[placeholder="0x..."]').last();
-    await expect(guardAddressInput).toBeVisible();
-
-    // Fill in the deployed guard address
-    await guardAddressInput.fill(deployedCanonGuard.guardAddress);
-
-    // Wait for validation to complete (the UI validates the guard address)
-    // The validation checks PARENT() and isChild() on the factory
-    await page.waitForTimeout(2000);
-
-    // Step 9: Click Continue to complete the setup
-    const continueButton = page.getByRole("button", { name: /continue/i });
-
-    // Wait for the button to be enabled (validation must pass first)
-    await expect(continueButton).toBeEnabled({ timeout: TEST_TIMEOUTS.MEDIUM });
-
-    await continueButton.click();
-
-    // Step 10: Verify setup completes successfully
-    // After clicking continue, the wizard should complete and show the main Canon Guard App
+    // Step 9: Verify setup completes successfully
+    // After deployment, the wizard auto-redirects to the main Canon Guard App
     // The main app shows the Queue section with search bar and filters
 
     // Verify the Queue section is visible (main app loaded)
@@ -157,9 +138,9 @@ test.describe("Canon Guard Setup Flow", () => {
     await expect(page.getByTestId("filter-in-review")).toBeVisible();
     await expect(page.getByTestId("filter-signed")).toBeVisible();
 
-    // Verify the URL has been updated with the guard address
+    // Verify the URL has been updated with a guard address
     const url = new URL(page.url());
-    expect(url.searchParams.get("guardAddress")).toBe(deployedCanonGuard.guardAddress);
+    expect(url.searchParams.get("guardAddress")).toMatch(/^0x[a-fA-F0-9]{40}$/);
     expect(url.searchParams.get("safeAddress")).toBe(safeAddress);
     expect(url.searchParams.get("chainId")).toBe(CHAIN_CONFIG.OP_MAINNET.id.toString());
   });

@@ -225,6 +225,49 @@ export const canonGuardFactoryAbi = [
   },
 ] as const;
 
+// Extended Canon Guard Factory ABI with deployment capability
+// Used by factories that support createCanonGuard()
+// Anyone can call createCanonGuard to deploy a Canon Guard for any Safe
+export const canonGuardFactoryAbiWithDeploy = [
+  { inputs: [], name: "MaxApprovalDurationCannotBeLessThanMin", type: "error" },
+  { inputs: [], name: "MultiSendCallOnlyCannotBeZero", type: "error" },
+  { inputs: [], name: "TxExpiryDelayCannotBeLessThanMin", type: "error" },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "_canonGuard", type: "address" },
+      { indexed: true, internalType: "address", name: "_safe", type: "address" },
+      { indexed: true, internalType: "address", name: "_emergencyTrigger", type: "address" },
+      { indexed: false, internalType: "address", name: "_emergencyCaller", type: "address" },
+    ],
+    name: "CanonGuardCreated",
+    type: "event",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "_safe", type: "address" },
+      { internalType: "address", name: "_multiSendCallOnly", type: "address" },
+      { internalType: "uint256", name: "_shortTxExecutionDelay", type: "uint256" },
+      { internalType: "uint256", name: "_longTxExecutionDelay", type: "uint256" },
+      { internalType: "uint256", name: "_txExpiryDelay", type: "uint256" },
+      { internalType: "uint256", name: "_maxApprovalDuration", type: "uint256" },
+      { internalType: "address", name: "_emergencyTrigger", type: "address" },
+      { internalType: "address", name: "_emergencyCaller", type: "address" },
+    ],
+    name: "createCanonGuard",
+    outputs: [{ internalType: "address", name: "_canonGuard", type: "address" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "_contract", type: "address" }],
+    name: "isChild",
+    outputs: [{ internalType: "bool", name: "_isChild", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
+
 // Safe ABI for hash approval and threshold/owners
 export const safeAbi = [
   {
