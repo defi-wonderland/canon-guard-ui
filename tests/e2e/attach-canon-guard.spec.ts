@@ -35,7 +35,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 5: Wait for the choice screen to appear and click "Use Existing Canon Guard"
     await expect(page.getByTestId("no-guard-message")).toBeVisible({
@@ -94,7 +94,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     // Wait for the third transaction to complete - status should change to 3/3
     await expect(page.getByText("3/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
 
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1500);
 
     // Step 15: Click "View Queue" to go back to the queue
     await page.getByTestId("view-queue-button").click();
@@ -111,7 +111,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("execute-button").click();
 
     // Wait for execution to complete
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1500);
 
     // Step 17: Verify we're still on the home page after execution
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -120,11 +120,15 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     // Step 18: Navigate to Settings via the Safe dropdown and verify guard is attached
     // Click on the Safe dropdown button in the header
     await page.getByTestId("header-safe-dropdown-button").click();
-    await page.waitForTimeout(500);
+
+    // Wait for the dropdown menu to be visible
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
 
     // Click Settings in the dropdown
     await page.getByTestId("settings-menu-item").click();
-    await page.waitForTimeout(1000);
+
+    // Wait for navigation to complete
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
 
     // Verify we're on the Settings page
     await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -161,7 +165,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
 
     // Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for the main app to load (Queue section should be visible since guard is attached)
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
@@ -228,7 +232,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("4/4")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 11: Click 'View Queue'
     await page.getByTestId("view-queue-button").click();
@@ -246,7 +250,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("execute-button").click();
 
     // Wait for execution to complete
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
   });
 
   test("should create a hub action with pre-approval and execute it", async ({
@@ -279,7 +283,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
 
     // Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for the main app to load (Queue section should be visible since guard is attached)
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
@@ -364,7 +368,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("sign-button").click();
     await expect(page.getByText(/5\/\d+/)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 10: Click 'View Queue'
     await page.getByTestId("view-queue-button").click();
@@ -378,14 +382,14 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("execute-button").click();
 
     // Wait for execution to complete
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
 
     // Step 12: Click 'Canon List' in the header to navigate to the list of actions
     await page.getByTestId("canon-list-button").click();
 
     // Wait for Canon List page to load
     await expect(page.getByText("Canon list")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 13: Verify the saved transaction has the deployed hub with the "fast-path" tag
     // The hub should be saved with a "fast-path" indicator since we enabled pre-approval

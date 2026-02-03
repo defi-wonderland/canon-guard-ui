@@ -58,7 +58,7 @@ test.describe("Canon Guard Setup Flow", () => {
     await page.getByTestId("continue-button").click();
 
     // Wait for the app to process the Safe address
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
 
     // After continue, Safe without guard should show the choice screen
     await expect(page.getByTestId("no-guard-message")).toBeVisible({
