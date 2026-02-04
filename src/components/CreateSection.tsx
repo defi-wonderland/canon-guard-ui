@@ -1,6 +1,7 @@
 import { Box, Typography, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { BoxIcon, VectorSquareIcon, FileJsonIcon, StarIcon, HelpCircleIcon } from "~/components/icons";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams } from "~/hooks";
 import { NewActionSection } from "./NewAction";
@@ -49,9 +50,14 @@ const CreateMain = () => {
         {/* Page Title */}
         <TitleSection>
           <PageTitle data-testid='create-page-title'>Create transaction</PageTitle>
-          <HelpIconWrapper>
-            <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
-          </HelpIconWrapper>
+          <StyledTooltip
+            title='Build new transactions, create action hubs, or reuse saved transactions from your Canon List.'
+            placement='right'
+          >
+            <HelpIconWrapper>
+              <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
+            </HelpIconWrapper>
+          </StyledTooltip>
         </TitleSection>
 
         {/* Build New Transaction Section */}

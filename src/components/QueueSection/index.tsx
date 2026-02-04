@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { Address } from "viem";
 import { SearchIcon, HelpCircleIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisIcon } from "~/components/icons";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useCanonGuardConfig } from "~/hooks/useCanonGuardConfig";
 import { useNavigateWithParams } from "~/hooks/useNavigateWithParams";
@@ -248,7 +249,14 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
         <TitleSection>
           <TitleRow>
             <Title data-testid='queue-title'>Queue</Title>
-            <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
+            <StyledTooltip
+              title='View and manage pending transactions. Sign, execute, or remove transactions from the queue.'
+              placement='right'
+            >
+              <HelpIconWrapper>
+                <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
+              </HelpIconWrapper>
+            </StyledTooltip>
           </TitleRow>
         </TitleSection>
 
@@ -463,6 +471,16 @@ const Title = styled("span")({
   fontStyle: "italic",
   lineHeight: "32px",
   color: canonHeaderTokens.foreground.accent0,
+});
+
+const HelpIconWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  "&:hover": {
+    opacity: 0.8,
+  },
 });
 
 const SearchFilterBar = styled(Box)({

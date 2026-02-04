@@ -254,19 +254,28 @@ export const QueueItem = ({
             <Divider />
 
             {/* Fast/Slow Path */}
-            <PathInfo $isFastPath={isPreApproved}>
-              {isPreApproved ? (
-                <>
-                  <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
-                  <PathText $isFastPath={true}>Fast-path</PathText>
-                </>
-              ) : (
-                <>
-                  <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
-                  <PathText $isFastPath={false}>Slow-path</PathText>
-                </>
-              )}
-            </PathInfo>
+            <StyledTooltip
+              title={
+                isPreApproved
+                  ? "This transaction is pre-approved and will follow the fast-path with a shorter delay."
+                  : "This transaction requires signatures and will follow the slow-path with a longer delay."
+              }
+              placement='top'
+            >
+              <PathInfo $isFastPath={isPreApproved}>
+                {isPreApproved ? (
+                  <>
+                    <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
+                    <PathText $isFastPath={true}>Fast-path</PathText>
+                  </>
+                ) : (
+                  <>
+                    <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
+                    <PathText $isFastPath={false}>Slow-path</PathText>
+                  </>
+                )}
+              </PathInfo>
+            </StyledTooltip>
           </StatusInfo>
         </BottomRow>
       </RightPanel>

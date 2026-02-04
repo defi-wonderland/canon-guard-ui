@@ -11,6 +11,7 @@ import {
   ChevronUpIcon,
 } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { getFactoryDisplayName, getHubDisplayName } from "~/utils/factoryDisplay";
@@ -152,22 +153,31 @@ export const ActionItem = ({
         {/* Hub children don't show Fast/Slow path - only hubs and regular actions show that */}
         {!isHubChild && (
           <ActionsBottom>
-            <PathIndicator
-              $isFastPath={isFastPath}
-              data-testid={isFastPath ? "fast-path-indicator" : "slow-path-indicator"}
+            <StyledTooltip
+              title={
+                isFastPath
+                  ? "This action is pre-approved and will follow the fast-path with a shorter delay."
+                  : "This action requires signatures and will follow the slow-path with a longer delay."
+              }
+              placement='top'
             >
-              {isFastPath ? (
-                <>
-                  <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
-                  <PathText $isFastPath={isFastPath}>Fast-path</PathText>
-                </>
-              ) : (
-                <>
-                  <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
-                  <PathText $isFastPath={isFastPath}>Slow-path</PathText>
-                </>
-              )}
-            </PathIndicator>
+              <PathIndicator
+                $isFastPath={isFastPath}
+                data-testid={isFastPath ? "fast-path-indicator" : "slow-path-indicator"}
+              >
+                {isFastPath ? (
+                  <>
+                    <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
+                    <PathText $isFastPath={isFastPath}>Fast-path</PathText>
+                  </>
+                ) : (
+                  <>
+                    <ZapOffIcon size={12} color={canonHeaderTokens.status.red} />
+                    <PathText $isFastPath={isFastPath}>Slow-path</PathText>
+                  </>
+                )}
+              </PathIndicator>
+            </StyledTooltip>
           </ActionsBottom>
         )}
       </ActionsSection>
