@@ -155,10 +155,18 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
         if (result) {
           console.log("Transaction executed successfully:", result);
 
-          // If this was a CHANGE_SAFE_GUARD action, do a full page refresh to landing
-          // (the guard is now detached/changed, so the current context is invalid)
+          // If this was a CHANGE_SAFE_GUARD action, refresh the page with correct params
+          // to pick up the new guard state
           if (item.factoryType === ActionFactoryType.CHANGE_SAFE_GUARD) {
-            window.location.href = "/";
+            // Build the new URL with safe params
+            const params = new URLSearchParams();
+            if (safeAddress) params.set("safeAddress", safeAddress);
+
+            const chainIdParam = new URLSearchParams(window.location.search).get("chainId");
+            if (chainIdParam) params.set("chainId", chainIdParam);
+
+            // Do a full page reload to let SafeVault re-fetch Safe info
+            window.location.href = `/queue?${params.toString()}`;
             return;
           }
 
@@ -195,7 +203,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
       }
       setExecutingItemAddress(null);
     },
-    [guardAddress, isExecuting, executeCanonTransaction, refetchConfig, onQueueCountChange],
+    [guardAddress, safeAddress, isExecuting, executeCanonTransaction, refetchConfig, onQueueCountChange],
   );
 
   const handleRemove = useCallback(

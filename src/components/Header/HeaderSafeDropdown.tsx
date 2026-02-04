@@ -64,8 +64,8 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
   };
 
   return (
-    <DropdownWrapper>
-      <DropdownButton onClick={handleButtonClick} data-testid='safe-dropdown-button'>
+    <DropdownWrapper data-testid='header-safe-dropdown'>
+      <DropdownButton onClick={handleButtonClick} data-testid='header-safe-dropdown-button'>
         <DropdownContent>
           <DropdownRow>
             <DropdownLabel>Safe</DropdownLabel>

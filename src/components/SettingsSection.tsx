@@ -4,7 +4,7 @@ import { DeploymentModesPanel } from "~/components/DeploymentModesPanel";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
 import { HelpCircleIcon, ShieldCheckIcon, AsteriskIcon, ShieldAlertIcon, Link2Icon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
-import { getChainConfig } from "~/config/chains";
+import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useStateContext, useCanonGuardConfig, humanizeDuration, useNavigateWithParams } from "~/hooks";
 
@@ -17,7 +17,7 @@ export const SettingsSection = () => {
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
   const [deploymentModesPanelOpen, setDeploymentModesPanelOpen] = useState(false);
 
-  const chainConfig = getChainConfig(chainId);
+  const chainConfig = getChainConfig(chainId as SupportedChainId);
 
   const handleDetachGuard = () => {
     navigateWithParams("/settings/detach");
@@ -177,9 +177,11 @@ export const SettingsSection = () => {
               <SettingInfo>
                 <SettingTitleRow>
                   <SettingTitle>Canon Guard:</SettingTitle>
-                  <StatusIndicator>
+                  <StatusIndicator data-testid='canon-guard-status'>
                     <StatusDot $color={isDetached ? canonHeaderTokens.status.amber : canonHeaderTokens.brand.green} />
-                    <StatusLabel>{isDetached ? "Detached" : "Attached"}</StatusLabel>
+                    <StatusLabel data-testid='canon-guard-status-label'>
+                      {isDetached ? "Detached" : "Attached"}
+                    </StatusLabel>
                   </StatusIndicator>
                 </SettingTitleRow>
                 <SettingDescription>
