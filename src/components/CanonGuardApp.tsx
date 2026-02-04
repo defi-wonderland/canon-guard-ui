@@ -15,6 +15,7 @@ import { CreateSection } from "./CreateSection";
 import { DeploymentModesPanel } from "./DeploymentModesPanel";
 import { DetachedModeBanner } from "./DetachedModeBanner";
 import { EmergencyModeBanner } from "./EmergencyModeBanner";
+import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { QueueActionSection } from "./QueueActionSection";
 import { QueueSection } from "./QueueSection";
@@ -139,6 +140,7 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
         onClose={handleCloseDeploymentModesPanel}
         isDetached={isDetached}
       />
+      <Footer />
     </PageContainer>
   );
 };

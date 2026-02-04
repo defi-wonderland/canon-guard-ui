@@ -5,6 +5,7 @@ import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ClientService, CanonGuardValidationService } from "~/services";
 import { SafeInfo } from "~/types";
+import { Footer } from "./Footer";
 import { HeaderLogo } from "./Header";
 import { CheckIcon } from "./icons";
 import { SafeProfileCard } from "./shared/SafeProfileCard";
@@ -142,6 +143,7 @@ export const DetachedGuardInput = ({ safeInfo, onContinue, onBack, onReset }: De
           </InputCard>
         </SetupFormWrapper>
       </SetupContentArea>
+      <Footer />
     </PageContainer>
   );
 };

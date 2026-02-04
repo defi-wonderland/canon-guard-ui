@@ -7,6 +7,7 @@ import { CANON_GUARD_FACTORY, MULTI_SEND_CALL_ONLY } from "~/constants/addresses
 import { ClientService, CanonGuardValidationService } from "~/services";
 import { SafeInfo } from "~/types";
 import { DurationTimeUnit, DURATION_TIME_MULTIPLIERS } from "~/utils/timeUnits";
+import { Footer } from "./Footer";
 import { HeaderLogo } from "./Header";
 import { CheckIcon, InfoIcon } from "./icons";
 import { CopyableText } from "./shared/CopyButton";
@@ -507,6 +508,8 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
           </SetupFormWrapper>
         </SetupContentArea>
       </ScrollArea>
+
+      <Footer />
     </PageContainer>
   );
 };

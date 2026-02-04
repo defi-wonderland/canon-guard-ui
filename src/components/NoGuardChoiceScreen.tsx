@@ -1,6 +1,7 @@
 import { Box, styled } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { SafeInfo } from "~/types";
+import { Footer } from "./Footer";
 import { HeaderLogo } from "./Header";
 import { CircleFadingPlusIcon, Link2Icon } from "./icons";
 import { SafeProfileCard } from "./shared/SafeProfileCard";
@@ -73,6 +74,8 @@ export const NoGuardChoiceScreen = ({ safeInfo, onDeployNew, onUseExisting, onBa
           </ChoiceCard>
         </SetupFormWrapper>
       </SetupContentArea>
+
+      <Footer />
     </PageContainer>
   );
 };
