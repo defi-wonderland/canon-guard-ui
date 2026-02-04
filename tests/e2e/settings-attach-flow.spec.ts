@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures";
 import { fundSafe } from "./utils/fundSafe";
 
 // Use deployment index 1 - allows this test file to run in parallel with attach-canon-guard.spec.ts
-test.use({ deploymentIndex: 1 });
+test.use({ deploymentIndex: 2 });
 
 // Use serial execution to ensure tests run in order within this file
 test.describe.serial("Settings Attach Flow", () => {

@@ -161,7 +161,6 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
             // Build the new URL with safe params
             const params = new URLSearchParams();
             if (safeAddress) params.set("safeAddress", safeAddress);
-
             const chainIdParam = new URLSearchParams(window.location.search).get("chainId");
             if (chainIdParam) params.set("chainId", chainIdParam);
 

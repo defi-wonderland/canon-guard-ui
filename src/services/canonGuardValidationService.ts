@@ -12,7 +12,7 @@
 
 import { Address, PublicClient, zeroAddress } from "viem";
 import { actionBuilderParentAbi, canonGuardFactoryAbi } from "../abis/canonGuard";
-import { KNOWN_CANON_GUARD_FACTORIES } from "../config/factories";
+import { getValidationFactoryAddresses } from "../config/canonGuardFactories";
 
 export interface ValidationResult {
   isValid: boolean;
@@ -62,9 +62,8 @@ export class CanonGuardValidationService {
     }
 
     // Step 2: Check if the factory address is in our known factories list
-    const isKnownFactory = KNOWN_CANON_GUARD_FACTORIES.some(
-      (known) => known.toLowerCase() === factoryAddress.toLowerCase(),
-    );
+    const knownFactories = getValidationFactoryAddresses();
+    const isKnownFactory = knownFactories.some((known) => known.toLowerCase() === factoryAddress.toLowerCase());
 
     if (!isKnownFactory) {
       return {
