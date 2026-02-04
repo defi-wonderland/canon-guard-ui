@@ -95,10 +95,10 @@ export const TEST_TIMEOUTS = {
  * Canon Guard default configuration for tests
  */
 export const CANON_GUARD_CONFIG = {
-  /** Short execution delay in seconds (1 second for fast testing) */
-  shortTxExecutionDelay: 1n,
-  /** Long execution delay in seconds (2 seconds for fast testing) */
-  longTxExecutionDelay: 2n,
+  /** Short execution delay in seconds (0 second for fast testing) */
+  shortTxExecutionDelay: 0n,
+  /** Long execution delay in seconds (1 seconds for fast testing) */
+  longTxExecutionDelay: 1n,
   /** Transaction expiry delay in seconds (7 days) */
   txExpiryDelay: 604800n,
   /** Max approval duration in seconds (~4 months) */

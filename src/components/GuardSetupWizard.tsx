@@ -2,21 +2,16 @@ import { useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { Address, isAddress } from "viem";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { useWallet } from "~/hooks";
 import { useTransactionExecutor, DeployCanonGuardParams } from "~/hooks/useTransactionExecutor";
 import { SafeInfo } from "~/types";
 import { DurationTimeUnit, DURATION_TIME_MULTIPLIERS } from "~/utils/timeUnits";
 import { Footer } from "./Footer";
-import { HeaderLogo } from "./Header";
+import { Header } from "./Header";
 import { CheckIcon, InfoIcon } from "./icons";
 import { DurationInput } from "./shared/DurationInput";
 import { SafeProfileCard } from "./shared/SafeProfileCard";
-import {
-  PageContainer,
-  SetupHeader,
-  SetupContentArea,
-  SetupFormWrapper,
-  SetupSectionTitle,
-} from "./shared/StyledComponents";
+import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
 
 interface GuardSetupWizardProps {
   safeInfo: SafeInfo;
@@ -101,6 +96,7 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
   const [deployError, setDeployError] = useState<string | null>(null);
   const [deployedGuardAddress, setDeployedGuardAddress] = useState<Address | null>(null);
 
+  const { isConnected, connect } = useWallet();
   const { executeDeployCanonGuard, isExecuting } = useTransactionExecutor();
 
   const validateParams = (): boolean => {
@@ -218,9 +214,7 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
 
   return (
     <PageContainer>
-      <SetupHeader>
-        <HeaderLogo onClick={onReset} />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={onReset} />
 
       <ScrollArea>
         <SetupContentArea>
@@ -408,12 +402,18 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
                       <span style={{ marginLeft: "8px" }}>Deployed</span>
                     </ContinueButton>
                   ) : (
-                    <ContinueButton onClick={handleDeploy} disabled={isDeploying} data-testid='deploy-guard-button'>
+                    <ContinueButton
+                      onClick={isConnected ? handleDeploy : connect}
+                      disabled={isDeploying}
+                      data-testid='deploy-guard-button'
+                    >
                       {isDeploying ? (
                         <>
                           <CircularProgress size={14} sx={{ color: "#ffffff", marginRight: "8px" }} />
                           {deployState === "confirming" ? "Confirming..." : "Deploying..."}
                         </>
+                      ) : !isConnected ? (
+                        "Connect Wallet to Deploy"
                       ) : (
                         "Deploy Canon Guard"
                       )}

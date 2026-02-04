@@ -30,8 +30,8 @@ export const HeaderWalletDropdown = () => {
   // Disconnected state - show CONNECT button
   if (!isConnected) {
     return (
-      <ConnectButtonWrapper>
-        <ConnectButton onClick={handleButtonClick} disabled={isConnecting}>
+      <ConnectButtonWrapper data-testid='header-wallet-section'>
+        <ConnectButton onClick={handleButtonClick} disabled={isConnecting} data-testid='header-connect-wallet-button'>
           {isConnecting ? (
             <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent10 }} />
           ) : (
@@ -44,8 +44,8 @@ export const HeaderWalletDropdown = () => {
 
   // Connected state - show address with dropdown
   return (
-    <WalletWrapper>
-      <DropdownButton onClick={handleButtonClick}>
+    <WalletWrapper data-testid='header-wallet-section'>
+      <DropdownButton onClick={handleButtonClick} data-testid='header-wallet-dropdown-button'>
         <DropdownContent>
           <DropdownRow>
             <DropdownValue>{truncateAddress(address || "")}</DropdownValue>

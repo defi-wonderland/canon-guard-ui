@@ -2,16 +2,10 @@ import { Box, styled } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { SafeInfo } from "~/types";
 import { Footer } from "./Footer";
-import { HeaderLogo } from "./Header";
+import { Header } from "./Header";
 import { CircleFadingPlusIcon, Link2Icon } from "./icons";
 import { SafeProfileCard } from "./shared/SafeProfileCard";
-import {
-  PageContainer,
-  SetupHeader,
-  SetupContentArea,
-  SetupFormWrapper,
-  SetupSectionTitle,
-} from "./shared/StyledComponents";
+import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
 
 interface NoGuardChoiceScreenProps {
   safeInfo: SafeInfo;
@@ -23,9 +17,7 @@ interface NoGuardChoiceScreenProps {
 export const NoGuardChoiceScreen = ({ safeInfo, onDeployNew, onUseExisting, onBack }: NoGuardChoiceScreenProps) => {
   return (
     <PageContainer>
-      <SetupHeader>
-        <HeaderLogo onClick={onBack} />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={onBack} />
 
       <SetupContentArea>
         <SetupFormWrapper>

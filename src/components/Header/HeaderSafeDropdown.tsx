@@ -80,7 +80,7 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
       {menuOpen && <MenuBackdrop onClick={handleCloseMenu} />}
 
       {/* Custom dropdown menu */}
-      <SafeMenu $isOpen={menuOpen}>
+      <SafeMenu $isOpen={menuOpen} data-testid='safe-dropdown-menu'>
         {/* Safe Profile Section */}
         <SafeProfileSection>
           <SafeProfileContent>

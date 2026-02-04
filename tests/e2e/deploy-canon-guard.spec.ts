@@ -24,6 +24,9 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
+    // Verify wallet section is visible in header on initial setup screen
+    await expect(page.getByTestId("header-wallet-section")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
     // Step 2: Enter the Safe address
     await page.getByTestId("safe-address-input").fill(safeAddress);
 
@@ -34,17 +37,24 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 5: Wait for the choice screen to appear and click "Deploy New Canon Guard"
     await expect(page.getByTestId("no-guard-message")).toBeVisible({
       timeout: TEST_TIMEOUTS.LONG,
     });
+
+    // Verify wallet section is still visible in header on choice screen
+    await expect(page.getByTestId("header-wallet-section")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
     await page.getByTestId("deploy-new-guard-button").click();
 
     // Step 6: Fill in the Guard Setup Wizard (Step 1: Configure)
     // Wait for the wizard to appear by checking for emergency trigger input
     await expect(page.getByTestId("emergency-trigger-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Verify wallet section is visible in header on wizard configure step
+    await expect(page.getByTestId("header-wallet-section")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
 
     // Set short delay values for testing (1 second each)
     // Short execution delay: 1 second
@@ -66,6 +76,10 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     // Step 7: Deploy Canon Guard (Step 2 of wizard)
     await expect(page.getByTestId("guard-setup-wizard")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByTestId("deploy-guard-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Verify wallet section is visible in header on wizard deploy step
+    await expect(page.getByTestId("header-wallet-section")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
     await page.getByTestId("deploy-guard-button").click();
 
     // Step 8: Wait for deployment to complete
@@ -105,13 +119,13 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Step 15: Wait for cooldown to expire (we set 2 second long delay)
     // The UI needs time to poll and update the button state
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
 
     // Step 16: Execute the attach transaction
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await expect(page.getByTestId("execute-button")).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
 
     // Step 17: Verify we're still on the home page after execution
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -119,16 +133,22 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Step 18: Navigate to Settings and verify guard is attached
     await page.getByTestId("header-safe-dropdown-button").click();
-    await page.waitForTimeout(500);
+
+    // Wait for the dropdown menu to be visible
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
     await page.getByTestId("settings-menu-item").click();
-    await page.waitForTimeout(1000);
+
+    // Wait for navigation to complete
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
 
     // Verify we're on the Settings page
     await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
-    // Verify the Canon Guard shows as "Attached"
+    // Wait for Canon Guard status to reflect attachment
+    await expect(page.getByTestId("settings-detach-button")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
     await expect(page.getByTestId("canon-guard-status-label")).toHaveText("Attached", {
-      timeout: TEST_TIMEOUTS.SHORT,
+      timeout: TEST_TIMEOUTS.TRANSACTION,
     });
   });
 });

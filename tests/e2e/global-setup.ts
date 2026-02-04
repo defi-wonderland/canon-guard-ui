@@ -56,7 +56,7 @@ async function globalSetup() {
       console.log(`\n[Global Setup] === Deployment ${i} (Owner: Account ${ownerIndex}) ===`);
 
       // Step 1: Deploy Safe with the specific owner
-      console.log(`[Global Setup] Deploying Safe ${i} with owner ${ownerAccount.address}...`);
+      console.log(`[Global Setup] Deploying Safe ${i} with owner ${ownerAccount.address}`);
       const safe = await deploySafe({
         rpcUrl: ANVIL_RPC_URL,
         threshold: 1,
@@ -65,7 +65,7 @@ async function globalSetup() {
       console.log(`[Global Setup] Safe ${i} deployed at: ${safe.safeAddress}`);
 
       // Step 2: Deploy Canon Guard using the same owner
-      console.log(`[Global Setup] Deploying Canon Guard ${i}...`);
+      console.log(`[Global Setup] Deploying Canon Guard ${i}`);
       const guard = await deployCanonGuard({
         rpcUrl: ANVIL_RPC_URL,
         safeAddress: safe.safeAddress,

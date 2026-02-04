@@ -36,7 +36,7 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 5: Wait for the choice screen to appear and click "Use Existing Canon Guard"
     await expect(page.getByTestId("no-guard-message")).toBeVisible({
@@ -59,14 +59,16 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Step 9: Click on the Safe dropdown in the header
     await page.getByTestId("header-safe-dropdown-button").click();
-    await page.waitForTimeout(500);
+
+    // Wait for the dropdown menu to be visible
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
 
     // Step 10: Click on "Settings" in the dropdown menu
     await page.getByTestId("settings-menu-item").click();
 
-    // Step 11: Wait for Settings page to load
+    // Step 11: Wait for navigation and Settings page to load
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
-    await page.waitForTimeout(1000);
 
     // Step 12: Click "ATTACH" button in the Canon Guard section
     await page.getByTestId("settings-attach-button").click();
@@ -93,7 +95,7 @@ test.describe.serial("Settings Attach Flow", () => {
 
     await expect(page.getByText("3/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
 
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
 
     // Step 17: Click "View Queue" to go back to the queue
     await page.getByTestId("view-queue-button").click();
@@ -142,7 +144,7 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for the main app to load (Queue section should be visible since guard is attached)
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
@@ -215,7 +217,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("4/4")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 11: Click 'View Queue'
     await page.getByTestId("view-queue-button").click();
@@ -232,7 +234,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.getByTestId("execute-button").click();
 
     // Wait for execution to complete
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
   });
 
   test("should queue and execute a transfer from Canon List", async ({
@@ -261,7 +263,7 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Click Continue
     await page.getByTestId("continue-button").click();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for the main app to load (Queue section should be visible since guard is attached)
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
@@ -274,7 +276,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await expect(page.getByTestId("canon-list-title")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
 
     // Wait for the list to load
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 4: Find the saved "Test USDC Transfer" action and click QUEUE
     // The action from the previous test should be visible
@@ -296,7 +298,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.getByTestId("sign-button").click();
     await expect(page.getByText("2/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
 
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Step 6: Click 'View Queue' to navigate to the queue
     await page.getByTestId("view-queue-button").click();
@@ -313,6 +315,6 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.getByTestId("execute-button").click();
 
     // Wait for execution to complete
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1000);
   });
 });

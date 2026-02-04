@@ -44,6 +44,7 @@ export const SetupHeader = styled(Box)({
   height: "72px",
   backgroundColor: canonHeaderTokens.background.layer1,
   width: "100%",
+  justifyContent: "space-between",
 });
 
 /**

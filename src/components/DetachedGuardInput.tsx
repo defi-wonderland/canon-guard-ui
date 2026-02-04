@@ -6,16 +6,10 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ClientService, CanonGuardValidationService } from "~/services";
 import { SafeInfo } from "~/types";
 import { Footer } from "./Footer";
-import { HeaderLogo } from "./Header";
+import { Header } from "./Header";
 import { CheckIcon } from "./icons";
 import { SafeProfileCard } from "./shared/SafeProfileCard";
-import {
-  PageContainer,
-  SetupHeader,
-  SetupContentArea,
-  SetupFormWrapper,
-  SetupSectionTitle,
-} from "./shared/StyledComponents";
+import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
 
 interface DetachedGuardInputProps {
   safeInfo: SafeInfo;
@@ -86,9 +80,7 @@ export const DetachedGuardInput = ({ safeInfo, onContinue, onBack, onReset }: De
 
   return (
     <PageContainer>
-      <SetupHeader>
-        <HeaderLogo onClick={onReset} />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={onReset} />
 
       <SetupContentArea>
         <SetupFormWrapper>
