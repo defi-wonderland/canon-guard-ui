@@ -5,6 +5,7 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useTransactionExecutor, DeployCanonGuardParams } from "~/hooks/useTransactionExecutor";
 import { SafeInfo } from "~/types";
 import { DurationTimeUnit, DURATION_TIME_MULTIPLIERS } from "~/utils/timeUnits";
+import { Footer } from "./Footer";
 import { HeaderLogo } from "./Header";
 import { CheckIcon, InfoIcon } from "./icons";
 import { DurationInput } from "./shared/DurationInput";
@@ -424,6 +425,8 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
           </SetupFormWrapper>
         </SetupContentArea>
       </ScrollArea>
+
+      <Footer />
     </PageContainer>
   );
 };
