@@ -108,7 +108,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
       await expect(page.getByText(`${i}/3`)).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
     }
 
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Step 13: Click 'View Queue' to go back to the queue
     await page.getByTestId("view-queue-button").click();
@@ -119,13 +119,13 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Step 15: Wait for cooldown to expire (we set 2 second long delay)
     // The UI needs time to poll and update the button state
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(2000);
 
     // Step 16: Execute the attach transaction
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await expect(page.getByTestId("execute-button")).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
 
     // Step 17: Verify we're still on the home page after execution
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
