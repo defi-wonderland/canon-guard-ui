@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { DeploymentModesPanel } from "~/components/DeploymentModesPanel";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
 import { HelpCircleIcon, ShieldCheckIcon, AsteriskIcon, ShieldAlertIcon, Link2Icon } from "~/components/icons";
@@ -13,6 +14,7 @@ export const SettingsSection = () => {
   const { safeAddress, guardAddress, chainId, isDetached } = useStateContext();
   const { shortTxExecutionDelay, longTxExecutionDelay, txExpiryDelay, maxApprovalDuration, emergencyMode, isLoading } =
     useCanonGuardConfig();
+  const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
 
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
@@ -26,6 +28,10 @@ export const SettingsSection = () => {
 
   const handleAttachGuard = () => {
     navigateWithParams("/settings/attach");
+  };
+
+  const handleManageSafes = () => {
+    navigate("/settings/safes");
   };
 
   if (isLoading) {
@@ -77,7 +83,9 @@ export const SettingsSection = () => {
                 <ChainName>{chainConfig?.chain.name || "Unknown Chain"}</ChainName>
               </SafeInfo>
             </SafeProfileLeft>
-            <OutlineButton>MANAGE SAFE ACCOUNTS</OutlineButton>
+            <OutlineButton onClick={handleManageSafes} data-testid='manage-safes-button'>
+              MANAGE SAFE ACCOUNTS
+            </OutlineButton>
           </SafeProfileRow>
 
           {/* Config Stats Row */}

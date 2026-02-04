@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { ManageSafesSection } from "~/components/ManageSafesSection";
 import { AppLayout } from "~/containers";
 import { SafeVault, TestPage } from "~/pages";
 
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: "settings", element: <SafeVault /> },
       { path: "settings/attach", element: <SafeVault /> },
       { path: "settings/detach", element: <SafeVault /> },
+      { path: "settings/safes", element: <ManageSafesSection /> },
       {
         path: "create",
         element: <SafeVault />,

@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { KeyboardArrowDown } from "@mui/icons-material";
 import { Box, styled } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import { Chain } from "viem/chains";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
 import { ChevronRightIcon, GripIcon, ShieldCheckIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams, useCanonGuardConfig } from "~/hooks";
+import { useNavigateWithParams, useCanonGuardConfig, useSafeStorage } from "~/hooks";
 import { truncateAddress } from "~/utils";
 import type { Address } from "viem";
 
@@ -18,8 +19,10 @@ interface HeaderSafeDropdownProps {
 }
 
 export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownProps) => {
+  const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
   const { emergencyMode } = useCanonGuardConfig();
+  const { savedSafesCount } = useSafeStorage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
 
@@ -59,7 +62,7 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
   };
 
   const handleManageSafesClick = () => {
-    // TODO: Implement manage safe accounts
+    navigate("/settings/safes");
     handleCloseMenu();
   };
 
@@ -128,10 +131,10 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
         <MenuDivider />
 
         {/* Manage Safe Accounts */}
-        <MenuItem onClick={handleManageSafesClick}>
+        <MenuItem onClick={handleManageSafesClick} data-testid='manage-safes-menu-item'>
           <MenuItemLeft>
             <GripIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-            <MenuItemLabel>Manage Safe Accounts (3)</MenuItemLabel>
+            <MenuItemLabel>Manage Safe Accounts{savedSafesCount > 0 ? ` (${savedSafesCount})` : ""}</MenuItemLabel>
           </MenuItemLeft>
         </MenuItem>
       </SafeMenu>

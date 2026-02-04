@@ -12,18 +12,30 @@ import { NoGuardChoiceScreen } from "~/components/NoGuardChoiceScreen";
 import { VaultSetupModal } from "~/components/VaultSetupModal";
 import { SupportedChainId, parseChainId, getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { useStateContext } from "~/hooks/useStateContext";
-import { ClientService, SafeService, CanonGuardValidationService } from "~/services";
+import { ClientService, SafeService, CanonGuardValidationService, SafeStorageService } from "~/services";
 import { SafeInfo } from "~/types";
 
 type ViewState = "setup" | "loading" | "error" | "ready" | "no-guard-choice" | "detached-input" | "deploy-wizard";
 
-// Helper to determine initial view state based on URL params
+// Helper to determine initial view state based on URL params and localStorage
 const getInitialViewState = (searchParams: URLSearchParams): ViewState => {
   const safeAddressParam = searchParams.get("safeAddress");
   const chainIdParam = searchParams.get("chainId");
+  const addNewParam = searchParams.get("addNew");
+
+  // If explicitly adding a new safe, show setup
+  if (addNewParam === "true") {
+    return "setup";
+  }
 
   // If we have valid URL params, start in loading state to avoid flicker
   if (safeAddressParam && isAddress(safeAddressParam) && parseChainId(chainIdParam)) {
+    return "loading";
+  }
+
+  // Check if we have a saved current safe in localStorage
+  const currentSafe = SafeStorageService.getCurrentSafe();
+  if (currentSafe) {
     return "loading";
   }
 
@@ -43,78 +55,118 @@ export const SafeVault = () => {
   // Track if we've initialized from URL params
   const initializedRef = useRef(false);
 
-  // Initialize from URL params on mount only
+  // Initialize from URL params or localStorage on mount only
   useEffect(() => {
     if (initializedRef.current) return;
 
     const safeAddressParam = searchParams.get("safeAddress");
     const chainIdParam = searchParams.get("chainId");
     const guardAddressParam = searchParams.get("guardAddress");
+    const addNewParam = searchParams.get("addNew");
+
+    // If explicitly adding a new safe, don't auto-load
+    if (addNewParam === "true") {
+      // Clear the addNew param from URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("addNew");
+      setSearchParams(newParams, { replace: true });
+      return;
+    }
+
+    // Priority 1: URL params
+    let targetAddress: Address | null = null;
+    let targetChainId: SupportedChainId | null = null;
+    let targetGuardAddress: Address | null = null;
 
     if (safeAddressParam && isAddress(safeAddressParam)) {
       const parsedChainId = parseChainId(chainIdParam);
-
       if (parsedChainId) {
-        initializedRef.current = true;
-        setSafeAddress(safeAddressParam as Address);
-        setChainId(parsedChainId);
-        setViewState("loading");
+        targetAddress = safeAddressParam as Address;
+        targetChainId = parsedChainId;
+        targetGuardAddress = guardAddressParam && isAddress(guardAddressParam) ? (guardAddressParam as Address) : null;
+      }
+    }
 
-        // Create a fresh service for the correct chain to avoid stale closure issues
-        const loadWithCorrectChain = async () => {
-          try {
-            const rpcUrl = getRpcUrlForChain(parsedChainId);
-            const chain = getViemChain(parsedChainId);
-            const clientService = new ClientService(rpcUrl, chain);
-            const freshSafeService = new SafeService(clientService);
+    // Priority 2: localStorage current safe (only if no URL params)
+    if (!targetAddress) {
+      const currentSafe = SafeStorageService.getCurrentSafe();
+      if (currentSafe) {
+        targetAddress = currentSafe.address;
+        targetChainId = currentSafe.chainId;
+        targetGuardAddress = currentSafe.guardAddress || null;
 
-            const info = await freshSafeService.getSafeInfo(safeAddressParam as Address);
-            setSafeInfo(info);
+        // Update URL params to reflect the loaded safe
+        const newParams: Record<string, string> = {
+          safeAddress: currentSafe.address,
+          chainId: String(currentSafe.chainId),
+        };
+        if (currentSafe.guardAddress) {
+          newParams.guardAddress = currentSafe.guardAddress;
+        }
+        setSearchParams(newParams, { replace: true });
+      }
+    }
 
-            // Case D: URL has guardAddress param - validate and use detached mode
-            if (guardAddressParam && isAddress(guardAddressParam) && !info.hasGuard) {
-              const validationService = new CanonGuardValidationService(clientService.getClient());
-              const isValid = await validationService.isValidCanonGuard(guardAddressParam as Address);
+    if (targetAddress && targetChainId) {
+      initializedRef.current = true;
+      setSafeAddress(targetAddress);
+      setChainId(targetChainId);
+      setViewState("loading");
 
-              if (isValid) {
-                setGuardAddress(guardAddressParam as Address);
-                setIsDetached(true);
-                setViewState("ready");
-                return;
-              }
-              // If invalid, fall through to normal flow
-            }
+      // Create a fresh service for the correct chain to avoid stale closure issues
+      const loadWithCorrectChain = async () => {
+        try {
+          const rpcUrl = getRpcUrlForChain(targetChainId!);
+          const chain = getViemChain(targetChainId!);
+          const clientService = new ClientService(rpcUrl, chain);
+          const freshSafeService = new SafeService(clientService);
 
-            // Case A: Safe has valid attached guard
-            if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
-              setGuardAddress(info.guardAddress);
-              setIsDetached(false);
+          const info = await freshSafeService.getSafeInfo(targetAddress!);
+          setSafeInfo(info);
+
+          // Case D: URL has guardAddress param - validate and use detached mode
+          if (targetGuardAddress && !info.hasGuard) {
+            const validationService = new CanonGuardValidationService(clientService.getClient());
+            const isValid = await validationService.isValidCanonGuard(targetGuardAddress);
+
+            if (isValid) {
+              setGuardAddress(targetGuardAddress);
+              setIsDetached(true);
               setViewState("ready");
               return;
             }
-
-            // Case B: Safe has invalid guard (not Canon Guard)
-            if (info.hasGuard && !info.isValidCanonGuard) {
-              setViewState("error");
-              return;
-            }
-
-            // Case C: Safe has no guard - show choice screen
-            if (!info.hasGuard) {
-              setViewState("no-guard-choice");
-              return;
-            }
-
-            setViewState("ready");
-          } catch (error) {
-            console.error("Failed to load Safe info:", error);
-            setSafeInfo(null);
-            setViewState("error");
+            // If invalid, fall through to normal flow
           }
-        };
 
-        loadWithCorrectChain();
-      }
+          // Case A: Safe has valid attached guard
+          if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
+            setGuardAddress(info.guardAddress);
+            setIsDetached(false);
+            setViewState("ready");
+            return;
+          }
+
+          // Case B: Safe has invalid guard (not Canon Guard)
+          if (info.hasGuard && !info.isValidCanonGuard) {
+            setViewState("error");
+            return;
+          }
+
+          // Case C: Safe has no guard - show choice screen
+          if (!info.hasGuard) {
+            setViewState("no-guard-choice");
+            return;
+          }
+
+          setViewState("ready");
+        } catch (error) {
+          console.error("Failed to load Safe info:", error);
+          setSafeInfo(null);
+          setViewState("error");
+        }
+      };
+
+      loadWithCorrectChain();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -144,6 +196,16 @@ export const SafeVault = () => {
         if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
           setGuardAddress(info.guardAddress);
           setIsDetached(false);
+
+          // Save to localStorage
+          SafeStorageService.saveSafe({
+            address,
+            chainId: selectedChainId,
+            guardAddress: info.guardAddress,
+            isDetached: false,
+          });
+          SafeStorageService.setCurrentSafe(address, selectedChainId);
+
           setViewState("ready");
           return;
         }
@@ -155,6 +217,14 @@ export const SafeVault = () => {
         }
 
         // Case C: Safe has no guard - show choice screen
+        // Save to localStorage (guard will be added later when deployed/selected)
+        SafeStorageService.saveSafe({
+          address,
+          chainId: selectedChainId,
+          isDetached: false,
+        });
+        SafeStorageService.setCurrentSafe(address, selectedChainId);
+
         if (!info.hasGuard) {
           setViewState("no-guard-choice");
           return;
@@ -210,6 +280,10 @@ export const SafeVault = () => {
       // Set in context
       setGuardAddress(guardAddr);
       setIsDetached(true);
+
+      // Update localStorage with guard address
+      SafeStorageService.updateGuardAddress(safeInfo.address, safeInfo.chainId as SupportedChainId, guardAddr, true);
+
       setViewState("ready");
     },
     [safeInfo, setSearchParams, setGuardAddress, setIsDetached],
