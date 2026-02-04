@@ -3,6 +3,7 @@ import { Box, Typography, Button, styled, CircularProgress } from "@mui/material
 import { Address, isAddress } from "viem";
 import { SupportedChainId, SUPPORTED_CHAINS_LIST, DEFAULT_CHAIN_ID } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { FormInput } from "./NewAction/shared/FormInput";
 import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
@@ -104,6 +105,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
           </FormCard>
         </SetupFormWrapper>
       </SetupContentArea>
+      <Footer />
     </PageContainer>
   );
 };
