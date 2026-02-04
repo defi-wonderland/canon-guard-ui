@@ -10,14 +10,10 @@
  * 3. We verify isChild() on the factory
  */
 
-import { Address } from "viem";
-import { CANON_GUARD_FACTORY } from "../constants/addresses";
+import { getValidationFactoryAddresses } from "./canonGuardFactories";
 
 /**
  * List of known Canon Guard factory addresses across all supported chains.
  * These are deployed via CREATE2 and have the same address on all chains.
  */
-export const KNOWN_CANON_GUARD_FACTORIES: Address[] = [
-  // Main Canon Guard Factory (deployed via CREATE2)
-  CANON_GUARD_FACTORY,
-];
+export const KNOWN_CANON_GUARD_FACTORIES = getValidationFactoryAddresses();

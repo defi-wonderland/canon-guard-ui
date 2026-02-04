@@ -13,19 +13,39 @@ import { HeaderWalletDropdown } from "./HeaderWalletDropdown";
 import type { Address } from "viem";
 
 interface HeaderProps {
-  safeAddress: string;
-  chain: Chain;
+  /** Safe address (required when not in minimal mode) */
+  safeAddress?: string;
+  /** Chain configuration (required when not in minimal mode) */
+  chain?: Chain;
+  /** Number of items in queue for badge display */
   queueCount?: number;
+  /** Callback to clear the current Safe configuration */
   onClearConfig: () => void;
+  /** When true, hides nav, create button, safe dropdown - shows only logo and wallet */
+  isMinimalMode?: boolean;
 }
 
-export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig }: HeaderProps) => {
+export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMinimalMode = false }: HeaderProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress } = useStateContext();
   const { isInitialized, openModal, sessions } = useWalletConnect();
   const isCreateActive = location.pathname.startsWith("/create");
   const hasActiveSessions = sessions.length > 0;
+
+  // In minimal mode, only show logo and wallet dropdown
+  if (isMinimalMode) {
+    return (
+      <HeaderContainer>
+        <HeaderLeftSection>
+          <LogoSection>
+            <HeaderLogo onClick={onClearConfig} />
+          </LogoSection>
+        </HeaderLeftSection>
+        <HeaderWalletDropdown />
+      </HeaderContainer>
+    );
+  }
 
   return (
     <HeaderContainer>
@@ -58,8 +78,8 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig }: He
         CREATE
       </CreateButton>
       <HeaderSafeDropdown
-        safeAddress={safeAddress}
-        chain={chain}
+        safeAddress={safeAddress!}
+        chain={chain!}
         guardAddress={guardAddress as Address | null}
         onClearConfig={onClearConfig}
       />

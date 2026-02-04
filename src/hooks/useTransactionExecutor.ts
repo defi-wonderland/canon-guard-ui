@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Address, Hash, Hex, parseUnits, parseEther, decodeEventLog, erc20Abi } from "viem";
+import { Address, Hash, Hex, parseUnits, parseEther, decodeEventLog, erc20Abi, getAddress } from "viem";
 import { useWriteContract, useConfig } from "wagmi";
 import { waitForTransactionReceipt, readContract } from "wagmi/actions";
 import {
@@ -12,6 +12,7 @@ import {
   preApproveActionFactoryAbi,
   safeAbi,
   changeSafeGuardActionFactoryAbi,
+  canonGuardFactoryAbiWithDeploy,
 } from "~/abis/canonGuard";
 import { cappedTokenTransfersHubAbi } from "~/abis/canonGuard";
 import type {
@@ -21,6 +22,8 @@ import type {
   CappedTransferHubFormData,
   HubChildFormData,
 } from "~/components/NewAction/steps";
+import { getDeployFactory } from "~/config/canonGuardFactories";
+import { MULTI_SEND_CALL_ONLY } from "~/constants/addresses";
 import {
   SIMPLE_TRANSFERS_FACTORY,
   ARBITRARY_ACTIONS_FACTORY,
@@ -74,6 +77,19 @@ export interface SignResult {
 export interface DeployPreApprovalResult {
   txHash: Hash;
   preApprovalAddress: Address;
+}
+
+/**
+ * Parameters for deploying a Canon Guard
+ */
+export interface DeployCanonGuardParams {
+  safeAddress: Address;
+  shortTxExecutionDelay: bigint;
+  longTxExecutionDelay: bigint;
+  txExpiryDelay: bigint;
+  maxApprovalDuration: bigint;
+  emergencyTrigger: Address;
+  emergencyCaller: Address;
 }
 
 /**
@@ -530,6 +546,87 @@ export function useTransactionExecutor() {
   );
 
   /**
+   * Execute the Deploy Canon Guard step
+   * Calls CanonGuardFactory.createCanonGuard() and returns the deployed guard address
+   * Anyone can deploy a Canon Guard for any Safe using the new factory.
+   */
+  const executeDeployCanonGuard = useCallback(
+    async (params: DeployCanonGuardParams): Promise<DeployResult | null> => {
+      setStatus("pending");
+      setError(null);
+      setTxHash(null);
+
+      const factory = getDeployFactory();
+      if (!factory) {
+        const error = new Error("No deploy factory configured");
+        setError(error);
+        setStatus("error");
+        return null;
+      }
+
+      try {
+        console.log("[useTransactionExecutor] Deploying Canon Guard:", {
+          factory: factory.address,
+          safe: params.safeAddress,
+          shortTxExecutionDelay: params.shortTxExecutionDelay.toString(),
+          longTxExecutionDelay: params.longTxExecutionDelay.toString(),
+          txExpiryDelay: params.txExpiryDelay.toString(),
+          maxApprovalDuration: params.maxApprovalDuration.toString(),
+          emergencyTrigger: params.emergencyTrigger,
+          emergencyCaller: params.emergencyCaller,
+        });
+
+        // Execute the contract write - anyone can call createCanonGuard
+        const hash = await writeContractAsync({
+          address: factory.address,
+          abi: canonGuardFactoryAbiWithDeploy,
+          functionName: "createCanonGuard",
+          args: [
+            params.safeAddress,
+            MULTI_SEND_CALL_ONLY,
+            params.shortTxExecutionDelay,
+            params.longTxExecutionDelay,
+            params.txExpiryDelay,
+            params.maxApprovalDuration,
+            params.emergencyTrigger,
+            params.emergencyCaller,
+          ],
+        });
+
+        setTxHash(hash);
+        setStatus("confirming");
+
+        // Wait for transaction confirmation
+        const receipt = await waitForTransactionReceipt(config, { hash });
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Parse the CanonGuardCreated event to get the deployed address
+        console.log("[useTransactionExecutor] Parsing Canon Guard logs:", receipt.logs);
+        const deployedAddress = parseCanonGuardAddress(receipt.logs, factory.address);
+
+        if (!deployedAddress) {
+          console.error("[useTransactionExecutor] Failed to parse deployed address from logs");
+          throw new Error("Could not find deployed Canon Guard address in transaction logs");
+        }
+
+        console.log("[useTransactionExecutor] Deploy Canon Guard successful:", { txHash: hash, deployedAddress });
+        setStatus("success");
+        return { txHash: hash, deployedAddress };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Deploy Canon Guard failed");
+        setError(error);
+        setStatus("error");
+        console.error("Deploy Canon Guard failed:", error);
+        return null;
+      }
+    },
+    [config, writeContractAsync],
+  );
+
+  /**
    * Execute the Save to Registry step
    * Calls CanonGuardRegistry.record() to save the deployed action with its label
    */
@@ -927,6 +1024,7 @@ export function useTransactionExecutor() {
     executeDeployHubChild,
     executeDeployCappedTransferHub,
     executeDeployChangeSafeGuardAction,
+    executeDeployCanonGuard,
     executeRecordToRegistry,
     executeQueueTransaction,
     executeSignTransaction,
@@ -1122,6 +1220,47 @@ function parseChangeSafeGuardActionAddress(
     } catch {
       // Not the event we're looking for, continue
       continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse the deployed Canon Guard address from transaction logs
+ * Looks for the CanonGuardCreated event from the specified factory
+ */
+function parseCanonGuardAddress(
+  logs: readonly { address?: Address; data: `0x${string}`; topics: readonly `0x${string}`[] }[],
+  factoryAddress?: Address,
+): Address | null {
+  for (const log of logs) {
+    // If factory address provided, only check logs from that factory
+    if (factoryAddress && log.address?.toLowerCase() !== factoryAddress.toLowerCase()) {
+      continue;
+    }
+
+    try {
+      const decoded = decodeEventLog({
+        abi: canonGuardFactoryAbiWithDeploy,
+        data: log.data,
+        topics: log.topics,
+      });
+
+      if (decoded.eventName === "CanonGuardCreated") {
+        // The event has: CanonGuardCreated(address indexed _canonGuard, address indexed _safe, address indexed _emergencyTrigger, address _emergencyCaller)
+        return (decoded.args as { _canonGuard: Address })._canonGuard;
+      }
+    } catch {
+      // Not the event we're looking for, try parsing from topics directly
+      // The guard address is in topic[1] (first indexed parameter)
+      if (log.topics && log.topics.length >= 2) {
+        try {
+          const addressHex = "0x" + log.topics[1].slice(-40);
+          return getAddress(addressHex);
+        } catch {
+          continue;
+        }
+      }
     }
   }
   return null;

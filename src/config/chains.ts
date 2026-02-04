@@ -96,8 +96,8 @@ export const getChainConfig = (chainId: SupportedChainId): ChainConfig => {
 /**
  * Get RPC URL for a chain
  */
-export const getRpcUrlForChain = (chainId: SupportedChainId): string | undefined => {
-  return SUPPORTED_CHAINS[chainId].rpcUrl;
+export const getRpcUrlForChain = (chainId: SupportedChainId): string => {
+  return SUPPORTED_CHAINS[chainId].rpcUrl ?? "";
 };
 
 /**

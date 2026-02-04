@@ -1,24 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { Address, isAddress } from "viem";
-import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { CANON_GUARD_FACTORY, MULTI_SEND_CALL_ONLY } from "~/constants/addresses";
-import { ClientService, CanonGuardValidationService } from "~/services";
+import { useWallet } from "~/hooks";
+import { useTransactionExecutor, DeployCanonGuardParams } from "~/hooks/useTransactionExecutor";
 import { SafeInfo } from "~/types";
 import { DurationTimeUnit, DURATION_TIME_MULTIPLIERS } from "~/utils/timeUnits";
-import { HeaderLogo } from "./Header";
+import { Footer } from "./Footer";
+import { Header } from "./Header";
 import { CheckIcon, InfoIcon } from "./icons";
-import { CopyableText } from "./shared/CopyButton";
 import { DurationInput } from "./shared/DurationInput";
 import { SafeProfileCard } from "./shared/SafeProfileCard";
-import {
-  PageContainer,
-  SetupHeader,
-  SetupContentArea,
-  SetupFormWrapper,
-  SetupSectionTitle,
-} from "./shared/StyledComponents";
+import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
 
 interface GuardSetupWizardProps {
   safeInfo: SafeInfo;
@@ -91,28 +84,20 @@ const toSeconds = (duration: DurationValue): number => {
   return Math.floor(amount * DURATION_TIME_MULTIPLIERS[duration.unit]);
 };
 
-type ValidationState = "idle" | "validating" | "valid" | "invalid";
+type DeployState = "idle" | "pending" | "confirming" | "success" | "error";
 
 export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: GuardSetupWizardProps) => {
   const [activeStep, setActiveStep] = useState(0);
   const [params, setParams] = useState<SetupParams>(DEFAULT_VALUES);
   const [errors, setErrors] = useState<Partial<SetupParams>>({});
 
-  // Guard address input for step 2
-  const [deployedGuardAddress, setDeployedGuardAddress] = useState("");
-  const [validationState, setValidationState] = useState<ValidationState>("idle");
-  const [validationError, setValidationError] = useState<string | null>(null);
+  // Deployment state for step 2
+  const [deployState, setDeployState] = useState<DeployState>("idle");
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const [deployedGuardAddress, setDeployedGuardAddress] = useState<Address | null>(null);
 
-  // Computed seconds values for display and validation
-  const secondsValues = useMemo(
-    () => ({
-      shortTxExecutionDelay: toSeconds(params.shortTxExecutionDelay).toString(),
-      longTxExecutionDelay: toSeconds(params.longTxExecutionDelay).toString(),
-      txExpiryDelay: toSeconds(params.txExpiryDelay).toString(),
-      maxApprovalDuration: toSeconds(params.maxApprovalDuration).toString(),
-    }),
-    [params.shortTxExecutionDelay, params.longTxExecutionDelay, params.txExpiryDelay, params.maxApprovalDuration],
-  );
+  const { isConnected, connect } = useWallet();
+  const { executeDeployCanonGuard, isExecuting } = useTransactionExecutor();
 
   const validateParams = (): boolean => {
     const newErrors: Partial<Record<keyof SetupParams, string>> = {};
@@ -184,63 +169,52 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
     }
   };
 
-  // Validate deployed guard address
-  const validateGuardAddress = useCallback(
-    async (address: string) => {
-      if (!address || !isAddress(address)) {
-        setValidationState("idle");
-        setValidationError(null);
-        return;
+  // Deploy Canon Guard handler
+  const handleDeploy = async () => {
+    setDeployState("pending");
+    setDeployError(null);
+
+    const deployParams: DeployCanonGuardParams = {
+      safeAddress: safeInfo.address,
+      shortTxExecutionDelay: BigInt(toSeconds(params.shortTxExecutionDelay)),
+      longTxExecutionDelay: BigInt(toSeconds(params.longTxExecutionDelay)),
+      txExpiryDelay: BigInt(toSeconds(params.txExpiryDelay)),
+      maxApprovalDuration: BigInt(toSeconds(params.maxApprovalDuration)),
+      emergencyTrigger: params.emergencyTrigger as Address,
+      emergencyCaller: params.emergencyCaller as Address,
+    };
+
+    try {
+      setDeployState("confirming");
+      const result = await executeDeployCanonGuard(deployParams);
+
+      if (result) {
+        setDeployState("success");
+        setDeployedGuardAddress(result.deployedAddress);
+        // Auto-complete after successful deployment
+        setTimeout(() => {
+          onComplete(result.deployedAddress);
+        }, 1500);
+      } else {
+        setDeployState("error");
+        setDeployError("Deployment failed. Please try again.");
       }
-
-      setValidationState("validating");
-      setValidationError(null);
-
-      try {
-        const rpcUrl = getRpcUrlForChain(safeInfo.chainId);
-        const chain = getViemChain(safeInfo.chainId);
-        const clientService = new ClientService(rpcUrl, chain);
-        const validationService = new CanonGuardValidationService(clientService.getClient());
-
-        const result = await validationService.validateCanonGuard(address as Address);
-
-        if (result.isValid) {
-          setValidationState("valid");
-          setValidationError(null);
-        } else {
-          setValidationState("invalid");
-          setValidationError(result.error || "Invalid Canon Guard address");
-        }
-      } catch {
-        setValidationState("invalid");
-        setValidationError("Failed to validate address");
-      }
-    },
-    [safeInfo.chainId],
-  );
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      validateGuardAddress(deployedGuardAddress);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [deployedGuardAddress, validateGuardAddress]);
-
-  const handleContinue = () => {
-    if (validationState === "valid" && isAddress(deployedGuardAddress)) {
-      onComplete(deployedGuardAddress as Address);
+    } catch (err) {
+      setDeployState("error");
+      setDeployError(err instanceof Error ? err.message : "Deployment failed");
     }
   };
 
-  const isValidGuard = validationState === "valid";
-  const showError = validationState === "invalid" && validationError;
+  const handleRetry = () => {
+    setDeployState("idle");
+    setDeployError(null);
+  };
+
+  const isDeploying = deployState === "pending" || deployState === "confirming" || isExecuting;
 
   return (
     <PageContainer>
-      <SetupHeader>
-        <HeaderLogo onClick={onReset} />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={onReset} />
 
       <ScrollArea>
         <SetupContentArea>
@@ -294,6 +268,7 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
                         onUnitChange={(unit) => handleDurationChange(field, params[field].amount, unit)}
                         hasError={!!errors[field]}
                         placeholder='Enter duration'
+                        testId={field}
                       />
                       {errors[field] && <ErrorText>{errors[field]}</ErrorText>}
                     </InputGroup>
@@ -311,6 +286,7 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
                         placeholder={PARAM_INFO.emergencyTrigger.placeholder}
                         value={params.emergencyTrigger}
                         onChange={(e) => handleAddressChange("emergencyTrigger", e.target.value)}
+                        data-testid='emergency-trigger-input'
                       />
                     </InputWrapper>
                     {errors.emergencyTrigger && <ErrorText>{errors.emergencyTrigger}</ErrorText>}
@@ -327,6 +303,7 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
                         placeholder={PARAM_INFO.emergencyCaller.placeholder}
                         value={params.emergencyCaller}
                         onChange={(e) => handleAddressChange("emergencyCaller", e.target.value)}
+                        data-testid='emergency-caller-input'
                       />
                     </InputWrapper>
                     {errors.emergencyCaller && <ErrorText>{errors.emergencyCaller}</ErrorText>}
@@ -335,178 +312,121 @@ export const GuardSetupWizard = ({ safeInfo, onBack, onReset, onComplete }: Guar
 
                 <ButtonSection>
                   <BackButton onClick={handleBack}>Back</BackButton>
-                  <ContinueButton onClick={handleNext}>Continue</ContinueButton>
+                  <ContinueButton onClick={handleNext} data-testid='wizard-continue-button'>
+                    Continue
+                  </ContinueButton>
                 </ButtonSection>
               </ConfigCard>
             ) : (
-              <DeployCard>
+              <DeployCard data-testid='guard-setup-wizard'>
                 <InfoSection>
                   <Box sx={{ flexShrink: 0, display: "flex" }}>
                     <InfoIcon size={16} color={canonHeaderTokens.foreground.accent20} />
                   </Box>
                   <InfoText>
-                    Use your Safe's Transaction Builder to deploy your Canon Guard. Please go to it and use the
-                    parameters below as input.
+                    Review your Canon Guard configuration below and click Deploy to create your guard on-chain.
                   </InfoText>
                 </InfoSection>
 
                 <DeploySection>
-                  <DeploySectionTitle>Deployment Parameters</DeploySectionTitle>
+                  <DeploySectionTitle>Configuration Summary</DeploySectionTitle>
 
                   <ParamRow>
-                    <ParamLabel>Target Contract</ParamLabel>
-                    <CopyableText
-                      text={CANON_GUARD_FACTORY}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{CANON_GUARD_FACTORY}</ParamCode>
-                    </CopyableText>
+                    <ParamLabel>Short Execution Delay</ParamLabel>
+                    <ParamValue>
+                      {params.shortTxExecutionDelay.amount} {params.shortTxExecutionDelay.unit}
+                    </ParamValue>
                   </ParamRow>
 
                   <ParamRow>
-                    <ParamLabel>Contract Method Selector</ParamLabel>
-                    <ParamCode>createCanonGuard</ParamCode>
+                    <ParamLabel>Long Execution Delay</ParamLabel>
+                    <ParamValue>
+                      {params.longTxExecutionDelay.amount} {params.longTxExecutionDelay.unit}
+                    </ParamValue>
+                  </ParamRow>
+
+                  <ParamRow>
+                    <ParamLabel>Transaction Expiry</ParamLabel>
+                    <ParamValue>
+                      {params.txExpiryDelay.amount} {params.txExpiryDelay.unit}
+                    </ParamValue>
+                  </ParamRow>
+
+                  <ParamRow>
+                    <ParamLabel>Max Approval Duration</ParamLabel>
+                    <ParamValue>
+                      {params.maxApprovalDuration.amount} {params.maxApprovalDuration.unit}
+                    </ParamValue>
                   </ParamRow>
 
                   <ParamsDivider />
 
-                  <DeploySectionTitle>Function Arguments</DeploySectionTitle>
-
                   <ParamRow>
-                    <ParamLabel>_safe</ParamLabel>
-                    <CopyableText
-                      text={safeInfo.address}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{safeInfo.address}</ParamCode>
-                    </CopyableText>
+                    <ParamLabel>Emergency Trigger</ParamLabel>
+                    <ParamCode>{params.emergencyTrigger}</ParamCode>
                   </ParamRow>
 
                   <ParamRow>
-                    <ParamLabel>_multiSendCallOnly</ParamLabel>
-                    <CopyableText
-                      text={MULTI_SEND_CALL_ONLY}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{MULTI_SEND_CALL_ONLY}</ParamCode>
-                    </CopyableText>
-                  </ParamRow>
-
-                  <ParamRow>
-                    <ParamLabel>_shortTxExecutionDelay</ParamLabel>
-                    <CopyableText
-                      text={secondsValues.shortTxExecutionDelay}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{secondsValues.shortTxExecutionDelay}</ParamCode>
-                    </CopyableText>
-                  </ParamRow>
-
-                  <ParamRow>
-                    <ParamLabel>_longTxExecutionDelay</ParamLabel>
-                    <CopyableText
-                      text={secondsValues.longTxExecutionDelay}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{secondsValues.longTxExecutionDelay}</ParamCode>
-                    </CopyableText>
-                  </ParamRow>
-
-                  <ParamRow>
-                    <ParamLabel>_txExpiryDelay</ParamLabel>
-                    <CopyableText
-                      text={secondsValues.txExpiryDelay}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{secondsValues.txExpiryDelay}</ParamCode>
-                    </CopyableText>
-                  </ParamRow>
-
-                  <ParamRow>
-                    <ParamLabel>_maxApprovalDuration</ParamLabel>
-                    <CopyableText
-                      text={secondsValues.maxApprovalDuration}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{secondsValues.maxApprovalDuration}</ParamCode>
-                    </CopyableText>
-                  </ParamRow>
-
-                  <ParamRow>
-                    <ParamLabel>_emergencyTrigger</ParamLabel>
-                    <CopyableText
-                      text={params.emergencyTrigger}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{params.emergencyTrigger}</ParamCode>
-                    </CopyableText>
-                  </ParamRow>
-
-                  <ParamRow>
-                    <ParamLabel>_emergencyCaller</ParamLabel>
-                    <CopyableText
-                      text={params.emergencyCaller}
-                      iconSize={10}
-                      iconColor={canonHeaderTokens.foreground.accent30}
-                    >
-                      <ParamCode>{params.emergencyCaller}</ParamCode>
-                    </CopyableText>
+                    <ParamLabel>Emergency Caller</ParamLabel>
+                    <ParamCode>{params.emergencyCaller}</ParamCode>
                   </ParamRow>
                 </DeploySection>
 
-                <InputSection>
-                  <InfoSection>
-                    <Box sx={{ flexShrink: 0, display: "flex" }}>
-                      <InfoIcon size={16} color={canonHeaderTokens.foreground.accent20} />
-                    </Box>
-                    <InfoText>
-                      After deploying, open your transaction in a block explorer. Navigate to the Logs tab and find the
-                      CanonGuardCreated event — your new Canon Guard address is in Topic 1 (_canonGuard).
-                    </InfoText>
-                  </InfoSection>
-                  <InputGroup>
-                    <InputLabel>Deployed Canon Guard Address</InputLabel>
-                    <InputWrapper $hasError={!!showError} $isValid={isValidGuard}>
-                      <StyledInput
-                        type='text'
-                        placeholder='0x...'
-                        value={deployedGuardAddress}
-                        onChange={(e) => setDeployedGuardAddress(e.target.value)}
-                      />
-                      {validationState === "validating" && (
-                        <ValidationIcon>
-                          <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent20 }} />
-                        </ValidationIcon>
-                      )}
-                      {validationState === "valid" && (
-                        <ValidationIcon>
-                          <CheckIcon size={14} color='#149b3a' />
-                        </ValidationIcon>
-                      )}
-                    </InputWrapper>
-                    {showError && <ErrorText>{validationError}</ErrorText>}
-                  </InputGroup>
-                </InputSection>
+                {/* Deployment Status */}
+                {deployState === "success" && (
+                  <SuccessSection data-testid='deploy-success-message'>
+                    <CheckIcon size={20} color='#149b3a' />
+                    <SuccessText>
+                      Canon Guard deployed successfully!
+                      {deployedGuardAddress && <DeployedAddress>{deployedGuardAddress}</DeployedAddress>}
+                    </SuccessText>
+                  </SuccessSection>
+                )}
+
+                {deployState === "error" && deployError && (
+                  <ErrorSection>
+                    <ErrorText>{deployError}</ErrorText>
+                  </ErrorSection>
+                )}
 
                 <ButtonSection>
-                  <BackButton onClick={handleBack}>Back</BackButton>
-                  <ContinueButton onClick={handleContinue} disabled={!isValidGuard}>
-                    Continue
-                  </ContinueButton>
+                  <BackButton onClick={handleBack} disabled={isDeploying}>
+                    Back
+                  </BackButton>
+
+                  {deployState === "error" ? (
+                    <ContinueButton onClick={handleRetry}>Try Again</ContinueButton>
+                  ) : deployState === "success" ? (
+                    <ContinueButton disabled>
+                      <CheckIcon size={14} color='#ffffff' />
+                      <span style={{ marginLeft: "8px" }}>Deployed</span>
+                    </ContinueButton>
+                  ) : (
+                    <ContinueButton
+                      onClick={isConnected ? handleDeploy : connect}
+                      disabled={isDeploying}
+                      data-testid='deploy-guard-button'
+                    >
+                      {isDeploying ? (
+                        <>
+                          <CircularProgress size={14} sx={{ color: "#ffffff", marginRight: "8px" }} />
+                          {deployState === "confirming" ? "Confirming..." : "Deploying..."}
+                        </>
+                      ) : !isConnected ? (
+                        "Connect Wallet to Deploy"
+                      ) : (
+                        "Deploy Canon Guard"
+                      )}
+                    </ContinueButton>
+                  )}
                 </ButtonSection>
               </DeployCard>
             )}
           </SetupFormWrapper>
         </SetupContentArea>
       </ScrollArea>
+
+      <Footer />
     </PageContainer>
   );
 };
@@ -661,27 +581,11 @@ const StyledInput = styled("input")({
   },
 });
 
-const ValidationIcon = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  marginLeft: "8px",
-});
-
 const ErrorText = styled("span")({
   fontFamily: "Inter, sans-serif",
   fontSize: "11px",
   fontWeight: 400,
   color: "#DA2828",
-});
-
-const InputSection = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  marginTop: "12px",
-  paddingTop: "20px",
-  borderTop: `1px solid ${canonHeaderTokens.foreground.accent50}`,
 });
 
 // Deploy Section
@@ -720,6 +624,14 @@ const ParamCode = styled("code")({
   fontSize: "12px",
   fontWeight: 400,
   color: canonHeaderTokens.foreground.accent0,
+  wordBreak: "break-all",
+});
+
+const ParamValue = styled("span")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "13px",
+  fontWeight: 500,
+  color: canonHeaderTokens.foreground.accent0,
 });
 
 const ParamsDivider = styled(Box)({
@@ -735,7 +647,7 @@ const ButtonSection = styled(Box)({
   paddingTop: "12px",
 });
 
-const BackButton = styled("button")({
+const BackButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   height: "36px",
   padding: "0 20px",
   borderRadius: "100px",
@@ -747,11 +659,12 @@ const BackButton = styled("button")({
   letterSpacing: "0.6px",
   textTransform: "uppercase",
   color: canonHeaderTokens.foreground.accent10,
-  cursor: "pointer",
+  cursor: disabled ? "not-allowed" : "pointer",
+  opacity: disabled ? 0.5 : 1,
   "&:hover": {
-    backgroundColor: `${canonHeaderTokens.foreground.accent40}20`,
+    backgroundColor: disabled ? "transparent" : `${canonHeaderTokens.foreground.accent40}20`,
   },
-});
+}));
 
 const ContinueButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   height: "36px",
@@ -767,7 +680,49 @@ const ContinueButton = styled("button")<{ disabled?: boolean }>(({ disabled }) =
   color: "#ffffff",
   cursor: disabled ? "not-allowed" : "pointer",
   opacity: disabled ? 0.5 : 1,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   "&:hover": {
     backgroundColor: disabled ? canonHeaderTokens.foreground.accent40 : "#129035",
   },
 }));
+
+// Success and Error sections for deployment status
+const SuccessSection = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  padding: "16px",
+  borderRadius: "8px",
+  backgroundColor: "rgba(20, 155, 58, 0.1)",
+  border: "1px solid rgba(20, 155, 58, 0.3)",
+});
+
+const SuccessText = styled("div")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "13px",
+  fontWeight: 500,
+  color: "#149b3a",
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+});
+
+const DeployedAddress = styled("code")({
+  fontFamily: "monospace",
+  fontSize: "11px",
+  fontWeight: 400,
+  color: canonHeaderTokens.foreground.accent10,
+  wordBreak: "break-all",
+});
+
+const ErrorSection = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  padding: "16px",
+  borderRadius: "8px",
+  backgroundColor: "rgba(218, 40, 40, 0.1)",
+  border: "1px solid rgba(218, 40, 40, 0.3)",
+});

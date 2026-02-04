@@ -14,6 +14,8 @@ interface DurationInputProps {
   className?: string;
   /** Units to exclude from the dropdown */
   excludeUnits?: DurationTimeUnit[];
+  /** Test ID for the input element */
+  testId?: string;
 }
 
 /**
@@ -29,6 +31,7 @@ export const DurationInput = ({
   placeholder = "Enter duration",
   className,
   excludeUnits = [],
+  testId,
 }: DurationInputProps) => {
   const availableUnits = ALL_DURATION_UNITS.filter((u) => !excludeUnits.includes(u));
 
@@ -41,8 +44,13 @@ export const DurationInput = ({
         onChange={(e) => onValueChange(e.target.value)}
         placeholder={placeholder}
         $hasError={hasError}
+        data-testid={testId ? `${testId}-input` : undefined}
       />
-      <StyledSelect value={unit} onChange={(e) => onUnitChange(e.target.value as DurationTimeUnit)}>
+      <StyledSelect
+        value={unit}
+        onChange={(e) => onUnitChange(e.target.value as DurationTimeUnit)}
+        data-testid={testId ? `${testId}-select` : undefined}
+      >
         {availableUnits.map((u) => (
           <option key={u} value={u}>
             {u}

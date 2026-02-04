@@ -3,15 +3,10 @@ import { Box, Typography, Button, styled, CircularProgress } from "@mui/material
 import { Address, isAddress } from "viem";
 import { SupportedChainId, SUPPORTED_CHAINS_LIST, DEFAULT_CHAIN_ID } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { HeaderLogo } from "./Header";
+import { Footer } from "./Footer";
+import { Header } from "./Header";
 import { FormInput } from "./NewAction/shared/FormInput";
-import {
-  PageContainer,
-  SetupHeader,
-  SetupContentArea,
-  SetupFormWrapper,
-  SetupSectionTitle,
-} from "./shared/StyledComponents";
+import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
 
 interface VaultSetupModalProps {
   open: boolean;
@@ -52,17 +47,15 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
 
   if (!open) return null;
 
+  const handleReset = () => {
+    setSafeAddress("");
+    setChainId(DEFAULT_CHAIN_ID);
+    setErrors({});
+  };
+
   return (
     <PageContainer>
-      <SetupHeader>
-        <HeaderLogo
-          onClick={() => {
-            setSafeAddress("");
-            setChainId(DEFAULT_CHAIN_ID);
-            setErrors({});
-          }}
-        />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={handleReset} />
 
       <SetupContentArea>
         <SetupFormWrapper data-testid='setup-form'>
@@ -112,6 +105,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
           </FormCard>
         </SetupFormWrapper>
       </SetupContentArea>
+      <Footer />
     </PageContainer>
   );
 };
