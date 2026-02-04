@@ -72,4 +72,7 @@ export {
   Waypoints as VectorSquareIcon, // matches vector-square concept (nodes connected)
 } from "lucide-react";
 
+// Chain icons
+export { EthereumIcon, OptimismIcon, InkIcon, ChainIcon, ChainBadge } from "./ChainIcons";
+
 // Re-export the type for convenience

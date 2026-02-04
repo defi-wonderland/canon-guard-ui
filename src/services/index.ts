@@ -7,3 +7,5 @@ export { QueueService } from "./queueService";
 export type { QueueItem } from "./queueService";
 export * from "./transactionBuilderService";
 export { CanonGuardValidationService } from "./canonGuardValidationService";
+export { SafeStorageService } from "./SafeStorageService";
+export type { SavedSafe } from "./SafeStorageService";
