@@ -8,6 +8,7 @@ import {
   ChevronRightIcon,
   EllipsisIcon,
 } from "~/components/icons";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams } from "~/hooks";
 import { useClientService } from "~/hooks/useServices";
@@ -31,8 +32,8 @@ interface CanonListSectionProps {
   onQueueCountChange?: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
+// eslint-disable-next-line no-empty-pattern
+export const CanonListSection = ({}: CanonListSectionProps) => {
   const { guardAddress, chainId } = useStateContext();
   const clientService = useClientService();
   const navigateWithParams = useNavigateWithParams();
@@ -335,7 +336,14 @@ export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
           <TitleRow>
             <TitleGroup>
               <PageTitle data-testid='canon-list-title'>Canon list</PageTitle>
-              <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
+              <StyledTooltip
+                title='Your saved transactions and action hubs. Queue, rename, or propose pre-approvals for fast execution.'
+                placement='right'
+              >
+                <HelpIconWrapper>
+                  <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
+                </HelpIconWrapper>
+              </StyledTooltip>
             </TitleGroup>
           </TitleRow>
 
@@ -548,6 +556,16 @@ const TitleGroup = styled(Box)({
   alignItems: "center",
   gap: "12px",
   flex: 1,
+});
+
+const HelpIconWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  "&:hover": {
+    opacity: 0.8,
+  },
 });
 
 const PageTitle = styled(Typography)({

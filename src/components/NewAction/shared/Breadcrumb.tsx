@@ -1,5 +1,6 @@
 import { Box, Typography, styled } from "@mui/material";
 import { ChevronRightIcon, HelpCircleIcon } from "~/components/icons";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 
 interface BreadcrumbProps {
@@ -9,6 +10,8 @@ interface BreadcrumbProps {
   standalone?: boolean;
   /** Custom text for the first link (defaults to "Create") */
   firstLinkText?: string;
+  /** Tooltip text for the help icon */
+  tooltipText?: string;
 }
 
 export const Breadcrumb = ({
@@ -16,6 +19,7 @@ export const Breadcrumb = ({
   currentPage,
   standalone = false,
   firstLinkText = "Create",
+  tooltipText = "Configure your transaction details. Once complete, you can deploy, propose, or pre-approve it.",
 }: BreadcrumbProps) => {
   return (
     <BreadcrumbContainer>
@@ -26,9 +30,11 @@ export const Breadcrumb = ({
         </>
       )}
       <CurrentPage>{currentPage}</CurrentPage>
-      <HelpIconWrapper>
-        <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
-      </HelpIconWrapper>
+      <StyledTooltip title={tooltipText} placement='right'>
+        <HelpIconWrapper>
+          <HelpCircleIcon size={18} color={canonHeaderTokens.foreground.accent20} />
+        </HelpIconWrapper>
+      </StyledTooltip>
     </BreadcrumbContainer>
   );
 };
