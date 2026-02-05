@@ -3,7 +3,6 @@ import { CustomThemes } from "~/types";
 export interface Env {
   IS_PLAYWRIGHT: boolean;
   PROJECT_ID: string;
-  ALCHEMY_KEY: string;
   RPC_URL_TESTING: string;
 }
 
