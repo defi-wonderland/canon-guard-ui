@@ -144,7 +144,7 @@ export const ManageSafesSection = () => {
   }
 
   return (
-    <PageContainer>
+    <PageContainer data-testid='manage-safes-page'>
       <SetupHeader>
         <HeaderLogo onClick={handleLogoClick} />
       </SetupHeader>
@@ -153,7 +153,7 @@ export const ManageSafesSection = () => {
         <SetupFormWrapper>
           {/* Currently Using Section */}
           {currentSafe && (
-            <Section>
+            <Section data-testid='current-safe-section'>
               <SetupSectionTitle>Currently Using</SetupSectionTitle>
               <SafeAccountCard
                 address={currentSafe.address}
@@ -163,11 +163,14 @@ export const ManageSafesSection = () => {
                 totalSigners={currentSafeInfo?.totalOwners}
                 isCurrentSafe
                 onClick={handleCurrentSafeClick}
+                testId='current-safe-card'
               />
 
               {/* Add New Safe Button */}
               <ButtonContainer>
-                <AddNewButton onClick={handleAddNewSafe}>Add New Safe</AddNewButton>
+                <AddNewButton onClick={handleAddNewSafe} data-testid='add-new-safe-button'>
+                  Add New Safe
+                </AddNewButton>
               </ButtonContainer>
             </Section>
           )}
@@ -185,10 +188,10 @@ export const ManageSafesSection = () => {
 
           {/* Previously Used Section */}
           {previousSafes.length > 0 && (
-            <Section>
+            <Section data-testid='previous-safes-section'>
               <SetupSectionTitle>Previously Used Safe Accounts</SetupSectionTitle>
-              <SafesList>
-                {previousSafes.map((safe) => {
+              <SafesList data-testid='previous-safes-list'>
+                {previousSafes.map((safe, index) => {
                   const key = SafeStorageService.getSafeKey(safe.address, safe.chainId);
                   const info = previousSafesInfo.get(key);
 
@@ -201,6 +204,7 @@ export const ManageSafesSection = () => {
                       threshold={info?.threshold}
                       totalSigners={info?.totalOwners}
                       onClick={() => handleSwitchSafe(safe)}
+                      testId={`previous-safe-card-${index}`}
                     />
                   );
                 })}
