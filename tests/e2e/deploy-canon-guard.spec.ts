@@ -1,5 +1,14 @@
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
+import type { DeploymentsConfig } from "./global-setup";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const TEST_RESULTS_DIR = path.join(__dirname, "../../test-results");
+const DEPLOYMENTS_CONFIG_FILE = path.join(TEST_RESULTS_DIR, ".deployments.json");
 
 // Use deployment index 1 to avoid conflicts with attach-canon-guard tests (index 0)
 test.use({ deploymentIndex: 1 });
@@ -150,5 +159,95 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await expect(page.getByTestId("canon-guard-status-label")).toHaveText("Attached", {
       timeout: TEST_TIMEOUTS.TRANSACTION,
     });
+  });
+
+  test("should add another Safe from the Manage Safe Accounts page", async ({
+    page,
+    deployedSafe,
+    setSigningAccountForDeployment,
+  }) => {
+    const { safeAddress } = deployedSafe;
+
+    // Load the Safe from deployment index 0 (which has an attached guard from attach-canon-guard tests)
+    const deploymentsConfig: DeploymentsConfig = JSON.parse(fs.readFileSync(DEPLOYMENTS_CONFIG_FILE, "utf-8"));
+    const otherDeployment = deploymentsConfig.deployments[0];
+    const otherSafeAddress = otherDeployment.safe.safeAddress;
+
+    // Step 1: Navigate to the app (each test gets a fresh browser context, so localStorage is empty)
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await setSigningAccountForDeployment();
+
+    // Step 2: Go through the setup form to save the Safe to localStorage
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Enter the Safe address
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    // Select OP Mainnet chain
+    const chainSelector = page.getByTestId("chain-selector");
+    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
+
+    // Click Continue - this saves the Safe to localStorage
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Step 3: Wait for the main app to load (Safe should have guard attached from previous test)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    // Step 3: Click on the Safe dropdown button in the header
+    await page.getByTestId("header-safe-dropdown-button").click();
+
+    // Wait for the dropdown menu to be visible
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 4: Click "Manage Safe Accounts" in the dropdown
+    await page.getByTestId("manage-safes-menu-item").click();
+
+    // Wait for navigation to complete
+    await page.waitForURL(/\/settings\/safes/, { timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 5: Verify we're on the Manage Safes page
+    await expect(page.getByTestId("manage-safes-page")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("current-safe-section")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await expect(page.getByTestId("current-safe-card")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 6: Click "Add New Safe" button
+    await page.getByTestId("add-new-safe-button").click();
+
+    // Step 7: Wait for the setup form to appear
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 8: Enter the other Safe address (from deployment 0)
+    await page.getByTestId("safe-address-input").fill(otherSafeAddress);
+
+    // Step 9: Select OP Mainnet chain
+    await page.getByTestId("chain-selector").selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
+    await expect(page.getByTestId("chain-selector")).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+
+    // Step 10: Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Step 11: Wait for the app to load (should show the queue since this Safe has a guard attached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    // Step 12: Go back to Manage Safes to verify the previous safe is now in the list
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("manage-safes-menu-item").click();
+
+    // Wait for navigation
+    await page.waitForURL(/\/settings\/safes/, { timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 13: Verify the Manage Safes page shows both safes
+    await expect(page.getByTestId("manage-safes-page")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("current-safe-card")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // The previous safe should now appear in the "Previously Used" section
+    await expect(page.getByTestId("previous-safes-section")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("previous-safe-card-0")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
   });
 });
