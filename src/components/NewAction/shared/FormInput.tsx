@@ -77,28 +77,7 @@ export const FormInput = ({
                   <ChevronDownIcon size={14} color={canonHeaderTokens.foreground.accent10} />
                 </ChevronWrapper>
               )}
-              MenuProps={{
-                disableScrollLock: true,
-                sx: {
-                  "& .MuiBackdrop-root": {
-                    opacity: "0 !important",
-                  },
-                },
-                BackdropProps: {
-                  invisible: true,
-                },
-                PaperProps: {
-                  sx: {
-                    backgroundColor: canonHeaderTokens.background.layer1,
-                    border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-                    borderRadius: "8px",
-                    marginTop: "4px",
-                    "& .MuiList-root": {
-                      padding: "4px",
-                    },
-                  },
-                },
-              }}
+              MenuProps={selectMenuProps}
             >
               {selectOptions.map((option) => (
                 <StyledMenuItem key={option.value} value={option.value}>
@@ -286,6 +265,29 @@ const StyledMenuItem = styled(MenuItem)({
     },
   },
 });
+
+const selectMenuProps = {
+  disableScrollLock: true,
+  sx: {
+    "& .MuiBackdrop-root": {
+      opacity: "0 !important",
+    },
+  },
+  BackdropProps: {
+    invisible: true,
+  },
+  PaperProps: {
+    sx: {
+      backgroundColor: canonHeaderTokens.background.layer1,
+      border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+      borderRadius: "8px",
+      marginTop: "4px",
+      "& .MuiList-root": {
+        padding: "4px",
+      },
+    },
+  },
+};
 
 const ChevronWrapper = styled(Box)({
   display: "flex",
