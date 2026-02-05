@@ -43,7 +43,6 @@ type ContextType = {
   isDetached: boolean;
   setIsDetached: (val: boolean) => void;
 
-  // Safe owners list for signer checking
   safeOwners: Address[];
   setSafeOwners: (owners: Address[]) => void;
 

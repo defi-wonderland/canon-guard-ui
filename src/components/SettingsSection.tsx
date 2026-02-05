@@ -38,12 +38,7 @@ export const SettingsSection = () => {
 
   const chainConfig = getChainConfig(chainId as SupportedChainId);
 
-  // Get disable reason for attach/detach button
-  const getAttachDetachDisableReason = (): string | null => {
-    if (!isSigner) return "Connected wallet is not a signer";
-    return null;
-  };
-  const attachDetachDisableReason = getAttachDetachDisableReason();
+  const isAttachDetachDisabled = !isSigner;
 
   const handleDetachGuard = () => {
     navigateWithParams("/settings/detach");
@@ -241,42 +236,24 @@ export const SettingsSection = () => {
               </SettingInfo>
             </SettingCardLeft>
             {/* Attach/Detach button: hidden when disconnected, disabled with tooltip when not signer */}
-            {isConnected &&
-              (isDetached ? (
-                <StyledTooltip
-                  title={attachDetachDisableReason || ""}
-                  placement='top'
-                  disableHoverListener={!attachDetachDisableReason}
-                >
-                  <span>
-                    <OutlineButton
-                      $width='108px'
-                      $disabled={!!attachDetachDisableReason}
-                      onClick={!attachDetachDisableReason ? handleAttachGuard : undefined}
-                      data-testid='settings-attach-button'
-                    >
-                      ATTACH
-                    </OutlineButton>
-                  </span>
-                </StyledTooltip>
-              ) : (
-                <StyledTooltip
-                  title={attachDetachDisableReason || ""}
-                  placement='top'
-                  disableHoverListener={!attachDetachDisableReason}
-                >
-                  <span>
-                    <OutlineButton
-                      $width='108px'
-                      $disabled={!!attachDetachDisableReason}
-                      onClick={!attachDetachDisableReason ? handleDetachGuard : undefined}
-                      data-testid='settings-detach-button'
-                    >
-                      DETACH
-                    </OutlineButton>
-                  </span>
-                </StyledTooltip>
-              ))}
+            {isConnected && (
+              <StyledTooltip
+                title='Connected wallet is not a signer'
+                placement='top'
+                disableHoverListener={!isAttachDetachDisabled}
+              >
+                <span>
+                  <OutlineButton
+                    $width='108px'
+                    $disabled={isAttachDetachDisabled}
+                    onClick={!isAttachDetachDisabled ? (isDetached ? handleAttachGuard : handleDetachGuard) : undefined}
+                    data-testid={isDetached ? "settings-attach-button" : "settings-detach-button"}
+                  >
+                    {isDetached ? "ATTACH" : "DETACH"}
+                  </OutlineButton>
+                </span>
+              </StyledTooltip>
+            )}
           </CanonGuardTop>
           <CardDivider />
           <CopyableText text={guardAddress || ""} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
