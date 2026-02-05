@@ -37,6 +37,9 @@ interface ActionItemProps {
   onDeployChild?: () => void;
   onRemove?: () => void;
   isRemoving?: boolean;
+  // Signer status (for controlling action visibility/availability)
+  isConnected?: boolean;
+  isSigner?: boolean;
 }
 
 export const ActionItem = ({
@@ -56,6 +59,8 @@ export const ActionItem = ({
   onDeployChild,
   onRemove,
   isRemoving,
+  isConnected = true,
+  isSigner = true,
 }: ActionItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -124,31 +129,62 @@ export const ActionItem = ({
               )}
             </ChildrenButton>
           ) : (
-            /* Both regular actions and hub children show QUEUE button */
-            <QueueButton onClick={isHubChild ? onAddToQueue : onQueue} data-testid='canon-list-queue-button'>
-              <ButtonText>QUEUE</ButtonText>
-              <PlusIcon size={14} color={canonHeaderTokens.foreground.accent10} />
-            </QueueButton>
+            /* Both regular actions and hub children show QUEUE button - hidden if disconnected */
+            isConnected && (
+              <StyledTooltip
+                title={!isSigner ? "Connected wallet is not a signer" : ""}
+                placement='top'
+                disableHoverListener={isSigner}
+              >
+                <span>
+                  <QueueButton
+                    onClick={isSigner ? (isHubChild ? onAddToQueue : onQueue) : undefined}
+                    data-testid='canon-list-queue-button'
+                    disabled={!isSigner}
+                  >
+                    <ButtonText $disabled={!isSigner}>QUEUE</ButtonText>
+                    <PlusIcon
+                      size={14}
+                      color={!isSigner ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent10}
+                    />
+                  </QueueButton>
+                </span>
+              </StyledTooltip>
+            )
           )}
-          <MoreButtonWrapper>
-            <MoreButton ref={moreButtonRef} onClick={handleMoreClick}>
-              <EllipsisIcon size={16} color={canonHeaderTokens.foreground.accent10} />
-            </MoreButton>
-            <ActionMenu
-              isOpen={isMenuOpen}
-              onClose={handleMenuClose}
-              isHub={isHub}
-              isHubChild={isHubChild}
-              isFastPath={isFastPath}
-              triggerRef={moreButtonRef}
-              onAddToQueue={onAddToQueue}
-              onRename={onRename}
-              onProposePreApproval={onProposePreApproval}
-              onDeployChild={onDeployChild}
-              onRemove={handleRemove}
-              isRemoving={isRemoving}
-            />
-          </MoreButtonWrapper>
+          {/* More button (ActionMenu) - hidden if disconnected */}
+          {isConnected && (
+            <MoreButtonWrapper>
+              <StyledTooltip
+                title={!isSigner ? "Connected wallet is not a signer" : ""}
+                placement='top'
+                disableHoverListener={isSigner}
+              >
+                <span>
+                  <MoreButton ref={moreButtonRef} onClick={isSigner ? handleMoreClick : undefined} disabled={!isSigner}>
+                    <EllipsisIcon
+                      size={16}
+                      color={!isSigner ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent10}
+                    />
+                  </MoreButton>
+                </span>
+              </StyledTooltip>
+              <ActionMenu
+                isOpen={isMenuOpen}
+                onClose={handleMenuClose}
+                isHub={isHub}
+                isHubChild={isHubChild}
+                isFastPath={isFastPath}
+                triggerRef={moreButtonRef}
+                onAddToQueue={onAddToQueue}
+                onRename={onRename}
+                onProposePreApproval={onProposePreApproval}
+                onDeployChild={onDeployChild}
+                onRemove={handleRemove}
+                isRemoving={isRemoving}
+              />
+            </MoreButtonWrapper>
+          )}
         </ActionsTop>
         {/* Hub children don't show Fast/Slow path - only hubs and regular actions show that */}
         {!isHubChild && (
@@ -321,7 +357,7 @@ const ActionsTop = styled(Box)({
   gap: "16px",
 });
 
-const QueueButton = styled("button")({
+const QueueButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -331,27 +367,29 @@ const QueueButton = styled("button")({
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
   borderRadius: "100px",
   backgroundColor: "transparent",
-  cursor: "pointer",
+  cursor: disabled ? "not-allowed" : "pointer",
   transition: "background-color 0.2s ease",
   "&:hover": {
-    backgroundColor: canonHeaderTokens.background.layer1Variation,
+    backgroundColor: disabled ? "transparent" : canonHeaderTokens.background.layer1Variation,
   },
-});
+}));
 
-const ButtonText = styled(Typography)({
+const ButtonText = styled(Typography, {
+  shouldForwardProp: (prop) => prop !== "$disabled",
+})<{ $disabled?: boolean }>(({ $disabled }) => ({
   fontSize: "12px",
   fontWeight: 600,
   lineHeight: "16px",
   letterSpacing: "0.6px",
   textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent10,
-});
+  color: $disabled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent10,
+}));
 
 const MoreButtonWrapper = styled(Box)({
   position: "relative",
 });
 
-const MoreButton = styled("button")({
+const MoreButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -359,12 +397,12 @@ const MoreButton = styled("button")({
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
   borderRadius: "100px",
   backgroundColor: "transparent",
-  cursor: "pointer",
+  cursor: disabled ? "not-allowed" : "pointer",
   transition: "background-color 0.2s ease",
   "&:hover": {
-    backgroundColor: canonHeaderTokens.background.layer1Variation,
+    backgroundColor: disabled ? "transparent" : canonHeaderTokens.background.layer1Variation,
   },
-});
+}));
 
 const ActionsBottom = styled(Box)({
   display: "flex",
