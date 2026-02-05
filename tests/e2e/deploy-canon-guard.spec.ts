@@ -122,11 +122,17 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await expect(page.getByTestId("execute-button")).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
-    await page.waitForTimeout(2000);
 
-    // Step 17: Verify we're still on the home page after execution
+    // Wait for page reload to complete (CHANGE_SAFE_GUARD action triggers window.location.href)
+    await page.waitForURL(/\/queue/, { timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 17: Verify we're on the home page after execution
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByTestId("create-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // CRITICAL: Wait for the detached banner to disappear (confirms isDetached state is false)
+    // This prevents race condition where we navigate to Settings before state has fully updated
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
 
     // Step 18: Navigate to Settings and verify guard is attached
     await page.getByTestId("header-safe-dropdown-button").click();

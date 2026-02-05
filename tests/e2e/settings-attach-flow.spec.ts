@@ -100,8 +100,12 @@ test.describe.serial("Settings Attach Flow", () => {
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
 
-    // Wait for the execution to complete
-    await page.waitForTimeout(1000);
+    // Wait for page reload to complete (CHANGE_SAFE_GUARD action triggers window.location.href)
+    await page.waitForURL(/\/queue/, { timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Wait for queue to load and verify detached banner is gone (confirms guard is attached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
   });
 
   test("should create and execute a transfer action", async ({ page, deployments, switchToDeployment }) => {
