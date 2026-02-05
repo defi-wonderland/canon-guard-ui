@@ -10,12 +10,11 @@ import {
 } from "~/components/icons";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams, useWallet } from "~/hooks";
+import { useNavigateWithParams, useWallet, useIsSigner } from "~/hooks";
 import { useClientService } from "~/hooks/useServices";
 import { useStateContext } from "~/hooks/useStateContext";
 import { useTransactionExecutor } from "~/hooks/useTransactionExecutor";
 import { RegistryService, RegisteredEntity } from "~/services";
-import { SafeInfo } from "~/types";
 import { getFactoryDisplayName } from "~/utils/factoryDisplay";
 import { ActionItem } from "./ActionItem";
 import { PreApproveDurationModal } from "./PreApproveDurationModal";
@@ -27,23 +26,13 @@ interface DisplayEntity extends RegisteredEntity {
   children?: RegisteredEntity[];
 }
 
-interface CanonListSectionProps {
-  safeInfo: SafeInfo;
-  onQueueCountChange?: () => void;
-}
-
-export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
+export const CanonListSection = () => {
   const { guardAddress, chainId } = useStateContext();
   const clientService = useClientService();
   const navigateWithParams = useNavigateWithParams();
   const { executeRemoveFromRegistry, executeRecordToRegistry, isExecuting } = useTransactionExecutor();
-  const { address: connectedAddress, isConnected } = useWallet();
-
-  // Check if connected wallet is a Safe signer
-  const isSigner =
-    isConnected &&
-    connectedAddress &&
-    safeInfo.owners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
+  const { isConnected } = useWallet();
+  const isSigner = useIsSigner();
 
   const [entities, setEntities] = useState<RegisteredEntity[]>([]);
   const [loading, setLoading] = useState(true);

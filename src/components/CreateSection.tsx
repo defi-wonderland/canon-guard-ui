@@ -1,6 +1,5 @@
 import { Box, Typography, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
-import { Address } from "viem";
 import { BoxIcon, VectorSquareIcon, FileJsonIcon, StarIcon, HelpCircleIcon } from "~/components/icons";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -107,10 +106,9 @@ const CreateMain = () => {
 
 interface CreateSectionProps {
   onQueueCountChange?: () => void;
-  safeOwners?: Address[];
 }
 
-export const CreateSection = ({ onQueueCountChange, safeOwners = [] }: CreateSectionProps) => {
+export const CreateSection = ({ onQueueCountChange }: CreateSectionProps) => {
   const location = useLocation();
 
   // Determine what to render based on current path
@@ -123,12 +121,12 @@ export const CreateSection = ({ onQueueCountChange, safeOwners = [] }: CreateSec
 
   // If at /create/action or deeper, show the NewActionSection
   if (path.startsWith("/create/action")) {
-    return <NewActionSection onQueueCountChange={onQueueCountChange} safeOwners={safeOwners} />;
+    return <NewActionSection onQueueCountChange={onQueueCountChange} />;
   }
 
   // If at /create/hub or deeper, show the NewActionSection (hub flow)
   if (path.startsWith("/create/hub")) {
-    return <NewActionSection onQueueCountChange={onQueueCountChange} safeOwners={safeOwners} />;
+    return <NewActionSection onQueueCountChange={onQueueCountChange} />;
   }
 
   // Default to main create view

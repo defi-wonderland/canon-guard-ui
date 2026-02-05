@@ -5,6 +5,7 @@ import { SearchIcon, HelpCircleIcon, ChevronLeftIcon, ChevronRightIcon, Ellipsis
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useCanonGuardConfig } from "~/hooks/useCanonGuardConfig";
+import { useIsSigner } from "~/hooks/useIsSigner";
 import { useNavigateWithParams } from "~/hooks/useNavigateWithParams";
 import { useQueueService } from "~/hooks/useServices";
 import { useStateContext } from "~/hooks/useStateContext";
@@ -17,16 +18,16 @@ import { QueueItem } from "./QueueItem";
 const ITEMS_PER_PAGE = 25;
 
 interface QueueSectionProps {
-  safeOwners?: Address[];
   onQueueCountChange?: (count: number) => void;
 }
 
-export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSectionProps) => {
+export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
   const queueService = useQueueService();
   const { guardAddress, safeAddress } = useStateContext();
   const { executeCanonTransaction, executeCancelTransaction, isExecuting } = useTransactionExecutor();
   const navigateWithParams = useNavigateWithParams();
   const { address: connectedAddress } = useWallet();
+  const isSigner = useIsSigner();
   const { emergencyMode, emergencyCaller, refetch: refetchConfig } = useCanonGuardConfig();
 
   const [queueItems, setQueueItems] = useState<QueueItemType[]>([]);
@@ -310,7 +311,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
                     key={`${item.actionBuilderAddress}-${item.nonce}`}
                     item={item}
                     connectedAddress={connectedAddress}
-                    safeOwners={safeOwners}
+                    isSigner={isSigner}
                     emergencyMode={emergencyMode ?? false}
                     emergencyCaller={emergencyCaller}
                     onSign={() => handleSign(item)}
@@ -337,7 +338,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
                     key={`${item.actionBuilderAddress}-${item.nonce}`}
                     item={item}
                     connectedAddress={connectedAddress}
-                    safeOwners={safeOwners}
+                    isSigner={isSigner}
                     emergencyMode={emergencyMode ?? false}
                     emergencyCaller={emergencyCaller}
                     onSign={() => handleSign(item)}
@@ -364,7 +365,7 @@ export const QueueSection = ({ safeOwners = [], onQueueCountChange }: QueueSecti
                     key={`${item.actionBuilderAddress}-${item.nonce}`}
                     item={item}
                     connectedAddress={connectedAddress}
-                    safeOwners={safeOwners}
+                    isSigner={isSigner}
                     emergencyMode={emergencyMode ?? false}
                     emergencyCaller={emergencyCaller}
                     onSign={() => handleSign(item)}

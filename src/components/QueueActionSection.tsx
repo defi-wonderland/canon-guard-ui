@@ -6,7 +6,7 @@ import { canonGuardAbi, safeAbi, preApproveActionFactoryAbi } from "~/abis/canon
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { PRE_APPROVE_ACTION_FACTORY } from "~/constants/canonGuard";
-import { useNavigateWithParams, useTransactionExecutor, useWallet } from "~/hooks";
+import { useNavigateWithParams, useTransactionExecutor } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
@@ -24,7 +24,6 @@ interface QueueActionState {
 
 interface QueueActionSectionProps {
   onQueueCountChange?: () => void;
-  safeOwners?: Address[];
 }
 
 /**
@@ -39,17 +38,10 @@ interface QueueActionSectionProps {
  * Note: This flow requires navigation state. If state is missing (e.g., on page refresh),
  * it redirects back to canon-list to restart the flow.
  */
-export const QueueActionSection = ({ onQueueCountChange, safeOwners = [] }: QueueActionSectionProps) => {
+export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { safeAddress, guardAddress, chainId } = useStateContext();
-  const { address: connectedAddress, isConnected } = useWallet();
-
-  // Check if connected wallet is a Safe signer
-  const isSigner =
-    isConnected &&
-    connectedAddress &&
-    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   // Get state passed from Canon List (required - redirects if missing)
   const navigationState = location.state as QueueActionState | null;
@@ -384,7 +376,6 @@ export const QueueActionSection = ({ onQueueCountChange, safeOwners = [] }: Queu
       nonceSelectionEnabled={nonceDataLoaded}
       currentSafeNonce={currentSafeNonce}
       queueItems={queueItems}
-      isSigner={isSigner}
     />
   );
 };

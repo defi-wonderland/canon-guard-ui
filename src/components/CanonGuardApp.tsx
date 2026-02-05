@@ -68,40 +68,40 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Attach/Detach Guard flow (must come before /settings check)
     if (path === "/settings/attach") {
-      return <ChangeGuardSection mode='attach' onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
+      return <ChangeGuardSection mode='attach' onQueueCountChange={fetchQueueCount} />;
     }
     if (path === "/settings/detach") {
-      return <ChangeGuardSection mode='detach' onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
+      return <ChangeGuardSection mode='detach' onQueueCountChange={fetchQueueCount} />;
     }
 
     // Settings page
     if (path === "/settings") {
-      return <SettingsSection safeOwners={safeInfo.owners} />;
+      return <SettingsSection />;
     }
 
     // Queue is the default when at root or /queue
     if (path === "/" || path === "/queue") {
-      return <QueueSection safeOwners={safeInfo.owners} onQueueCountChange={handleQueueCountChange} />;
+      return <QueueSection onQueueCountChange={handleQueueCountChange} />;
     }
 
     // Queue Sign (from Queue item Sign button)
     if (path === "/queue/sign") {
-      return <QueueSignSection onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
+      return <QueueSignSection onQueueCountChange={fetchQueueCount} />;
     }
 
     // Queue Action (from Canon List)
     if (path === "/queue-action") {
-      return <QueueActionSection onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
+      return <QueueActionSection onQueueCountChange={fetchQueueCount} />;
     }
 
     // Canon List
     if (path === "/canon-list") {
-      return <CanonListSection safeInfo={safeInfo} onQueueCountChange={fetchQueueCount} />;
+      return <CanonListSection />;
     }
 
     // Create routes - render CreateSection which handles its own nested routing
     if (path.startsWith("/create")) {
-      return <CreateSection onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
+      return <CreateSection onQueueCountChange={fetchQueueCount} />;
     }
 
     // Default to queue for unknown routes
@@ -131,7 +131,6 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
         chain={chainConfig.chain}
         queueCount={queueCount}
         onClearConfig={onClearConfig}
-        safeOwners={safeInfo.owners}
       />
       <MainContent>{renderContent()}</MainContent>
 

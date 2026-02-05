@@ -15,7 +15,7 @@ import {
 import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useWallet, useStateContext, useNavigateWithParams } from "~/hooks";
+import { useWallet, useStateContext, useNavigateWithParams, useIsSigner } from "~/hooks";
 import type { QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
 import { Breadcrumb, ParametersDisplay } from "../shared";
@@ -48,8 +48,6 @@ interface SigningFlowStepProps {
   isNonceLocked?: boolean;
   /** Locked nonce value when isNonceLocked is true */
   lockedNonce?: number;
-  /** If false, the SIGN button will be disabled with a tooltip indicating the user is not a signer */
-  isSigner?: boolean;
 }
 
 export const SigningFlowStep = ({
@@ -69,10 +67,10 @@ export const SigningFlowStep = ({
   queueItems = [],
   isNonceLocked = false,
   lockedNonce,
-  isSigner = true,
 }: SigningFlowStepProps) => {
   const [parametersExpanded, setParametersExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isSigner = useIsSigner();
   const [isSigning, setIsSigning] = useState(false);
 
   // Nonce selection state

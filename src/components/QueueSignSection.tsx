@@ -15,7 +15,7 @@ import { Address, encodeFunctionData } from "viem";
 import { safeAbi } from "~/abis/canonGuard";
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams, useTransactionExecutor, useWallet } from "~/hooks";
+import { useNavigateWithParams, useTransactionExecutor } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import { ClientService } from "~/services/clientService";
 import { QueueService, type QueueItem } from "~/services/queueService";
@@ -34,20 +34,12 @@ interface QueueSignState {
 
 interface QueueSignSectionProps {
   onQueueCountChange?: () => void;
-  safeOwners?: Address[];
 }
 
-export const QueueSignSection = ({ onQueueCountChange, safeOwners = [] }: QueueSignSectionProps) => {
+export const QueueSignSection = ({ onQueueCountChange }: QueueSignSectionProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { safeAddress, guardAddress, chainId } = useStateContext();
-  const { address: connectedAddress, isConnected } = useWallet();
-
-  // Check if connected wallet is a Safe signer
-  const isSigner =
-    isConnected &&
-    connectedAddress &&
-    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   // Get state passed from Queue
   const navigationState = location.state as QueueSignState | null;
@@ -247,7 +239,6 @@ export const QueueSignSection = ({ onQueueCountChange, safeOwners = [] }: QueueS
       queueItems={queueItems}
       isNonceLocked={isNonceLocked}
       lockedNonce={navigationState.nonce}
-      isSigner={isSigner}
     />
   );
 };

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { Address } from "viem";
 import { DeploymentModesPanel } from "~/components/DeploymentModesPanel";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
 import { HelpCircleIcon, ShieldCheckIcon, AsteriskIcon, ShieldAlertIcon, Link2Icon } from "~/components/icons";
@@ -9,30 +8,28 @@ import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useStateContext, useCanonGuardConfig, humanizeDuration, useNavigateWithParams, useWallet } from "~/hooks";
+import {
+  useStateContext,
+  useCanonGuardConfig,
+  humanizeDuration,
+  useNavigateWithParams,
+  useWallet,
+  useIsSigner,
+} from "~/hooks";
 
-interface SettingsSectionProps {
-  safeOwners?: Address[];
-}
-
-export const SettingsSection = ({ safeOwners = [] }: SettingsSectionProps) => {
+export const SettingsSection = () => {
   const { safeAddress, guardAddress, chainId, isDetached } = useStateContext();
   const { shortTxExecutionDelay, longTxExecutionDelay, txExpiryDelay, maxApprovalDuration, emergencyMode, isLoading } =
     useCanonGuardConfig();
   const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
-  const { address: connectedAddress, isConnected } = useWallet();
+  const { isConnected } = useWallet();
+  const isSigner = useIsSigner();
 
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
   const [deploymentModesPanelOpen, setDeploymentModesPanelOpen] = useState(false);
 
   const chainConfig = getChainConfig(chainId as SupportedChainId);
-
-  // Check if connected wallet is a Safe signer
-  const isSigner =
-    isConnected &&
-    connectedAddress &&
-    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   // Get disable reason for attach/detach button
   const getAttachDetachDisableReason = (): string | null => {

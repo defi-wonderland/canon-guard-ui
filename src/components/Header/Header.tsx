@@ -4,14 +4,13 @@ import { Chain } from "viem/chains";
 import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams, useWallet } from "~/hooks";
+import { useNavigateWithParams, useWallet, useIsSigner } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import { useWalletConnect } from "~/providers/WalletConnectProvider";
 import { HeaderLogo } from "./HeaderLogo";
 import { HeaderNav } from "./HeaderNav";
 import { HeaderSafeDropdown } from "./HeaderSafeDropdown";
 import { HeaderWalletDropdown } from "./HeaderWalletDropdown";
-import type { Address } from "viem";
 
 interface HeaderProps {
   /** Safe address (required when not in minimal mode) */
@@ -24,31 +23,17 @@ interface HeaderProps {
   onClearConfig: () => void;
   /** When true, hides nav, create button, safe dropdown - shows only logo and wallet */
   isMinimalMode?: boolean;
-  /** Safe owners for signer checking */
-  safeOwners?: Address[];
 }
 
-export const Header = ({
-  safeAddress,
-  chain,
-  queueCount = 0,
-  onClearConfig,
-  isMinimalMode = false,
-  safeOwners = [],
-}: HeaderProps) => {
+export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMinimalMode = false }: HeaderProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress } = useStateContext();
   const { isInitialized, openModal, sessions } = useWalletConnect();
-  const { address: connectedAddress, isConnected } = useWallet();
+  const { isConnected } = useWallet();
+  const isSigner = useIsSigner();
   const isCreateActive = location.pathname.startsWith("/create");
   const hasActiveSessions = sessions.length > 0;
-
-  // Check if connected wallet is a Safe signer
-  const isSigner =
-    isConnected &&
-    connectedAddress &&
-    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   // Determine if CREATE button should be disabled and why
   const getCreateDisableReason = (): string | null => {

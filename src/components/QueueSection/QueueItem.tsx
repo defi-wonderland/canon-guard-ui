@@ -11,7 +11,7 @@ import type { Address } from "viem";
 interface QueueItemProps {
   item: QueueItemType;
   connectedAddress?: Address;
-  safeOwners?: Address[];
+  isSigner?: boolean;
   emergencyMode?: boolean;
   emergencyCaller?: Address | null;
   onSign?: () => void;
@@ -25,7 +25,7 @@ interface QueueItemProps {
 export const QueueItem = ({
   item,
   connectedAddress,
-  safeOwners = [],
+  isSigner = false,
   emergencyMode = false,
   emergencyCaller,
   onSign,
@@ -111,10 +111,6 @@ export const QueueItem = ({
     }
     return "<1 minute left";
   };
-
-  // Check if connected wallet is a Safe signer
-  const isSigner =
-    connectedAddress && safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   // Check if connected wallet is the emergency caller
   const isEmergencyCaller =
