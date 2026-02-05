@@ -5,7 +5,7 @@ import { Address, encodeFunctionData } from "viem";
 import { canonGuardAbi, safeAbi } from "~/abis/canonGuard";
 import { getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams, useTransactionExecutor } from "~/hooks";
+import { useNavigateWithParams, useTransactionExecutor, useWallet } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import type { ParsedWalletConnectTransaction } from "~/providers/WalletConnectProvider";
 import { ClientService } from "~/services/clientService";
@@ -82,13 +82,21 @@ const INITIAL_HUB_CHILD_FORM_DATA: HubChildFormData = {
 
 interface NewActionSectionProps {
   onQueueCountChange?: () => void;
+  safeOwners?: Address[];
 }
 
-export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) => {
+export const NewActionSection = ({ onQueueCountChange, safeOwners = [] }: NewActionSectionProps) => {
   const location = useLocation();
   const { hubAddress: hubAddressParam } = useParams<{ hubAddress: string }>();
   const navigateWithParams = useNavigateWithParams();
   const { safeAddress, guardAddress, chainId } = useStateContext();
+  const { address: connectedAddress, isConnected } = useWallet();
+
+  // Check if connected wallet is a Safe signer
+  const isSigner =
+    isConnected &&
+    connectedAddress &&
+    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   // Transaction executor hook for real blockchain transactions
   const {
@@ -1264,6 +1272,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           nonceSelectionEnabled={nonceDataLoaded}
           currentSafeNonce={currentSafeNonce}
           queueItems={queueItems}
+          isSigner={isSigner}
         />
       );
     }
@@ -1314,6 +1323,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           nonceSelectionEnabled={nonceDataLoaded}
           currentSafeNonce={currentSafeNonce}
           queueItems={queueItems}
+          isSigner={isSigner}
         />
       );
     }
@@ -1364,6 +1374,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           nonceSelectionEnabled={nonceDataLoaded}
           currentSafeNonce={currentSafeNonce}
           queueItems={queueItems}
+          isSigner={isSigner}
         />
       );
     }
@@ -1427,6 +1438,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
         nonceSelectionEnabled={nonceDataLoaded}
         currentSafeNonce={currentSafeNonce}
         queueItems={queueItems}
+        isSigner={isSigner}
       />
     );
   }
@@ -1458,6 +1470,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           nonceSelectionEnabled={nonceDataLoaded}
           currentSafeNonce={currentSafeNonce}
           queueItems={queueItems}
+          isSigner={isSigner}
         />
       );
     }
@@ -1508,6 +1521,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           nonceSelectionEnabled={nonceDataLoaded}
           currentSafeNonce={currentSafeNonce}
           queueItems={queueItems}
+          isSigner={isSigner}
         />
       );
     }

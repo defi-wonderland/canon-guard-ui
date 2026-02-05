@@ -68,15 +68,15 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Attach/Detach Guard flow (must come before /settings check)
     if (path === "/settings/attach") {
-      return <ChangeGuardSection mode='attach' onQueueCountChange={fetchQueueCount} />;
+      return <ChangeGuardSection mode='attach' onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
     }
     if (path === "/settings/detach") {
-      return <ChangeGuardSection mode='detach' onQueueCountChange={fetchQueueCount} />;
+      return <ChangeGuardSection mode='detach' onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
     }
 
     // Settings page
     if (path === "/settings") {
-      return <SettingsSection />;
+      return <SettingsSection safeOwners={safeInfo.owners} />;
     }
 
     // Queue is the default when at root or /queue
@@ -86,12 +86,12 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Queue Sign (from Queue item Sign button)
     if (path === "/queue/sign") {
-      return <QueueSignSection onQueueCountChange={fetchQueueCount} />;
+      return <QueueSignSection onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
     }
 
     // Queue Action (from Canon List)
     if (path === "/queue-action") {
-      return <QueueActionSection onQueueCountChange={fetchQueueCount} />;
+      return <QueueActionSection onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
     }
 
     // Canon List
@@ -101,7 +101,7 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Create routes - render CreateSection which handles its own nested routing
     if (path.startsWith("/create")) {
-      return <CreateSection onQueueCountChange={fetchQueueCount} />;
+      return <CreateSection onQueueCountChange={fetchQueueCount} safeOwners={safeInfo.owners} />;
     }
 
     // Default to queue for unknown routes

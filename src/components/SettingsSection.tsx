@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { Address } from "viem";
 import { DeploymentModesPanel } from "~/components/DeploymentModesPanel";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
 import { HelpCircleIcon, ShieldCheckIcon, AsteriskIcon, ShieldAlertIcon, Link2Icon } from "~/components/icons";
@@ -8,19 +9,37 @@ import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useStateContext, useCanonGuardConfig, humanizeDuration, useNavigateWithParams } from "~/hooks";
+import { useStateContext, useCanonGuardConfig, humanizeDuration, useNavigateWithParams, useWallet } from "~/hooks";
 
-export const SettingsSection = () => {
+interface SettingsSectionProps {
+  safeOwners?: Address[];
+}
+
+export const SettingsSection = ({ safeOwners = [] }: SettingsSectionProps) => {
   const { safeAddress, guardAddress, chainId, isDetached } = useStateContext();
   const { shortTxExecutionDelay, longTxExecutionDelay, txExpiryDelay, maxApprovalDuration, emergencyMode, isLoading } =
     useCanonGuardConfig();
   const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
+  const { address: connectedAddress, isConnected } = useWallet();
 
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
   const [deploymentModesPanelOpen, setDeploymentModesPanelOpen] = useState(false);
 
   const chainConfig = getChainConfig(chainId as SupportedChainId);
+
+  // Check if connected wallet is a Safe signer
+  const isSigner =
+    isConnected &&
+    connectedAddress &&
+    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
+
+  // Get disable reason for attach/detach button
+  const getAttachDetachDisableReason = (): string | null => {
+    if (!isSigner) return "Connected wallet is not a signer";
+    return null;
+  };
+  const attachDetachDisableReason = getAttachDetachDisableReason();
 
   const handleDetachGuard = () => {
     navigateWithParams("/settings/detach");
@@ -153,7 +172,13 @@ export const SettingsSection = () => {
               </SettingDescription>
             </SettingInfo>
           </SettingCardLeft>
-          <OutlineButton $width='108px'>EDIT</OutlineButton>
+          <StyledTooltip title='Not available yet' placement='top'>
+            <span>
+              <OutlineButton $width='108px' $disabled={true}>
+                EDIT
+              </OutlineButton>
+            </span>
+          </StyledTooltip>
         </SettingCard>
 
         {/* Emergency Mode Card */}
@@ -208,15 +233,43 @@ export const SettingsSection = () => {
                 </SettingDescription>
               </SettingInfo>
             </SettingCardLeft>
-            {isDetached ? (
-              <OutlineButton $width='108px' onClick={handleAttachGuard} data-testid='settings-attach-button'>
-                ATTACH
-              </OutlineButton>
-            ) : (
-              <OutlineButton $width='108px' onClick={handleDetachGuard} data-testid='settings-detach-button'>
-                DETACH
-              </OutlineButton>
-            )}
+            {/* Attach/Detach button: hidden when disconnected, disabled with tooltip when not signer */}
+            {isConnected &&
+              (isDetached ? (
+                <StyledTooltip
+                  title={attachDetachDisableReason || ""}
+                  placement='top'
+                  disableHoverListener={!attachDetachDisableReason}
+                >
+                  <span>
+                    <OutlineButton
+                      $width='108px'
+                      $disabled={!!attachDetachDisableReason}
+                      onClick={!attachDetachDisableReason ? handleAttachGuard : undefined}
+                      data-testid='settings-attach-button'
+                    >
+                      ATTACH
+                    </OutlineButton>
+                  </span>
+                </StyledTooltip>
+              ) : (
+                <StyledTooltip
+                  title={attachDetachDisableReason || ""}
+                  placement='top'
+                  disableHoverListener={!attachDetachDisableReason}
+                >
+                  <span>
+                    <OutlineButton
+                      $width='108px'
+                      $disabled={!!attachDetachDisableReason}
+                      onClick={!attachDetachDisableReason ? handleDetachGuard : undefined}
+                      data-testid='settings-detach-button'
+                    >
+                      DETACH
+                    </OutlineButton>
+                  </span>
+                </StyledTooltip>
+              ))}
           </CanonGuardTop>
           <CardDivider />
           <CopyableText text={guardAddress || ""} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
@@ -424,7 +477,7 @@ const StatusDot = styled("div")<{ $color: string }>(({ $color }) => ({
 }));
 
 // Buttons
-const OutlineButton = styled("button")<{ $width?: string }>(({ $width }) => ({
+const OutlineButton = styled("button")<{ $width?: string; $disabled?: boolean }>(({ $width, $disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -434,15 +487,16 @@ const OutlineButton = styled("button")<{ $width?: string }>(({ $width }) => ({
   borderRadius: "100px",
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
   background: "transparent",
-  cursor: "pointer",
+  cursor: $disabled ? "not-allowed" : "pointer",
   fontFamily: "Inter, sans-serif",
   fontSize: "12px",
   fontWeight: 600,
   letterSpacing: "0.6px",
   textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent10,
+  color: $disabled ? canonHeaderTokens.foreground.accent30 : canonHeaderTokens.foreground.accent10,
+  opacity: $disabled ? 0.6 : 1,
   "&:hover": {
-    backgroundColor: `${canonHeaderTokens.foreground.accent40}20`,
+    backgroundColor: $disabled ? "transparent" : `${canonHeaderTokens.foreground.accent40}20`,
   },
 }));
 

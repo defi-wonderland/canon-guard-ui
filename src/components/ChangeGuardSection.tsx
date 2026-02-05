@@ -7,7 +7,7 @@ import { SigningFlowStep } from "~/components/NewAction/steps/SigningFlowStep";
 import { getRpcUrlForChain, getChainConfig } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { CHANGE_SAFE_GUARD_ACTION_FACTORY } from "~/constants/canonGuard";
-import { useStateContext, useNavigateWithParams } from "~/hooks";
+import { useStateContext, useNavigateWithParams, useWallet } from "~/hooks";
 import { useTransactionExecutor } from "~/hooks/useTransactionExecutor";
 import { ClientService, QueueService, type QueueItem } from "~/services";
 import type { TransactionStep } from "~/services/transactionBuilderService";
@@ -18,6 +18,7 @@ type ChangeGuardMode = "attach" | "detach";
 interface ChangeGuardSectionProps {
   mode: ChangeGuardMode;
   onQueueCountChange?: () => void;
+  safeOwners?: Address[];
 }
 
 // Mode-specific labels
@@ -48,10 +49,17 @@ const MODE_CONFIG = {
   },
 } as const;
 
-export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSectionProps) => {
+export const ChangeGuardSection = ({ mode, onQueueCountChange, safeOwners = [] }: ChangeGuardSectionProps) => {
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress, safeAddress, chainId } = useStateContext();
+  const { address: connectedAddress, isConnected } = useWallet();
   const config = MODE_CONFIG[mode];
+
+  // Check if connected wallet is a Safe signer
+  const isSigner =
+    isConnected &&
+    connectedAddress &&
+    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   const { executeDeployChangeSafeGuardAction, executeQueueTransaction, executeSignTransaction } =
     useTransactionExecutor();
@@ -354,6 +362,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
       nonceSelectionEnabled={nonceDataLoaded}
       currentSafeNonce={currentSafeNonce}
       queueItems={queueItems}
+      isSigner={isSigner}
     />
   );
 };
