@@ -1,34 +1,22 @@
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
-import type { DeploymentsConfig } from "./global-setup";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const TEST_RESULTS_DIR = path.join(__dirname, "../../test-results");
-const DEPLOYMENTS_CONFIG_FILE = path.join(TEST_RESULTS_DIR, ".deployments.json");
-
-// Use deployment index 1 to avoid conflicts with attach-canon-guard tests (index 0)
-test.use({ deploymentIndex: 1 });
 
 // Use serial execution since we modify the Safe state
 test.describe.serial("In-App Canon Guard Deployment", () => {
   test("should deploy a Canon Guard within the app and attach it to a Safe", async ({
     page,
-    deployedSafe,
-    ownerIndex,
-    setSigningAccountForDeployment,
+    deployments,
+    switchToDeployment,
   }) => {
-    const { safeAddress } = deployedSafe;
+    const deployment = deployments[1];
+    const { safeAddress } = deployment.safe;
 
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
     // Switch signing account to match this deployment's owner
-    await setSigningAccountForDeployment();
+    await switchToDeployment(deployment);
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -75,7 +63,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await page.getByTestId("longTxExecutionDelay-select").selectOption("seconds");
 
     // Use the owner address for emergency trigger and caller
-    const emergencyAddress = ANVIL_ACCOUNTS[ownerIndex].address;
+    const emergencyAddress = ANVIL_ACCOUNTS[deployment.index].address;
     await page.getByTestId("emergency-trigger-input").fill(emergencyAddress);
     await page.getByTestId("emergency-caller-input").fill(emergencyAddress);
 
@@ -163,14 +151,14 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
   test("should add another Safe from the Manage Safe Accounts page", async ({
     page,
-    deployedSafe,
-    setSigningAccountForDeployment,
+    deployments,
+    switchToDeployment,
   }) => {
-    const { safeAddress } = deployedSafe;
+    const deployment = deployments[1];
+    const { safeAddress } = deployment.safe;
 
-    // Load the Safe from deployment index 0 (which has an attached guard from attach-canon-guard tests)
-    const deploymentsConfig: DeploymentsConfig = JSON.parse(fs.readFileSync(DEPLOYMENTS_CONFIG_FILE, "utf-8"));
-    const otherDeployment = deploymentsConfig.deployments[0];
+    // Get the Safe from deployment 0 (which has an attached guard from attach-canon-guard tests)
+    const otherDeployment = deployments[0];
     const otherSafeAddress = otherDeployment.safe.safeAddress;
 
     // Step 1: Navigate to the app (each test gets a fresh browser context, so localStorage is empty)
@@ -178,7 +166,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await page.waitForLoadState("networkidle");
 
     // Switch signing account to match this deployment's owner
-    await setSigningAccountForDeployment();
+    await switchToDeployment(deployment);
 
     // Step 2: Go through the setup form to save the Safe to localStorage
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -231,8 +219,30 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await page.getByTestId("continue-button").click();
     await page.waitForTimeout(1000);
 
-    // Step 11: Wait for the app to load (should show the queue since this Safe has a guard attached)
-    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    // Step 11: Handle the case where the Safe doesn't have a guard attached yet
+    // (this can happen if attach-canon-guard tests haven't run first)
+    const noGuardMessage = page.getByTestId("no-guard-message");
+    const queueSearchInput = page.getByTestId("queue-search-input");
+
+    // Wait for either the queue or the no-guard choice screen
+    await expect(noGuardMessage.or(queueSearchInput)).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    // If we see the no-guard choice screen, use the existing Canon Guard
+    if (await noGuardMessage.isVisible()) {
+      await page.getByTestId("use-existing-guard-button").click();
+
+      // Enter the Canon Guard address from deployment 0
+      await expect(page.getByTestId("guard-address-label")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+      await page.getByTestId("guard-address-input").fill(otherDeployment.canonGuard.guardAddress);
+
+      // Wait for validation and click Continue
+      const guardContinueButton = page.getByTestId("guard-continue-button");
+      await expect(guardContinueButton).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
+      await guardContinueButton.click();
+
+      // Wait for the queue to load
+      await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    }
 
     // Step 12: Go back to Manage Safes to verify the previous safe is now in the list
     await page.getByTestId("header-safe-dropdown-button").click();

@@ -2,26 +2,19 @@ import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS, USDC_OPTIMISM } from "./co
 import { test, expect } from "./fixtures";
 import { fundSafe } from "./utils/fundSafe";
 
-// Use deployment index 1 - allows this test file to run in parallel with attach-canon-guard.spec.ts
-test.use({ deploymentIndex: 2 });
-
 // Use serial execution to ensure tests run in order within this file
 test.describe.serial("Settings Attach Flow", () => {
-  test("should attach an existing Canon Guard via Settings page", async ({
-    page,
-    deployedSafe,
-    deployedCanonGuard,
-    setSigningAccountForDeployment,
-  }) => {
-    const { safeAddress } = deployedSafe;
-    const { guardAddress } = deployedCanonGuard;
+  test("should attach an existing Canon Guard via Settings page", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+    const { guardAddress } = deployment.canonGuard;
 
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
     // Switch signing account to match this deployment's owner
-    await setSigningAccountForDeployment();
+    await switchToDeployment(deployment);
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -111,13 +104,9 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.waitForTimeout(1000);
   });
 
-  test("should create and execute a transfer action", async ({
-    page,
-    deployedSafe,
-    ownerIndex,
-    setSigningAccountForDeployment,
-  }) => {
-    const { safeAddress } = deployedSafe;
+  test("should create and execute a transfer action", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
 
     // Step 1: Fund the Safe with USDC before the test
     await fundSafe({
@@ -130,7 +119,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.waitForLoadState("networkidle");
 
     // Switch signing account to match this deployment's owner
-    await setSigningAccountForDeployment();
+    await switchToDeployment(deployment);
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
@@ -177,9 +166,8 @@ test.describe.serial("Settings Attach Flow", () => {
     // Token address (USDC on Optimism)
     await page.getByTestId("transfer-token-address-input").fill(USDC_OPTIMISM);
 
-    // Recipient address (use Anvil account)
-    // Use the correct owner address for this deployment as the recipient
-    await page.getByTestId("transfer-recipient-address-input").fill(ANVIL_ACCOUNTS[ownerIndex].address);
+    // Recipient address (use Anvil account for this deployment)
+    await page.getByTestId("transfer-recipient-address-input").fill(ANVIL_ACCOUNTS[deployment.index].address);
 
     // Amount (10 USDC - in smallest unit)
     await page.getByTestId("transfer-amount-input").fill("10");
@@ -237,19 +225,16 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.waitForTimeout(1000);
   });
 
-  test("should queue and execute a transfer from Canon List", async ({
-    page,
-    deployedSafe,
-    setSigningAccountForDeployment,
-  }) => {
-    const { safeAddress } = deployedSafe;
+  test("should queue and execute a transfer from Canon List", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
 
     // Step 1: Navigate to the app
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
     // Switch signing account to match this deployment's owner
-    await setSigningAccountForDeployment();
+    await switchToDeployment(deployment);
 
     // Verify setup form is visible
     await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
