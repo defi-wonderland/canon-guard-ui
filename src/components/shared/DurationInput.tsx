@@ -75,7 +75,7 @@ const StyledInput = styled("input")<{ $hasError?: boolean }>(({ $hasError }) => 
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
-  backgroundColor: canonHeaderTokens.background.layer0,
+  backgroundColor: canonHeaderTokens.background.layer1,
   border: `1px solid ${$hasError ? canonHeaderTokens.status.red : canonHeaderTokens.foreground.accent40}`,
   borderRadius: "6px",
   outline: "none",
@@ -103,7 +103,7 @@ const StyledSelect = styled("select")({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
-  backgroundColor: canonHeaderTokens.background.layer0,
+  backgroundColor: canonHeaderTokens.background.layer1,
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
   borderRadius: "6px",
   outline: "none",
@@ -117,7 +117,7 @@ const StyledSelect = styled("select")({
     borderColor: canonHeaderTokens.foreground.accent20,
   },
   "& option": {
-    backgroundColor: canonHeaderTokens.background.layer0,
+    backgroundColor: canonHeaderTokens.background.layer1,
     color: canonHeaderTokens.foreground.accent0,
   },
 });
