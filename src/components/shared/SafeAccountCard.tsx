@@ -31,6 +31,8 @@ export interface SafeAccountCardProps {
   onClick?: () => void;
   /** Whether to show the full card (profile + chain row) or just chain row */
   variant?: "full" | "chain-row";
+  /** Test ID for E2E testing */
+  testId?: string;
 }
 
 /**
@@ -45,12 +47,13 @@ export const SafeAccountCard = ({
   isCurrentSafe = false,
   onClick,
   variant = "full",
+  testId,
 }: SafeAccountCardProps) => {
   const chainConfig = getChainConfig(chainId);
 
   if (variant === "chain-row") {
     return (
-      <ChainRowContainer onClick={onClick} $clickable={!!onClick}>
+      <ChainRowContainer onClick={onClick} $clickable={!!onClick} data-testid={testId}>
         <ChainInfo>
           <ChainIcon chainId={chainId} size={14} />
           <ChainName>{chainConfig?.shortName || chainConfig?.name || "Unknown"}</ChainName>
@@ -77,7 +80,7 @@ export const SafeAccountCard = ({
   }
 
   return (
-    <CardContainer onClick={onClick} $clickable={!!onClick} $isCurrentSafe={isCurrentSafe}>
+    <CardContainer onClick={onClick} $clickable={!!onClick} $isCurrentSafe={isCurrentSafe} data-testid={testId}>
       {/* Profile Section */}
       <ProfileSection>
         <ProfileContent>

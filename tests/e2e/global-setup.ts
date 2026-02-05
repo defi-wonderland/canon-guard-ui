@@ -17,12 +17,11 @@ const DEPLOYMENTS_CONFIG_FILE = path.join(TEST_RESULTS_DIR, ".deployments.json")
 const NUM_DEPLOYMENTS = 3;
 
 /**
- * A single deployment containing both Safe and Canon Guard
+ * A single deployment containing both Safe and Canon Guard.
+ * The deployment index also serves as the Anvil account index for the owner.
  */
 export interface Deployment {
   index: number;
-  /** The Anvil account index used as the owner for this deployment */
-  ownerIndex: number;
   safe: DeploySafeResult;
   canonGuard: DeployCanonGuardResult;
 }
@@ -50,10 +49,10 @@ async function globalSetup() {
 
     for (let i = 0; i < NUM_DEPLOYMENTS; i++) {
       // Use a different Anvil account for each deployment to avoid nonce conflicts
-      const ownerIndex = i % ANVIL_ACCOUNTS.length;
-      const ownerAccount = ANVIL_ACCOUNTS[ownerIndex];
+      // The deployment index serves as the Anvil account index
+      const ownerAccount = ANVIL_ACCOUNTS[i];
 
-      console.log(`\n[Global Setup] === Deployment ${i} (Owner: Account ${ownerIndex}) ===`);
+      console.log(`\n[Global Setup] === Deployment ${i} (Owner: Account ${i}) ===`);
 
       // Step 1: Deploy Safe with the specific owner
       console.log(`[Global Setup] Deploying Safe ${i} with owner ${ownerAccount.address}`);
@@ -81,7 +80,6 @@ async function globalSetup() {
 
       deployments.push({
         index: i,
-        ownerIndex,
         safe,
         canonGuard: guard,
       });

@@ -88,12 +88,14 @@ export const SafeVault = () => {
     }
 
     // Priority 2: localStorage current safe (only if no URL params)
+    let loadedFromLocalStorage = false;
     if (!targetAddress) {
       const currentSafe = SafeStorageService.getCurrentSafe();
       if (currentSafe) {
         targetAddress = currentSafe.address;
         targetChainId = currentSafe.chainId;
         targetGuardAddress = currentSafe.guardAddress || null;
+        loadedFromLocalStorage = true;
 
         // Update URL params to reflect the loaded safe
         const newParams: Record<string, string> = {
@@ -161,6 +163,12 @@ export const SafeVault = () => {
           setViewState("ready");
         } catch (error) {
           console.error("Failed to load Safe info:", error);
+
+          // If loaded from localStorage and invalid, remove it to prevent persistent invalid entries
+          if (loadedFromLocalStorage && targetAddress && targetChainId) {
+            SafeStorageService.removeSafe(targetAddress, targetChainId);
+          }
+
           setSafeInfo(null);
           setViewState("error");
         }
@@ -237,7 +245,7 @@ export const SafeVault = () => {
         setViewState("error");
       }
     },
-    [setSafeAddress, setChainId, setSearchParams, setGuardAddress, setIsDetached],
+    [switchChainAsync, setSafeAddress, setChainId, setSearchParams, setGuardAddress, setIsDetached],
   );
 
   const handleClearConfig = useCallback(() => {
