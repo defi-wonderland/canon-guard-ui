@@ -2,8 +2,9 @@ import { Box, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { Chain } from "viem/chains";
 import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams } from "~/hooks";
+import { useNavigateWithParams, useWallet } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import { useWalletConnect } from "~/providers/WalletConnectProvider";
 import { HeaderLogo } from "./HeaderLogo";
@@ -23,15 +24,38 @@ interface HeaderProps {
   onClearConfig: () => void;
   /** When true, hides nav, create button, safe dropdown - shows only logo and wallet */
   isMinimalMode?: boolean;
+  /** Safe owners for signer checking */
+  safeOwners?: Address[];
 }
 
-export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMinimalMode = false }: HeaderProps) => {
+export const Header = ({
+  safeAddress,
+  chain,
+  queueCount = 0,
+  onClearConfig,
+  isMinimalMode = false,
+  safeOwners = [],
+}: HeaderProps) => {
   const location = useLocation();
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress } = useStateContext();
   const { isInitialized, openModal, sessions } = useWalletConnect();
+  const { address: connectedAddress, isConnected } = useWallet();
   const isCreateActive = location.pathname.startsWith("/create");
   const hasActiveSessions = sessions.length > 0;
+
+  // Check if connected wallet is a Safe signer
+  const isSigner =
+    isConnected &&
+    connectedAddress &&
+    safeOwners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
+
+  // Determine if CREATE button should be disabled and why
+  const getCreateDisableReason = (): string | null => {
+    if (!isSigner) return "Connected wallet is not a signer";
+    return null;
+  };
+  const createDisableReason = getCreateDisableReason();
 
   // In minimal mode, only show logo and wallet dropdown
   if (isMinimalMode) {
@@ -70,13 +94,21 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
       )}
 
       {/* Right section: CREATE | Safe | Wallet with dividers */}
-      <CreateButton
-        $isActive={isCreateActive}
-        onClick={() => navigateWithParams("/create")}
-        data-testid='create-button'
-      >
-        CREATE
-      </CreateButton>
+      {/* CREATE button: hidden if disconnected, disabled with tooltip if not signer */}
+      {isConnected && (
+        <StyledTooltip title={createDisableReason || ""} placement='bottom' disableHoverListener={!createDisableReason}>
+          <span style={{ display: "flex", height: "100%" }}>
+            <CreateButton
+              $isActive={isCreateActive}
+              $disabled={!!createDisableReason}
+              onClick={() => !createDisableReason && navigateWithParams("/create")}
+              data-testid='create-button'
+            >
+              CREATE
+            </CreateButton>
+          </span>
+        </StyledTooltip>
+      )}
       <HeaderSafeDropdown
         safeAddress={safeAddress!}
         chain={chain!}
@@ -150,7 +182,7 @@ const WalletConnectButton = styled("button")<{ $hasActiveSessions?: boolean }>((
 }));
 
 // CREATE button with layer1 background for divider effect
-const CreateButton = styled("button")<{ $isActive?: boolean }>(() => ({
+const CreateButton = styled("button")<{ $isActive?: boolean; $disabled?: boolean }>(({ $disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -158,14 +190,14 @@ const CreateButton = styled("button")<{ $isActive?: boolean }>(() => ({
   padding: "0 32px",
   background: canonHeaderTokens.background.layer1,
   border: "none",
-  cursor: "pointer",
+  cursor: $disabled ? "not-allowed" : "pointer",
   fontFamily: "Inter, sans-serif",
   fontSize: "12px",
   fontWeight: 600,
   letterSpacing: "0.6px",
   textTransform: "uppercase",
-  color: canonHeaderTokens.brand.green,
+  color: $disabled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.brand.green,
   "&:hover": {
-    opacity: 0.8,
+    opacity: $disabled ? 1 : 0.8,
   },
 }));

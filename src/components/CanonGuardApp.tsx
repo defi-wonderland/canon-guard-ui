@@ -131,6 +131,7 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
         chain={chainConfig.chain}
         queueCount={queueCount}
         onClearConfig={onClearConfig}
+        safeOwners={safeInfo.owners}
       />
       <MainContent>{renderContent()}</MainContent>
 

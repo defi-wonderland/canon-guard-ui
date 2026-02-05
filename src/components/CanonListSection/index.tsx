@@ -10,7 +10,7 @@ import {
 } from "~/components/icons";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams } from "~/hooks";
+import { useNavigateWithParams, useWallet } from "~/hooks";
 import { useClientService } from "~/hooks/useServices";
 import { useStateContext } from "~/hooks/useStateContext";
 import { useTransactionExecutor } from "~/hooks/useTransactionExecutor";
@@ -32,12 +32,18 @@ interface CanonListSectionProps {
   onQueueCountChange?: () => void;
 }
 
-// eslint-disable-next-line no-empty-pattern
-export const CanonListSection = ({}: CanonListSectionProps) => {
+export const CanonListSection = ({ safeInfo }: CanonListSectionProps) => {
   const { guardAddress, chainId } = useStateContext();
   const clientService = useClientService();
   const navigateWithParams = useNavigateWithParams();
   const { executeRemoveFromRegistry, executeRecordToRegistry, isExecuting } = useTransactionExecutor();
+  const { address: connectedAddress, isConnected } = useWallet();
+
+  // Check if connected wallet is a Safe signer
+  const isSigner =
+    isConnected &&
+    connectedAddress &&
+    safeInfo.owners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
 
   const [entities, setEntities] = useState<RegisteredEntity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -417,6 +423,8 @@ export const CanonListSection = ({}: CanonListSectionProps) => {
                     onDeployChild={entity.isHub ? () => handleDeployChild(entity) : undefined}
                     onRemove={() => handleRemove(entity)}
                     isRemoving={removingAddress === entity.address && isExecuting}
+                    isConnected={isConnected}
+                    isSigner={isSigner}
                   />
                   {/* Render children if hub is expanded and has children */}
                   {entity.isHub &&
@@ -445,6 +453,8 @@ export const CanonListSection = ({}: CanonListSectionProps) => {
                                 onProposePreApproval={undefined} // Children don't have pre-approval
                                 onRemove={undefined} // Children can't be removed directly
                                 isRemoving={false}
+                                isConnected={isConnected}
+                                isSigner={isSigner}
                               />
                             </ChildItemWrapper>
                           </ChildWrapper>
