@@ -1,5 +1,6 @@
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
 import { test, expect } from "./fixtures";
+import { selectChain } from "./utils/selectChain";
 
 // Use serial execution to ensure tests run in order (attach must run before arbitrary action)
 test.describe.serial("Canon Guard E2E Flow", () => {
@@ -27,8 +28,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
 
     // Step 3: Select OP Mainnet chain
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
@@ -107,12 +107,16 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
 
-    // Wait for execution to complete
-    await page.waitForTimeout(1500);
+    // Wait for page reload to complete (CHANGE_SAFE_GUARD action triggers window.location.href)
+    await page.waitForURL(/\/queue/, { timeout: TEST_TIMEOUTS.MEDIUM });
 
-    // Step 17: Verify we're still on the home page after execution
+    // Step 17: Verify we're on the home page after execution
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByTestId("create-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // CRITICAL: Wait for the detached banner to disappear (confirms isDetached state is false)
+    // This prevents race condition where we navigate to Settings before state has fully updated
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
 
     // Step 18: Navigate to Settings via the Safe dropdown and verify guard is attached
     // Click on the Safe dropdown button in the header
@@ -158,8 +162,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("safe-address-input").fill(safeAddress);
 
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Click Continue
     await page.getByTestId("continue-button").click();
@@ -276,8 +279,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
     await page.getByTestId("safe-address-input").fill(safeAddress);
 
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Click Continue
     await page.getByTestId("continue-button").click();

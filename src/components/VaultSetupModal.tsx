@@ -6,6 +6,7 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { FormInput } from "./NewAction/shared/FormInput";
+import { ChainIcon } from "./icons";
 import { PageContainer, SetupContentArea, SetupFormWrapper, SetupSectionTitle } from "./shared/StyledComponents";
 
 interface VaultSetupModalProps {
@@ -90,6 +91,7 @@ export const VaultSetupModal = ({ open, onSubmit }: VaultSetupModalProps) => {
                   selectOptions={SUPPORTED_CHAINS_LIST.map((chain) => ({
                     label: chain.name,
                     value: chain.id.toString(),
+                    icon: <ChainIcon chainId={chain.id as SupportedChainId} size={20} />,
                   }))}
                   disabled={isLoading}
                   data-testid='chain-selector'

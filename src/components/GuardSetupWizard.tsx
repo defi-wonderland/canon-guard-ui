@@ -559,8 +559,8 @@ const InputWrapper = styled(Box)<{ $hasError?: boolean; $isValid?: boolean }>(({
   height: "40px",
   padding: "0 12px",
   borderRadius: "6px",
-  backgroundColor: canonHeaderTokens.background.layer0,
-  border: `1px solid ${$hasError ? "#DA2828" : $isValid ? "#149b3a" : canonHeaderTokens.foreground.accent50}`,
+  backgroundColor: canonHeaderTokens.background.layer1,
+  border: `1px solid ${$hasError ? "#DA2828" : $isValid ? "#149b3a" : canonHeaderTokens.foreground.accent40}`,
   "&:focus-within": {
     borderColor: $hasError ? "#DA2828" : $isValid ? "#149b3a" : canonHeaderTokens.brand.green,
   },

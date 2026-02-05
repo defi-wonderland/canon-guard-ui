@@ -1,5 +1,6 @@
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
+import { selectChain } from "./utils/selectChain";
 
 // Use serial execution since we modify the Safe state
 test.describe.serial("In-App Canon Guard Deployment", () => {
@@ -29,8 +30,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Step 3: Select OP Mainnet chain
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
@@ -122,11 +122,17 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
     await expect(page.getByTestId("execute-button")).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
     await page.getByTestId("execute-button").click();
-    await page.waitForTimeout(2000);
 
-    // Step 17: Verify we're still on the home page after execution
+    // Wait for page reload to complete (CHANGE_SAFE_GUARD action triggers window.location.href)
+    await page.waitForURL(/\/queue/, { timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 17: Verify we're on the home page after execution
     await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
     await expect(page.getByTestId("create-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // CRITICAL: Wait for the detached banner to disappear (confirms isDetached state is false)
+    // This prevents race condition where we navigate to Settings before state has fully updated
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
 
     // Step 18: Navigate to Settings and verify guard is attached
     await page.getByTestId("header-safe-dropdown-button").click();
@@ -176,7 +182,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Select OP Mainnet chain
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Click Continue - this saves the Safe to localStorage
     await page.getByTestId("continue-button").click();
@@ -212,8 +218,8 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await page.getByTestId("safe-address-input").fill(otherSafeAddress);
 
     // Step 9: Select OP Mainnet chain
-    await page.getByTestId("chain-selector").selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(page.getByTestId("chain-selector")).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    const chainSelector2 = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector2, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Step 10: Click Continue
     await page.getByTestId("continue-button").click();
