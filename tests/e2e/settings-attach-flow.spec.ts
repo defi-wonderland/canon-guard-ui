@@ -1,6 +1,7 @@
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS, USDC_OPTIMISM } from "./constants";
 import { test, expect } from "./fixtures";
 import { fundSafe } from "./utils/fundSafe";
+import { selectChain } from "./utils/selectChain";
 
 // Use serial execution to ensure tests run in order within this file
 test.describe.serial("Settings Attach Flow", () => {
@@ -24,8 +25,7 @@ test.describe.serial("Settings Attach Flow", () => {
 
     // Step 3: Select OP Mainnet chain
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
@@ -128,8 +128,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.getByTestId("safe-address-input").fill(safeAddress);
 
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Click Continue
     await page.getByTestId("continue-button").click();
@@ -243,8 +242,7 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.getByTestId("safe-address-input").fill(safeAddress);
 
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Click Continue
     await page.getByTestId("continue-button").click();

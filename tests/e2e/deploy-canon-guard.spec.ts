@@ -1,5 +1,6 @@
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
+import { selectChain } from "./utils/selectChain";
 
 // Use serial execution since we modify the Safe state
 test.describe.serial("In-App Canon Guard Deployment", () => {
@@ -29,8 +30,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Step 3: Select OP Mainnet chain
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(chainSelector).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Step 4: Click Continue
     await page.getByTestId("continue-button").click();
@@ -176,7 +176,7 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
 
     // Select OP Mainnet chain
     const chainSelector = page.getByTestId("chain-selector");
-    await chainSelector.selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Click Continue - this saves the Safe to localStorage
     await page.getByTestId("continue-button").click();
@@ -212,8 +212,8 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     await page.getByTestId("safe-address-input").fill(otherSafeAddress);
 
     // Step 9: Select OP Mainnet chain
-    await page.getByTestId("chain-selector").selectOption({ label: CHAIN_CONFIG.OP_MAINNET.label });
-    await expect(page.getByTestId("chain-selector")).toHaveValue(CHAIN_CONFIG.OP_MAINNET.id.toString());
+    const chainSelector2 = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector2, CHAIN_CONFIG.OP_MAINNET.label);
 
     // Step 10: Click Continue
     await page.getByTestId("continue-button").click();
