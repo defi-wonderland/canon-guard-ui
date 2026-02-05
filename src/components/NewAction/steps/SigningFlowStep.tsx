@@ -13,8 +13,9 @@ import {
   XIcon,
 } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useWallet, useStateContext, useNavigateWithParams } from "~/hooks";
+import { useWallet, useStateContext, useNavigateWithParams, useIsSigner } from "~/hooks";
 import type { QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
 import { Breadcrumb, ParametersDisplay } from "../shared";
@@ -69,6 +70,7 @@ export const SigningFlowStep = ({
 }: SigningFlowStepProps) => {
   const [parametersExpanded, setParametersExpanded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const isSigner = useIsSigner();
   const [isSigning, setIsSigning] = useState(false);
 
   // Nonce selection state
@@ -501,6 +503,12 @@ export const SigningFlowStep = ({
                         <CircularProgress size={16} sx={{ color: "inherit", mr: 1 }} />
                         Waiting for wallet...
                       </WaitingButton>
+                    ) : !isSigner ? (
+                      <StyledTooltip title='Connected wallet is not a signer' placement='top'>
+                        <span style={{ width: "100%" }}>
+                          <DisabledSignButton data-testid='sign-button-disabled'>SIGN</DisabledSignButton>
+                        </span>
+                      </StyledTooltip>
                     ) : (
                       <SignButton onClick={handleSignClick} data-testid='sign-button'>
                         SIGN
@@ -1076,6 +1084,26 @@ const SignButton = styled("button")({
   "&:hover": {
     opacity: 0.9,
   },
+});
+
+const DisabledSignButton = styled("button")({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+  height: "44px",
+  padding: "12px 24px",
+  borderRadius: "100px",
+  backgroundColor: canonHeaderTokens.brand.green,
+  color: "#ffffff",
+  fontSize: "14px",
+  fontWeight: 600,
+  lineHeight: "20px",
+  letterSpacing: "0.6px",
+  textTransform: "uppercase",
+  border: "none",
+  cursor: "not-allowed",
+  opacity: 0.5,
 });
 
 const WaitingButton = styled("button")({

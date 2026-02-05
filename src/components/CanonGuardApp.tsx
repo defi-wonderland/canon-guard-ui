@@ -81,7 +81,7 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Queue is the default when at root or /queue
     if (path === "/" || path === "/queue") {
-      return <QueueSection safeOwners={safeInfo.owners} onQueueCountChange={handleQueueCountChange} />;
+      return <QueueSection onQueueCountChange={handleQueueCountChange} />;
     }
 
     // Queue Sign (from Queue item Sign button)
@@ -96,7 +96,7 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
 
     // Canon List
     if (path === "/canon-list") {
-      return <CanonListSection safeInfo={safeInfo} onQueueCountChange={fetchQueueCount} />;
+      return <CanonListSection />;
     }
 
     // Create routes - render CreateSection which handles its own nested routing
@@ -131,7 +131,6 @@ const CanonGuardAppInner = ({ safeInfo, onClearConfig }: CanonGuardAppProps) => 
         chain={chainConfig.chain}
         queueCount={queueCount}
         onClearConfig={onClearConfig}
-        safeOwners={safeInfo.owners}
       />
       <MainContent>{renderContent()}</MainContent>
 

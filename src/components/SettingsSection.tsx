@@ -8,7 +8,14 @@ import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useStateContext, useCanonGuardConfig, humanizeDuration, useNavigateWithParams } from "~/hooks";
+import {
+  useStateContext,
+  useCanonGuardConfig,
+  humanizeDuration,
+  useNavigateWithParams,
+  useWallet,
+  useIsSigner,
+} from "~/hooks";
 
 export const SettingsSection = () => {
   const { safeAddress, guardAddress, chainId, isDetached } = useStateContext();
@@ -16,11 +23,15 @@ export const SettingsSection = () => {
     useCanonGuardConfig();
   const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
+  const { isConnected } = useWallet();
+  const isSigner = useIsSigner();
 
   const [emergencyPanelOpen, setEmergencyPanelOpen] = useState(false);
   const [deploymentModesPanelOpen, setDeploymentModesPanelOpen] = useState(false);
 
   const chainConfig = getChainConfig(chainId as SupportedChainId);
+
+  const isAttachDetachDisabled = !isSigner;
 
   const handleDetachGuard = () => {
     navigateWithParams("/settings/detach");
@@ -153,7 +164,13 @@ export const SettingsSection = () => {
               </SettingDescription>
             </SettingInfo>
           </SettingCardLeft>
-          <OutlineButton $width='108px'>EDIT</OutlineButton>
+          <StyledTooltip title='Not available yet' placement='top'>
+            <span>
+              <OutlineButton $width='108px' $disabled={true}>
+                EDIT
+              </OutlineButton>
+            </span>
+          </StyledTooltip>
         </SettingCard>
 
         {/* Emergency Mode Card */}
@@ -208,14 +225,24 @@ export const SettingsSection = () => {
                 </SettingDescription>
               </SettingInfo>
             </SettingCardLeft>
-            {isDetached ? (
-              <OutlineButton $width='108px' onClick={handleAttachGuard} data-testid='settings-attach-button'>
-                ATTACH
-              </OutlineButton>
-            ) : (
-              <OutlineButton $width='108px' onClick={handleDetachGuard} data-testid='settings-detach-button'>
-                DETACH
-              </OutlineButton>
+            {/* Attach/Detach button: hidden when disconnected, disabled with tooltip when not signer */}
+            {isConnected && (
+              <StyledTooltip
+                title='Connected wallet is not a signer'
+                placement='top'
+                disableHoverListener={!isAttachDetachDisabled}
+              >
+                <span>
+                  <OutlineButton
+                    $width='108px'
+                    $disabled={isAttachDetachDisabled}
+                    onClick={!isAttachDetachDisabled ? (isDetached ? handleAttachGuard : handleDetachGuard) : undefined}
+                    data-testid={isDetached ? "settings-attach-button" : "settings-detach-button"}
+                  >
+                    {isDetached ? "ATTACH" : "DETACH"}
+                  </OutlineButton>
+                </span>
+              </StyledTooltip>
             )}
           </CanonGuardTop>
           <CardDivider />
@@ -424,7 +451,7 @@ const StatusDot = styled("div")<{ $color: string }>(({ $color }) => ({
 }));
 
 // Buttons
-const OutlineButton = styled("button")<{ $width?: string }>(({ $width }) => ({
+const OutlineButton = styled("button")<{ $width?: string; $disabled?: boolean }>(({ $width, $disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -434,15 +461,16 @@ const OutlineButton = styled("button")<{ $width?: string }>(({ $width }) => ({
   borderRadius: "100px",
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
   background: "transparent",
-  cursor: "pointer",
+  cursor: $disabled ? "not-allowed" : "pointer",
   fontFamily: "Inter, sans-serif",
   fontSize: "12px",
   fontWeight: 600,
   letterSpacing: "0.6px",
   textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent10,
+  color: $disabled ? canonHeaderTokens.foreground.accent30 : canonHeaderTokens.foreground.accent10,
+  opacity: $disabled ? 0.6 : 1,
   "&:hover": {
-    backgroundColor: `${canonHeaderTokens.foreground.accent40}20`,
+    backgroundColor: $disabled ? "transparent" : `${canonHeaderTokens.foreground.accent40}20`,
   },
 }));
 

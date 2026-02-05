@@ -7,7 +7,7 @@ import { SigningFlowStep } from "~/components/NewAction/steps/SigningFlowStep";
 import { getRpcUrlForChain, getChainConfig } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { CHANGE_SAFE_GUARD_ACTION_FACTORY } from "~/constants/canonGuard";
-import { useStateContext, useNavigateWithParams } from "~/hooks";
+import { useStateContext, useNavigateWithParams, useIsSigner } from "~/hooks";
 import { useTransactionExecutor } from "~/hooks/useTransactionExecutor";
 import { ClientService, QueueService, type QueueItem } from "~/services";
 import type { TransactionStep } from "~/services/transactionBuilderService";
@@ -51,6 +51,7 @@ const MODE_CONFIG = {
 export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSectionProps) => {
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress, safeAddress, chainId } = useStateContext();
+  const isSigner = useIsSigner();
   const config = MODE_CONFIG[mode];
 
   const { executeDeployChangeSafeGuardAction, executeQueueTransaction, executeSignTransaction } =
@@ -354,6 +355,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
       nonceSelectionEnabled={nonceDataLoaded}
       currentSafeNonce={currentSafeNonce}
       queueItems={queueItems}
+      isSigner={isSigner}
     />
   );
 };

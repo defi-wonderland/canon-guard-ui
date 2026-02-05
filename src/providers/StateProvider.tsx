@@ -43,6 +43,9 @@ type ContextType = {
   isDetached: boolean;
   setIsDetached: (val: boolean) => void;
 
+  safeOwners: Address[];
+  setSafeOwners: (owners: Address[]) => void;
+
   chainId: SupportedChainId | null;
   setChainId: (chainId: SupportedChainId) => void;
 
@@ -63,6 +66,7 @@ export const StateProvider = ({ children }: StateProps) => {
   const [safeAddress, setSafeAddressState] = useState<Address | null>(null);
   const [guardAddress, setGuardAddressState] = useState<Address | null>(null);
   const [isDetached, setIsDetachedState] = useState<boolean>(false);
+  const [safeOwners, setSafeOwnersState] = useState<Address[]>([]);
   const [chainId, setChainIdState] = useState<SupportedChainId | null>(null);
   const [services, setServices] = useState<ServiceInstances>(initialServices);
 
@@ -83,6 +87,10 @@ export const StateProvider = ({ children }: StateProps) => {
     setIsDetachedState(val);
   };
 
+  const setSafeOwners = (owners: Address[]) => {
+    setSafeOwnersState(owners);
+  };
+
   const setChainId = (newChainId: SupportedChainId) => {
     setChainIdState(newChainId);
     updateServicesForChain(newChainId);
@@ -92,6 +100,7 @@ export const StateProvider = ({ children }: StateProps) => {
     setSafeAddressState(null);
     setGuardAddressState(null);
     setIsDetachedState(false);
+    setSafeOwnersState([]);
     setChainIdState(null);
   };
 
@@ -106,6 +115,8 @@ export const StateProvider = ({ children }: StateProps) => {
         setGuardAddress,
         isDetached,
         setIsDetached,
+        safeOwners,
+        setSafeOwners,
         chainId,
         setChainId,
         services,

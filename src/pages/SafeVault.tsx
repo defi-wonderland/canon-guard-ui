@@ -43,7 +43,7 @@ const getInitialViewState = (searchParams: URLSearchParams): ViewState => {
 };
 
 export const SafeVault = () => {
-  const { setSafeAddress, setChainId, setGuardAddress, setIsDetached, clearConfig } = useStateContext();
+  const { setSafeAddress, setChainId, setGuardAddress, setIsDetached, setSafeOwners, clearConfig } = useStateContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const { switchChainAsync } = useSwitchChain();
   const navigate = useNavigate();
@@ -125,6 +125,7 @@ export const SafeVault = () => {
 
           const info = await freshSafeService.getSafeInfo(targetAddress!);
           setSafeInfo(info);
+          setSafeOwners(info.owners);
 
           // Case D: URL has guardAddress param - validate and use detached mode
           if (targetGuardAddress && !info.hasGuard) {
@@ -170,6 +171,7 @@ export const SafeVault = () => {
           }
 
           setSafeInfo(null);
+          setSafeOwners([]);
           setViewState("error");
         }
       };
@@ -199,6 +201,7 @@ export const SafeVault = () => {
           chainId: String(selectedChainId),
         });
         setSafeInfo(info);
+        setSafeOwners(info.owners);
 
         // Case A: Safe has valid attached guard
         if (info.hasGuard && info.isValidCanonGuard && info.guardAddress) {
@@ -242,10 +245,11 @@ export const SafeVault = () => {
       } catch (error) {
         console.error("Failed to load Safe info:", error);
         setSafeInfo(null);
+        setSafeOwners([]);
         setViewState("error");
       }
     },
-    [switchChainAsync, setSafeAddress, setChainId, setSearchParams, setGuardAddress, setIsDetached],
+    [switchChainAsync, setSafeAddress, setChainId, setSearchParams, setGuardAddress, setIsDetached, setSafeOwners],
   );
 
   const handleClearConfig = useCallback(() => {
