@@ -4,8 +4,9 @@ import { Box, styled } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Chain } from "viem/chains";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
-import { ChevronRightIcon, GripIcon, ShieldCheckIcon } from "~/components/icons";
+import { ChainIcon, ChevronRightIcon, GripIcon, ShieldCheckIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import { SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams, useCanonGuardConfig, useSafeStorage } from "~/hooks";
 import { truncateAddress } from "~/utils";
@@ -75,7 +76,10 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
             <DropdownValue>{truncateAddress(safeAddress)}</DropdownValue>
             <ChevronIcon />
           </DropdownRow>
-          <NetworkLabel>{chain.name}</NetworkLabel>
+          <NetworkRow>
+            <ChainIcon chainId={chain.id as SupportedChainId} size={14} />
+            <NetworkLabel>{chain.name}</NetworkLabel>
+          </NetworkRow>
         </DropdownContent>
       </DropdownButton>
 
@@ -98,6 +102,7 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
                 </CopyableText>
               </SafeAddressRow>
               <ChainRow>
+                <ChainIcon chainId={chain.id as SupportedChainId} size={14} />
                 <ChainName>{chain.name}</ChainName>
               </ChainRow>
             </SafeProfileInfo>
@@ -198,6 +203,12 @@ const DropdownValue = styled("span")({
 const ChevronIcon = styled(KeyboardArrowDown)({
   fontSize: "14px",
   color: canonHeaderTokens.foreground.accent10,
+});
+
+const NetworkRow = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
 });
 
 const NetworkLabel = styled("span")({

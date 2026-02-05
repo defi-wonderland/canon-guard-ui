@@ -3,7 +3,14 @@ import { Box, styled, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { DeploymentModesPanel } from "~/components/DeploymentModesPanel";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
-import { HelpCircleIcon, ShieldCheckIcon, AsteriskIcon, ShieldAlertIcon, Link2Icon } from "~/components/icons";
+import {
+  ChainIcon,
+  HelpCircleIcon,
+  ShieldCheckIcon,
+  AsteriskIcon,
+  ShieldAlertIcon,
+  Link2Icon,
+} from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
@@ -96,7 +103,10 @@ export const SettingsSection = () => {
                     <AddressText>{safeAddress || ""}</AddressText>
                   </CopyableText>
                 </SafeAddressRow>
-                <ChainName>{chainConfig?.chain.name || "Unknown Chain"}</ChainName>
+                <ChainRow>
+                  <ChainIcon chainId={chainId as SupportedChainId} size={14} />
+                  <ChainName>{chainConfig?.chain.name || "Unknown Chain"}</ChainName>
+                </ChainRow>
               </SafeInfo>
             </SafeProfileLeft>
             <OutlineButton onClick={handleManageSafes} data-testid='manage-safes-button'>
@@ -409,6 +419,12 @@ const AddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
+});
+
+const ChainRow = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
 });
 
 const ChainName = styled("span")({

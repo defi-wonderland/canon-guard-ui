@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
-import { Box, Typography, styled } from "@mui/material";
+import { Box, Typography, styled, Select, MenuItem, SelectChangeEvent } from "@mui/material";
 import { ChevronDownIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+
+interface SelectOption {
+  label: string;
+  value: string;
+  icon?: ReactNode;
+}
 
 interface FormInputProps {
   label: string;
@@ -10,7 +16,7 @@ interface FormInputProps {
   onChange: (value: string) => void;
   optional?: boolean;
   type?: "text" | "number" | "select";
-  selectOptions?: { label: string; value: string }[];
+  selectOptions?: SelectOption[];
   badge?: ReactNode;
   disabled?: boolean;
   error?: string;
@@ -35,6 +41,15 @@ export const FormInput = ({
   const hasError = Boolean(error);
   const hasWarning = Boolean(warning) && !hasError;
 
+  // Check if any option has an icon - use MUI Select for icon support
+  const hasIcons = selectOptions.some((opt) => opt.icon);
+
+  const handleMuiSelectChange = (event: SelectChangeEvent<string>) => {
+    onChange(event.target.value);
+  };
+
+  const selectedOption = selectOptions.find((opt) => opt.value === value);
+
   return (
     <InputWrapper>
       <LabelRow>
@@ -43,9 +58,61 @@ export const FormInput = ({
         {badge}
       </LabelRow>
       <InputContainer hasError={hasError} hasWarning={hasWarning}>
-        {type === "select" ? (
+        {type === "select" && hasIcons && (
+          <MuiSelectWrapper>
+            <StyledMuiSelect
+              value={value}
+              onChange={handleMuiSelectChange}
+              disabled={disabled}
+              data-testid={testId}
+              displayEmpty
+              renderValue={() => (
+                <SelectedValueWrapper>
+                  {selectedOption?.icon}
+                  <span>{selectedOption?.label || "Select"}</span>
+                </SelectedValueWrapper>
+              )}
+              IconComponent={() => (
+                <ChevronWrapper>
+                  <ChevronDownIcon size={14} color={canonHeaderTokens.foreground.accent10} />
+                </ChevronWrapper>
+              )}
+              MenuProps={{
+                disableScrollLock: true,
+                sx: {
+                  "& .MuiBackdrop-root": {
+                    opacity: "0 !important",
+                  },
+                },
+                BackdropProps: {
+                  invisible: true,
+                },
+                PaperProps: {
+                  sx: {
+                    backgroundColor: canonHeaderTokens.background.layer1,
+                    border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+                    borderRadius: "8px",
+                    marginTop: "4px",
+                    "& .MuiList-root": {
+                      padding: "4px",
+                    },
+                  },
+                },
+              }}
+            >
+              {selectOptions.map((option) => (
+                <StyledMenuItem key={option.value} value={option.value}>
+                  {option.icon}
+                  <span>{option.label}</span>
+                </StyledMenuItem>
+              ))}
+            </StyledMuiSelect>
+          </MuiSelectWrapper>
+        )}
+
+        {type === "select" && !hasIcons && (
           <SelectWrapper>
-            <StyledSelect
+            <StyledNativeSelect
               value={value}
               onChange={(e) => onChange(e.target.value)}
               disabled={disabled}
@@ -59,12 +126,14 @@ export const FormInput = ({
                   {option.label}
                 </option>
               ))}
-            </StyledSelect>
+            </StyledNativeSelect>
             <ChevronWrapper>
               <ChevronDownIcon size={14} color={canonHeaderTokens.foreground.accent10} />
             </ChevronWrapper>
           </SelectWrapper>
-        ) : (
+        )}
+
+        {type !== "select" && (
           <StyledInput
             placeholder={placeholder}
             value={value}
@@ -154,7 +223,7 @@ const SelectWrapper = styled(Box)({
   width: "100%",
 });
 
-const StyledSelect = styled("select")({
+const StyledNativeSelect = styled("select")({
   flex: 1,
   fontSize: "16px",
   fontWeight: 400,
@@ -168,6 +237,53 @@ const StyledSelect = styled("select")({
   "& option": {
     backgroundColor: canonHeaderTokens.background.layer1,
     color: canonHeaderTokens.foreground.accent0,
+  },
+});
+
+const MuiSelectWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  width: "100%",
+});
+
+const StyledMuiSelect = styled(Select<string>)({
+  flex: 1,
+  fontSize: "16px",
+  fontWeight: 400,
+  lineHeight: "24px",
+  color: canonHeaderTokens.foreground.accent0,
+  backgroundColor: "transparent",
+  "& .MuiOutlinedInput-notchedOutline": {
+    border: "none",
+  },
+  "& .MuiSelect-select": {
+    padding: 0,
+    paddingRight: "24px !important",
+  },
+});
+
+const SelectedValueWrapper = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+});
+
+const StyledMenuItem = styled(MenuItem)({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  padding: "10px 12px",
+  borderRadius: "4px",
+  fontSize: "14px",
+  color: canonHeaderTokens.foreground.accent0,
+  "&:hover": {
+    backgroundColor: canonHeaderTokens.background.layer1Variation,
+  },
+  "&.Mui-selected": {
+    backgroundColor: canonHeaderTokens.background.layer1Variation,
+    "&:hover": {
+      backgroundColor: canonHeaderTokens.background.layer1Variation,
+    },
   },
 });
 

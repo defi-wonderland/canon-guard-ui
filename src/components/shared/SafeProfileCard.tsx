@@ -1,6 +1,6 @@
 import { Box, styled } from "@mui/material";
-import { ShieldCheckIcon } from "~/components/icons";
-import { getChainConfig } from "~/config/chains";
+import { ChainIcon, ShieldCheckIcon } from "~/components/icons";
+import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { CopyableText } from "./CopyButton";
 
@@ -29,7 +29,10 @@ export const SafeProfileCard = ({ address, chainId }: SafeProfileCardProps) => {
               <AddressText>{address}</AddressText>
             </CopyableText>
           </AddressRow>
-          <ChainName>{chainConfig?.chain.name || "Unknown Chain"}</ChainName>
+          <ChainRow>
+            <ChainIcon chainId={chainId as SupportedChainId} size={14} />
+            <ChainName>{chainConfig?.chain.name || "Unknown Chain"}</ChainName>
+          </ChainRow>
         </Details>
       </CardContent>
     </CardContainer>
@@ -89,6 +92,12 @@ const AddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
+});
+
+const ChainRow = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
 });
 
 const ChainName = styled("span")({
