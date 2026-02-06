@@ -89,7 +89,7 @@ export const ActionItem = ({
   return (
     <ItemContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {/* Left icon section */}
-      <IconSection $isHubChild={isHubChild}>
+      <IconSection $isHubChild={isHubChild} $isClickable={!!onTitleClick} onClick={onTitleClick}>
         {isHub ? (
           <VectorSquareIcon size={20} color={canonHeaderTokens.foreground.accent10} />
         ) : (
@@ -234,8 +234,8 @@ const ItemContainer = styled(Box)({
 });
 
 const IconSection = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$isHubChild",
-})<{ $isHubChild?: boolean }>(({ $isHubChild }) => ({
+  shouldForwardProp: (prop) => prop !== "$isHubChild" && prop !== "$isClickable",
+})<{ $isHubChild?: boolean; $isClickable?: boolean }>(({ $isHubChild, $isClickable }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -244,6 +244,7 @@ const IconSection = styled(Box, {
   padding: $isHubChild ? "16px 20px" : "20px 24px",
   opacity: 0.8,
   borderRadius: "8px 0 0 8px",
+  cursor: $isClickable ? "pointer" : "default",
 }));
 
 const ContentSection = styled(Box, {

@@ -143,7 +143,7 @@ export const QueueItem = ({
   return (
     <ItemContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {/* Left Panel - Nonce/Warning + Signed indicator */}
-      <LeftPanel>
+      <LeftPanel $isClickable={!!onTitleClick} onClick={onTitleClick}>
         <NonceSection>
           {isWarningState ? (
             <WarningContainer>
@@ -300,7 +300,9 @@ const ItemContainer = styled(Box)({
   overflow: "hidden",
 });
 
-const LeftPanel = styled(Box)({
+const LeftPanel = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "$isClickable",
+})<{ $isClickable?: boolean }>(({ $isClickable }) => ({
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
@@ -308,7 +310,8 @@ const LeftPanel = styled(Box)({
   minWidth: "160px",
   padding: "16px",
   backgroundColor: "#202026", // layer1-variation
-});
+  cursor: $isClickable ? "pointer" : "default",
+}));
 
 const NonceSection = styled(Box)({
   display: "flex",
