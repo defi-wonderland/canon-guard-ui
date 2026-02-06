@@ -441,8 +441,14 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
             setSelectedItem(null);
             handleSign(selectedItem);
           }}
-          onExecute={() => handleExecute(selectedItem)}
-          onRemove={() => handleRemove(selectedItem)}
+          onExecute={async () => {
+            await handleExecute(selectedItem);
+            setSelectedItem(null);
+          }}
+          onRemove={async () => {
+            await handleRemove(selectedItem);
+            setSelectedItem(null);
+          }}
           isExecuteLoading={executingItemAddress === selectedItem.actionBuilderAddress && isExecuting}
           isRemoveLoading={removingItemAddress === selectedItem.actionBuilderAddress && isRemoving}
           connectedAddress={connectedAddress}

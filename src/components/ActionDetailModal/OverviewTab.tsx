@@ -257,6 +257,9 @@ const ActionButtonsSection = ({
   return (
     <ButtonsContainer>
       <ButtonsRow>
+        <ActionButton $variant='red' onClick={onRemove} disabled={isRemoveLoading}>
+          {isRemoveLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "CANCEL"}
+        </ActionButton>
         {showSignButton && (
           <ActionButton $variant='green' onClick={onSign}>
             SIGN
@@ -274,9 +277,6 @@ const ActionButtonsSection = ({
             <SignedStateText>Signed</SignedStateText>
           </SignedStateButton>
         )}
-        <ActionButton $variant='red' onClick={onRemove} disabled={isRemoveLoading}>
-          {isRemoveLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "CANCEL"}
-        </ActionButton>
       </ButtonsRow>
     </ButtonsContainer>
   );
