@@ -344,10 +344,11 @@ const TokenDropdownButton = styled("button")({
   justifyContent: "space-between",
   width: "100%",
   padding: "12px 16px",
-  backgroundColor: canonHeaderTokens.background.layer0,
-  border: `1px solid ${canonHeaderTokens.foreground.accent50}`,
+  backgroundColor: "transparent",
+  border: `1px solid ${canonHeaderTokens.foreground.accent40 || "#37373e"}`,
   borderRadius: "8px",
   cursor: "pointer",
+  boxShadow: "0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)",
   transition: "border-color 0.2s ease",
   "&:hover": {
     borderColor: canonHeaderTokens.foreground.accent40,
@@ -417,8 +418,8 @@ const TokenCapInfo = styled(Typography)({
 
 const ReadOnlyInput = styled(Box)({
   padding: "12px 16px",
-  backgroundColor: canonHeaderTokens.background.layer0,
-  border: `1px solid ${canonHeaderTokens.foreground.accent50}`,
+  backgroundColor: "transparent",
+  border: `1px solid ${canonHeaderTokens.foreground.accent40 || "#37373e"}`,
   borderRadius: "8px",
   fontSize: "14px",
   fontWeight: 400,
@@ -426,6 +427,7 @@ const ReadOnlyInput = styled(Box)({
   color: canonHeaderTokens.foreground.accent20,
   fontFamily: "monospace",
   wordBreak: "break-all",
+  boxShadow: "0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)",
 });
 
 const InputHint = styled(Typography)({
