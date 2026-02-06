@@ -1,6 +1,9 @@
+import { useCallback } from "react";
 import { Box, styled } from "@mui/material";
+import { ExternalLink as ExternalLinkIcon } from "lucide-react";
 import { BoxIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { getFactoryDisplayName } from "~/utils/factoryDisplay";
 import { truncateAddress } from "~/utils/format";
@@ -8,9 +11,10 @@ import type { ActionDetailModalData } from "./index";
 
 interface DetailsTabProps {
   data: ActionDetailModalData;
+  chainId: SupportedChainId | null;
 }
 
-export const DetailsTab = ({ data }: DetailsTabProps) => {
+export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
   const isQueue = data.mode === "queue";
 
   const factoryType = isQueue ? data.item.factoryType : data.entity.factoryType;
@@ -19,6 +23,15 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
 
   const factoryDisplayName = getFactoryDisplayName(factoryType);
   const displayFactory = factoryDisplayName !== "Unknown" ? factoryDisplayName : factoryLabel || "Unknown";
+
+  const openExplorer = useCallback(
+    (addr: string) => {
+      if (!chainId) return;
+      const config = getChainConfig(chainId);
+      window.open(`${config.blockExplorerUrl}/address/${addr}`, "_blank", "noopener,noreferrer");
+    },
+    [chainId],
+  );
 
   return (
     <Container>
@@ -31,6 +44,9 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
               <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent20}>
                 <AddressText>{truncateAddress(address)}</AddressText>
               </CopyableText>
+              <ExplorerLink onClick={() => openExplorer(address)}>
+                <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
+              </ExplorerLink>
             </InfoValueRow>
           </InfoRow>
           <InfoDivider />
@@ -67,6 +83,9 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
                   >
                     <AddressText>{truncateAddress(data.item.proposer)}</AddressText>
                   </CopyableText>
+                  <ExplorerLink onClick={() => openExplorer(data.item.proposer)}>
+                    <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
+                  </ExplorerLink>
                 </InfoValueRow>
               </InfoRow>
               <InfoDivider />
@@ -108,6 +127,9 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
                       >
                         <AddressText>{truncateAddress(data.item.hubAddress)}</AddressText>
                       </CopyableText>
+                      <ExplorerLink onClick={() => openExplorer(data.item.hubAddress!)}>
+                        <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
+                      </ExplorerLink>
                     </InfoValueRow>
                   </InfoRow>
                   {data.item.hubLabel && (
@@ -243,4 +265,20 @@ const DataText = styled("span")({
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
   wordBreak: "break-all",
+});
+
+const ExplorerLink = styled("button")({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "none",
+  border: "none",
+  padding: "2px",
+  cursor: "pointer",
+  opacity: 0.9,
+  transition: "opacity 0.15s ease",
+  flexShrink: 0,
+  "&:hover": {
+    opacity: 1,
+  },
 });

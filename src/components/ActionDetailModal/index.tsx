@@ -172,7 +172,7 @@ export const ActionDetailModal = ({
               isSigner={isSigner}
             />
           )}
-          {activeTab === "details" && <DetailsTab data={data} />}
+          {activeTab === "details" && <DetailsTab data={data} chainId={chainId} />}
         </TabContent>
       </ModalContainer>
     </Overlay>
