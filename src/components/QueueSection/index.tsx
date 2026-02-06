@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { Address } from "viem";
+import { ActionDetailModal } from "~/components/ActionDetailModal";
 import { SearchIcon, HelpCircleIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisIcon } from "~/components/icons";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -23,7 +24,7 @@ interface QueueSectionProps {
 
 export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
   const queueService = useQueueService();
-  const { guardAddress, safeAddress } = useStateContext();
+  const { guardAddress, safeAddress, chainId } = useStateContext();
   const { executeCanonTransaction, executeCancelTransaction, isExecuting } = useTransactionExecutor();
   const navigateWithParams = useNavigateWithParams();
   const { address: connectedAddress } = useWallet();
@@ -38,6 +39,9 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
   const [executingItemAddress, setExecutingItemAddress] = useState<Address | null>(null);
   const [removingItemAddress, setRemovingItemAddress] = useState<Address | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+
+  // Action detail modal state
+  const [selectedItem, setSelectedItem] = useState<QueueItemType | null>(null);
 
   const fetchQueueItems = useCallback(async () => {
     if (!guardAddress || !safeAddress) return;
@@ -317,6 +321,7 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
                     onSign={() => handleSign(item)}
                     onExecute={() => handleExecute(item)}
                     onRemove={() => handleRemove(item)}
+                    onTitleClick={() => setSelectedItem(item)}
                     isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
                     isSignLoading={false}
                     isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
@@ -344,6 +349,7 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
                     onSign={() => handleSign(item)}
                     onExecute={() => handleExecute(item)}
                     onRemove={() => handleRemove(item)}
+                    onTitleClick={() => setSelectedItem(item)}
                     isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
                     isSignLoading={false}
                     isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
@@ -371,6 +377,7 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
                     onSign={() => handleSign(item)}
                     onExecute={() => handleExecute(item)}
                     onRemove={() => handleRemove(item)}
+                    onTitleClick={() => setSelectedItem(item)}
                     isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
                     isSignLoading={false}
                     isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
@@ -422,6 +429,32 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
           )}
         </QueueItemsContainer>
       </ContentWrapper>
+
+      {/* Action Detail Modal */}
+      {selectedItem && (
+        <ActionDetailModal
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
+          data={{ mode: "queue", item: selectedItem }}
+          chainId={chainId}
+          onSign={() => {
+            setSelectedItem(null);
+            handleSign(selectedItem);
+          }}
+          onExecute={async () => {
+            await handleExecute(selectedItem);
+            setSelectedItem(null);
+          }}
+          onRemove={async () => {
+            await handleRemove(selectedItem);
+            setSelectedItem(null);
+          }}
+          isExecuteLoading={executingItemAddress === selectedItem.actionBuilderAddress && isExecuting}
+          isRemoveLoading={removingItemAddress === selectedItem.actionBuilderAddress && isRemoving}
+          connectedAddress={connectedAddress}
+          isSigner={isSigner}
+        />
+      )}
     </Container>
   );
 };

@@ -36,6 +36,7 @@ interface ActionItemProps {
   onProposePreApproval?: () => void;
   onDeployChild?: () => void;
   onRemove?: () => void;
+  onTitleClick?: () => void;
   isRemoving?: boolean;
   // Signer status (for controlling action visibility/availability)
   isConnected?: boolean;
@@ -58,6 +59,7 @@ export const ActionItem = ({
   onProposePreApproval,
   onDeployChild,
   onRemove,
+  onTitleClick,
   isRemoving,
   isConnected = true,
   isSigner = true,
@@ -87,7 +89,7 @@ export const ActionItem = ({
   return (
     <ItemContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {/* Left icon section */}
-      <IconSection $isHubChild={isHubChild}>
+      <IconSection $isHubChild={isHubChild} $isClickable={!!onTitleClick} onClick={onTitleClick}>
         {isHub ? (
           <VectorSquareIcon size={20} color={canonHeaderTokens.foreground.accent10} />
         ) : (
@@ -99,7 +101,9 @@ export const ActionItem = ({
       <ContentSection $isHubChild={isHubChild}>
         <ContentInner $isHubChild={isHubChild}>
           <TitleSection>
-            <Title $isUntitled={isUntitled}>{displayTitle}</Title>
+            <Title $isUntitled={isUntitled} $isClickable={!!onTitleClick} onClick={onTitleClick}>
+              {displayTitle}
+            </Title>
             {/* Hub children always show address; others show on hover */}
             <AddressRow $isVisible={isHubChild || isHovered}>
               <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
@@ -230,8 +234,8 @@ const ItemContainer = styled(Box)({
 });
 
 const IconSection = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$isHubChild",
-})<{ $isHubChild?: boolean }>(({ $isHubChild }) => ({
+  shouldForwardProp: (prop) => prop !== "$isHubChild" && prop !== "$isClickable",
+})<{ $isHubChild?: boolean; $isClickable?: boolean }>(({ $isHubChild, $isClickable }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -240,6 +244,7 @@ const IconSection = styled(Box, {
   padding: $isHubChild ? "16px 20px" : "20px 24px",
   opacity: 0.8,
   borderRadius: "8px 0 0 8px",
+  cursor: $isClickable ? "pointer" : "default",
 }));
 
 const ContentSection = styled(Box, {
@@ -268,12 +273,21 @@ const TitleSection = styled(Box)({
 });
 
 const Title = styled(Typography, {
-  shouldForwardProp: (prop) => prop !== "$isUntitled",
-})<{ $isUntitled: boolean }>(({ $isUntitled }) => ({
+  shouldForwardProp: (prop) => prop !== "$isUntitled" && prop !== "$isClickable",
+})<{ $isUntitled: boolean; $isClickable?: boolean }>(({ $isUntitled, $isClickable }) => ({
   fontSize: "14px",
   fontWeight: 600,
   lineHeight: "20px",
   color: $isUntitled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent0,
+  cursor: $isClickable ? "pointer" : "default",
+  width: "fit-content",
+  "&:hover": $isClickable
+    ? {
+        textDecoration: "underline",
+        textDecorationColor: canonHeaderTokens.foreground.accent30,
+        textUnderlineOffset: "3px",
+      }
+    : {},
 }));
 
 const AddressRow = styled(Box, {
