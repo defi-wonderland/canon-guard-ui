@@ -8,3 +8,5 @@ export const getCustomThemes = () => {
     rainbow: rainbowTheme,
   };
 };
+
+export * from "./safeTheme";

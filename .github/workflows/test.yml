@@ -10,13 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
+          standalone: true
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
-          cache: "pnpm"
+          node-version: 22
+      - name: Configure git to use HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Install dependencies
         run: pnpm install
       - name: Create env file
@@ -24,7 +26,6 @@ jobs:
           touch .env
           echo "PUBLIC_RPC_URL=${{ secrets.PUBLIC_RPC_URL }}" >> .env
           echo "VITE_PUBLIC_PROJECT_ID=${{ secrets.VITE_PUBLIC_PROJECT_ID }}" >> .env
-          echo "VITE_PUBLIC_ALCHEMY_KEY=${{ secrets.VITE_PUBLIC_ALCHEMY_KEY }}" >> .env
       - name: Run unit tests
         run: pnpm test:unit
 
@@ -34,17 +35,19 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
+          standalone: true
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
-          cache: "pnpm"
+          node-version: 22
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+      - name: Configure git to use HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
       - name: Install dependencies
         run: pnpm install
       - name: Install Playwright Browsers
@@ -53,25 +56,9 @@ jobs:
         run: |
           touch .env
           echo "VITE_PUBLIC_PROJECT_ID=${{ secrets.VITE_PUBLIC_PROJECT_ID }}" >> .env
-          echo "VITE_PUBLIC_ALCHEMY_KEY=${{ secrets.VITE_PUBLIC_ALCHEMY_KEY }}" >> .env
-          echo "PUBLIC_RPC_URL=${{ secrets.PUBLIC_RPC_URL }}" >> .env
-          echo "IS_PLAYWRIGHT='true'" >> .env
-          echo "SEED_PHRASE=${{ secrets.SEED_PHRASE }}" >> .env
-          echo "PASSWORD=${{ secrets.PASSWORD }}" >> .env
-      - name: Build application
-        run: pnpm build
-      - name: Build cache
-        # xvfb-run is needed due to a known issue (https://docs.synpress.io/docs/known-issues#headless-mode-limitations-on-ci)
-        run: xvfb-run pnpm synpress:cache
-        continue-on-error: true
-      - name: Run Sepolia Fork
-        run: |
-          pnpm test:fork:latest &
-          sleep 5
-          echo "Anvil fork started in background"
-      - name: Run E2E tests (headful)
-        # xvfb-run is needed due to a known issue (https://docs.synpress.io/docs/known-issues#headless-mode-limitations-on-ci)
-        run: xvfb-run pnpm playwright:test:headed
+          echo "VITE_PUBLIC_IS_PLAYWRIGHT='true'" >> .env
+      - name: Run E2E tests
+        run: pnpm playwright:test
       - uses: actions/upload-artifact@v4
         if: always()
         with:

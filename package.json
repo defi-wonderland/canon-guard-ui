@@ -1,12 +1,12 @@
 {
-  "name": "web3-vite-boilerplate",
+  "name": "canon-guard-ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
   "author": "Wonderland",
   "engines": {
-    "node": ">=18.17.0"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "vite --port 3000",
@@ -19,44 +19,57 @@
     "format": "pnpm run prettier:fix && pnpm run lint:fix",
     "format:check": "pnpm run prettier && pnpm run lint",
     "prepare": "husky && wonderland-crypto-husky-checks install",
-    "test:fork:latest": "RPC_URL=${NEXT_PUBLIC_RPC_URL:-https://ethereum-sepolia-rpc.publicnode.com/} && anvil --fork-url $RPC_URL --chain-id 11155111 --no-storage-caching",
-    "synpress:cache": "npx synpress tests/setup",
-    "playwright:install": "playwright install",
-    "playwright:test": "playwright test --reporter=list",
-    "playwright:test:headed": "playwright test --reporter=list --headed",
-    "test:e2e": "playwright test",
+    "test": "pnpm run test:unit && pnpm run test:e2e",
     "test:unit": "vitest run",
-    "test": "pnpm run test:unit && pnpm run test:e2e"
+    "test:e2e": "playwright test --reporter=list",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "fork:op": "anvil --fork-url ${RPC_URL_OPTIMISM:-https://mainnet.optimism.io} --chain-id 10 --no-storage-caching --port 8545 --auto-impersonate",
+    "fork:eth": "anvil --fork-url ${RPC_URL_ETHEREUM:-https://eth.llamarpc.com} --chain-id 1 --no-storage-caching --port 8546 --auto-impersonate",
+    "playwright:install": "playwright install",
+    "playwright:test": "playwright test --reporter=list"
   },
   "lint-staged": {
     "src/**/*.{js,jsx,ts,tsx}": "eslint --cache --fix",
     "src/**/*.{js,jsx,ts,tsx,css,scss,md,html}": "prettier --write --ignore-unknown"
   },
   "dependencies": {
+    "@defi-wonderland/canon-guard-interfaces": "0.0.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@mui/icons-material": "6.1.3",
     "@mui/material": "6.1.3",
     "@rainbow-me/rainbowkit": "2.2.5",
     "@tanstack/react-query": "5.80.3",
+    "@walletconnect/sign-client": "2.23.1",
+    "@walletconnect/types": "2.23.1",
+    "@walletconnect/utils": "2.23.1",
     "lodash.merge": "4.6.2",
+    "lucide-react": "0.562.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-router-dom": "7.6.2",
+    "react-router-dom": "7.12.0",
     "viem": "2.30.6",
     "wagmi": "2.15.5"
   },
+  "pnpm": {
+    "overrides": {
+      "@safe-global/safe-contracts": "npm:@safe-global/safe-smart-account@1.5.0",
+      "solady": "npm:solady@0.1.26"
+    }
+  },
   "devDependencies": {
     "@defi-wonderland/crypto-husky-checks": "1.5.6",
-    "@dotenvx/dotenvx": "1.44.2",
     "@eslint/js": "9.28.0",
-    "@playwright/test": "1.53.0",
-    "@synthetixio/synpress": "4.1.0",
+    "@playwright/test": "1.58.0",
     "@types/lodash.merge": "4.6.9",
     "@types/node": "24.0.1",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.6",
     "@vitejs/plugin-react": "4.5.1",
+    "@wonderland/walletless": "1.1.0",
+    "dotenv": "17.2.3",
     "eslint": "9.28.0",
     "eslint-config-prettier": "10.1.5",
     "eslint-import-resolver-alias": "1.1.2",
@@ -71,7 +84,7 @@
     "prettier": "3.5.3",
     "typescript": "5.8.3",
     "typescript-eslint": "8.33.1",
-    "vite": "6.3.5",
+    "vite": "7.3.1",
     "vitest": "3.2.1"
   }
 }

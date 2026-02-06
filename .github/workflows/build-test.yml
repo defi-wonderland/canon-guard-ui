@@ -25,16 +25,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
+          standalone: true
 
       - name: Install Node
         uses: actions/setup-node@v4
         with:
-          node-version: "21.4"
+          node-version: 22
           registry-url: "https://registry.npmjs.org"
-          cache: "pnpm"
+
+      - name: Configure git to use HTTPS
+        run: git config --global url."https://github.com/".insteadOf "git@github.com:"
 
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile --prefer-frozen-lockfile

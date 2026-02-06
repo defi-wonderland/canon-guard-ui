@@ -1,172 +1,113 @@
-# 💻 Web3 Vite Boilerplate
+# 🏦 Canon Guard UI
 
-This is a boilerplate project for building web applications using Vite and React, with a focus on web3 technologies. It integrates several powerful libraries and tools to streamline development.
+A web application for managing Canon Guard multisig security system. Canon Guard adds timelock protection to Gnosis Safe operations, preventing immediate transaction execution and providing time to review and stop malicious actions.
 
-## Features
+## What is Canon Guard?
 
-- [Material-UI (MUI)](https://mui.com/material-ui/getting-started/): A popular React UI framework for building responsive and accessible web applications.
-- [Dark/Light Mode](https://mui.com/material-ui/customization/dark-mode/): Easily switch between dark and light themes for better user experience.
-- [React Router](https://reactrouter.com/start/library/routing): A library for routing and navigation in web applications.
-- [RainbowKit](https://www.rainbowkit.com/es-419/docs/installation): Integrated for wallet connection and management in web3 applications.
-- [Wagmi](https://wagmi.sh/react/getting-started): A React Hooks library for web3 applications (EVM chains), making it easier to interact with smart contracts.
-- [Viem](https://viem.sh/docs/getting-started): A library for building web3 applications (EVM chains) with a focus on performance and usability.
+Canon Guard transforms your Safe from "execute immediately" to "execute thoughtfully" by adding mandatory delays and approval systems. This provides hack protection and reduces manual review work for common transactions.
 
-## Getting Started
+📖 **[Read the complete Canon Guard guide →](CANON_GUARD_CONCEPTS.md)**
 
-To get started with this project, follow these steps:
+## Quick Start
 
-1. **Clone the repository**:
-
-   ```bash
-   git clone git@github.com:defi-wonderland/web3-vite-boilerplate.git
-   ```
-
-2. **Navigate into the project directory**:
-
-   ```bash
-   cd web3-vite-boilerplate
-   ```
-
-3. **Install dependencies** using pnpm:
+1. **Install dependencies**:
 
    ```bash
    pnpm install
    ```
 
-4. **Run the development server**:
+2. **Configure environment**:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Add your API keys from [WalletConnect Cloud](https://cloud.walletconnect.com) and [Alchemy Dashboard](https://dashboard.alchemy.com).
+
+3. **Start development server**:
    ```bash
    pnpm run dev
    ```
-   This will start the application at `http://localhost:3000`.
 
-## Environment Variables
-
-To run the project, you need to create a `.env` file in the root directory with the following variables:
+## Testing
 
 ```bash
-VITE_PUBLIC_PROJECT_ID=your_project_id # ProjectID from WalletConnect
-VITE_PUBLIC_ALCHEMY_KEY=your_alchemy_key # API key from Alchemy
+# Run all tests
+pnpm run test
+
+# Unit tests only
+pnpm run test:unit
+
+# E2E tests only
+pnpm run test:e2e
 ```
 
-## Running Tests
+## E2E Testing
 
-To run the tests for this project, you can use the following commands:
+Canon Guard UI uses Playwright with Walletless for fast, reliable E2E testing.
 
-- **Run all tests** (both unit and end-to-end):
+### Prerequisites
 
-  ```bash
-  pnpm run test
-  ```
-
-- **Run unit tests** using Vitest:
-
-  ```bash
-  pnpm run test:unit
-  ```
-
-- **Run end-to-end tests** using Playwright:
-  ```bash
-  pnpm run test:e2e
-  ```
-
-### Test Setup
-
-Before running the end-to-end tests, you need to complete the following setup steps:
-
-1. **Configure environment variables**: Add the following testing variables to your `.env` file:
-
+1. Install dependencies:
    ```bash
-   SEED_PHRASE=your_test_wallet_seed_phrase
-   PASSWORD=your_test_wallet_password
-   PUBLIC_RPC_URL=your_rpc_url
-   IS_PLAYWRIGHT='true'
+   pnpm install
+   pnpm playwright:install
    ```
 
-2. **Generate test wallet**: Run Synpress to generate the wallet needed for testing:
-
+2. Configure environment:
    ```bash
-   npx synpress
+   cp .env.example .env
+   # Add your RPC URLs for forking
    ```
 
-   This command will set up the necessary wallet configuration for your end-to-end tests.
+### Running Tests
 
-3. **Run the tests**: After completing the setup, you can run the end-to-end tests using:
-   ```bash
-   pnpm run test:e2e
-   ```
+```bash
+# Run all tests (unit + E2E)
+pnpm test
 
-## Theme Customization
+# Run only E2E tests
+pnpm test:e2e
 
-### Modifying Default Colors
+# Run with Playwright UI (interactive)
+pnpm test:e2e:ui
 
-To customize the default palette (error, warning, success, info), uncomment and modify the palette object in `src/config/themes/theme.ts`:
+# Run in headed mode (see browser)
+pnpm test:e2e:headed
 
-```typescript
-const palette = {
-   error: {
-     main: '#BA6B5D',    // Main error color
-     light: '#ECCCC6',   // Light variant
-     dark: '#824A41',    // Dark variant
-   },
-   warning: { ... },
-   success: { ... },
-   info: { ... },
-};
+# Debug specific test
+pnpm test:e2e:debug tests/wallet-connection.spec.ts
 ```
 
-### Adding New Theme Variables
+### How It Works
 
-To extend the theme with new variables, declare them in `src/types/theme.ts` using the Material-UI module augmentation:
+- **Walletless**: Provides a mock wallet that signs transactions automatically
+- **Anvil**: Local fork of Optimism mainnet for realistic testing
+- **No Extensions**: No MetaMask or other browser extensions needed
+- **Fast**: 16x faster than traditional wallet testing
 
-```typescript
-declare module "@mui/material/styles" {
-  interface Palette {
-    // Add new palette property
-    myNewColor: {
-      primary: string;
-    };
-  }
+### Writing Tests
 
-  // Add new theme property
-  interface Theme {
-    myNewProperty: {
-      value: string;
-    };
-  }
-}
-```
-
-### Using Theme Attributes with Styled Components
-
-You can access theme properties in your styled components using the theme prop. Here are some examples:
+Example test:
 
 ```typescript
-import { styled } from "@mui/material/styles";
+import { test, expect } from '@playwright/test';
 
-// Using background colors
-const StyledContainer = styled("div")(({ theme }) => ({
-  backgroundColor: theme.palette.background.default,
-  padding: "1rem",
-}));
-
-// Using border radius
-const RoundedBox = styled("div")(({ theme }) => ({
-  borderRadius: theme.borderRadius.default,
-  border: theme.palette.border,
-}));
-
-// Using typography
-const StyledText = styled("p")(({ theme }) => ({
-  color: theme.palette.text.primary,
-  fontFamily: theme.typography.fontFamily,
-}));
-
-// Using custom theme properties
-const TitleText = styled("h1")(({ theme }) => ({
-  color: theme.palette.title.primary,
-}));
+test('should connect wallet', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: /connect/i }).click();
+  await page.getByText('E2E Test Wallet').click();
+  await expect(page.getByText(/0xf39f/i)).toBeVisible();
+});
 ```
 
-These styled components will automatically adapt to theme changes (light/dark mode).
+See `tests/` directory for more examples.
 
-Created by [Wonderland](https://defi.sucks).
+## Tech Stack
+
+- **React** with **Vite** for fast development
+- **Material-UI** for UI components and theming
+- **RainbowKit** + **Wagmi** + **Viem** for Web3 integration
+- **React Router** for navigation
+
+Created by [Wonderland](https://wonderland.xyz).

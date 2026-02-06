@@ -1,6 +1,7 @@
 {
+  "installCommand": "git config --global url.\"https://github.com/\".insteadOf git@github.com: && pnpm install --ignore-scripts",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }],
   "github": {
-    "enabled": false
+    "enabled": true
   }
 }
