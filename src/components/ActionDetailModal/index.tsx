@@ -3,6 +3,7 @@ import { Box, styled } from "@mui/material";
 import { ExternalLink as ShareIcon } from "lucide-react";
 import { XIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { QueueItem } from "~/services";
@@ -142,9 +143,11 @@ export const ActionDetailModal = ({
               <TabLabel $isActive={activeTab === "details"}>DETAILS</TabLabel>
             </Tab>
             <TabDivider />
-            <TabDisabled>
-              <TabLabel $isActive={false}>SIMULATE</TabLabel>
-            </TabDisabled>
+            <StyledTooltip title='Transaction simulation coming soon' placement='top'>
+              <TabDisabled>
+                <TabLabel $isActive={false}>SIMULATE</TabLabel>
+              </TabDisabled>
+            </StyledTooltip>
             <TabDivider />
             <TabSpacer />
             <ShareButton onClick={handleShare}>

@@ -3,6 +3,7 @@ import { BoxIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { getFactoryDisplayName } from "~/utils/factoryDisplay";
+import { truncateAddress } from "~/utils/format";
 import type { ActionDetailModalData } from "./index";
 
 interface DetailsTabProps {
@@ -28,7 +29,7 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
             <InfoLabel>Action Builder</InfoLabel>
             <InfoValueRow>
               <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent20}>
-                <AddressText>{address}</AddressText>
+                <AddressText>{truncateAddress(address)}</AddressText>
               </CopyableText>
             </InfoValueRow>
           </InfoRow>
@@ -64,7 +65,7 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
                     iconSize={10}
                     iconColor={canonHeaderTokens.foreground.accent20}
                   >
-                    <AddressText>{data.item.proposer}</AddressText>
+                    <AddressText>{truncateAddress(data.item.proposer)}</AddressText>
                   </CopyableText>
                 </InfoValueRow>
               </InfoRow>
@@ -105,7 +106,7 @@ export const DetailsTab = ({ data }: DetailsTabProps) => {
                         iconSize={10}
                         iconColor={canonHeaderTokens.foreground.accent20}
                       >
-                        <AddressText>{data.item.hubAddress}</AddressText>
+                        <AddressText>{truncateAddress(data.item.hubAddress)}</AddressText>
                       </CopyableText>
                     </InfoValueRow>
                   </InfoRow>
@@ -227,7 +228,7 @@ const InfoDivider = styled(Box)({
 });
 
 const DataBox = styled(Box)({
-  backgroundColor: canonHeaderTokens.background.layer0,
+  backgroundColor: canonHeaderTokens.background.layer1Variation,
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
   borderRadius: "6px",
   padding: "12px",
