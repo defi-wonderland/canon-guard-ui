@@ -280,6 +280,7 @@ const Title = styled(Typography, {
   lineHeight: "20px",
   color: $isUntitled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent0,
   cursor: $isClickable ? "pointer" : "default",
+  width: "fit-content",
   "&:hover": $isClickable
     ? {
         textDecoration: "underline",

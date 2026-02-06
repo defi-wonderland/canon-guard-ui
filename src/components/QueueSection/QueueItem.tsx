@@ -441,6 +441,7 @@ const Title = styled("span", {
   color: $isUntitled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent0,
   textAlign: "left",
   cursor: $isClickable ? "pointer" : "default",
+  width: "fit-content",
   "&:hover": $isClickable
     ? {
         textDecoration: "underline",
