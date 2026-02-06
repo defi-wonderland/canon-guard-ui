@@ -17,6 +17,7 @@ interface QueueItemProps {
   onSign?: () => void;
   onExecute?: () => void;
   onRemove?: () => void;
+  onTitleClick?: () => void;
   isLoading?: boolean;
   isSignLoading?: boolean;
   isRemoveLoading?: boolean;
@@ -31,6 +32,7 @@ export const QueueItem = ({
   onSign,
   onExecute,
   onRemove,
+  onTitleClick,
   isLoading,
   isSignLoading,
   isRemoveLoading,
@@ -165,7 +167,9 @@ export const QueueItem = ({
       <RightPanel>
         <TopRow>
           <TitleSection>
-            <Title $isUntitled={isUntitled}>{displayLabel}</Title>
+            <Title $isUntitled={isUntitled} $isClickable={!!onTitleClick} onClick={onTitleClick}>
+              {displayLabel}
+            </Title>
             <AddressRow $isVisible={isHovered}>
               <CopyableText text={actionBuilderAddress} iconSize={10} iconColor={canonHeaderTokens.foreground.accent10}>
                 <AddressText>{actionBuilderAddress}</AddressText>
@@ -425,14 +429,22 @@ const TitleSection = styled(Box)({
 });
 
 const Title = styled("span", {
-  shouldForwardProp: (prop) => prop !== "$isUntitled",
-})<{ $isUntitled: boolean }>(({ $isUntitled }) => ({
+  shouldForwardProp: (prop) => prop !== "$isUntitled" && prop !== "$isClickable",
+})<{ $isUntitled: boolean; $isClickable?: boolean }>(({ $isUntitled, $isClickable }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "14px",
   fontWeight: 600,
   lineHeight: "20px",
   color: $isUntitled ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent0,
   textAlign: "left",
+  cursor: $isClickable ? "pointer" : "default",
+  "&:hover": $isClickable
+    ? {
+        textDecoration: "underline",
+        textDecorationColor: canonHeaderTokens.foreground.accent30,
+        textUnderlineOffset: "3px",
+      }
+    : {},
 }));
 
 const AddressRow = styled(Box, {
