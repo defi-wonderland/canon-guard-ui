@@ -1,7 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ManageSafesSection } from "~/components/ManageSafesSection";
 import { AppLayout } from "~/containers";
-import { SafeVault, TestPage } from "~/pages";
+import { Landing, SafeVault, TestPage } from "~/pages";
 
 // Lazy load the route components to avoid circular dependencies
 // These will be rendered inside CanonGuardApp via Outlet
@@ -51,6 +51,8 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      // Landing page route
+      { path: "landing", element: <Landing /> },
       // Test route for design iteration (temporary)
       { path: "test", element: <TestPage /> },
       // Catch-all redirect to home
