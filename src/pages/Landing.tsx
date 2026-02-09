@@ -75,7 +75,7 @@ const HeaderContent = styled(Box)({
   height: "100%",
 });
 
-const LogoContainer = styled(Box)({
+const LogoContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: "4px",
   alignItems: "center",
@@ -85,7 +85,11 @@ const LogoContainer = styled(Box)({
   lineHeight: 0,
   color: canonHeaderTokens.foreground.accent0,
   whiteSpace: "nowrap",
-});
+  [theme.breakpoints.down("sm")]: {
+    paddingLeft: "16px",
+    fontSize: "18px",
+  },
+}));
 
 const LogoBold = styled("span")({
   fontFamily: "GT Walsheim Pro, sans-serif",
@@ -101,39 +105,76 @@ const LogoRegular = styled("span")({
   lineHeight: "normal",
 });
 
-const HeroSection = styled(Box)({
+const HeroSection = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: "32px",
   alignItems: "center",
   paddingLeft: "120px",
   paddingRight: "120px",
   flexShrink: 0,
-});
+  [theme.breakpoints.down("lg")]: {
+    paddingLeft: "60px",
+    paddingRight: "60px",
+    gap: "24px",
+  },
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column",
+    paddingLeft: "32px",
+    paddingRight: "32px",
+    gap: "24px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    paddingLeft: "16px",
+    paddingRight: "16px",
+    gap: "16px",
+  },
+}));
 
-const HeroLine = styled(Box)({
+const HeroLine = styled(Box)(({ theme }) => ({
   width: "120px",
   height: "1px",
   backgroundColor: canonHeaderTokens.foreground.accent0,
   flexShrink: 0,
-});
+  [theme.breakpoints.down("md")]: {
+    width: "60px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    display: "none",
+  },
+}));
 
-const HeroText = styled(Typography)({
+const HeroText = styled(Typography)(({ theme }) => ({
   fontSize: "28px",
   fontWeight: 200,
   fontStyle: "italic",
   lineHeight: "normal",
   color: canonHeaderTokens.foreground.accent0,
   flexShrink: 0,
-});
+  [theme.breakpoints.down("md")]: {
+    fontSize: "24px",
+    textAlign: "center",
+  },
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "20px",
+  },
+}));
 
-const ButtonGroup = styled(Box)({
+const ButtonGroup = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: "16px",
   alignItems: "center",
   flexShrink: 0,
-});
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column",
+    width: "100%",
+    maxWidth: "300px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    gap: "12px",
+  },
+}));
 
-const LaunchButton = styled(Button)({
+const LaunchButton = styled(Button)(({ theme }) => ({
   backgroundColor: canonHeaderTokens.brand.green,
   color: "#ffffff",
   height: "48px",
@@ -150,9 +191,12 @@ const LaunchButton = styled(Button)({
   "&:hover": {
     backgroundColor: canonHeaderTokens.brand.greenLight,
   },
-});
+  [theme.breakpoints.down("md")]: {
+    width: "100%",
+  },
+}));
 
-const DocsButton = styled(Button)({
+const DocsButton = styled(Button)(({ theme }) => ({
   borderColor: canonHeaderTokens.foreground.accent40,
   color: canonHeaderTokens.foreground.accent10,
   height: "48px",
@@ -170,9 +214,12 @@ const DocsButton = styled(Button)({
     borderColor: canonHeaderTokens.foreground.accent30,
     backgroundColor: "rgba(55, 55, 62, 0.1)",
   },
-});
+  [theme.breakpoints.down("md")]: {
+    width: "100%",
+  },
+}));
 
-const Footer = styled(Box)({
+const Footer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -182,25 +229,44 @@ const Footer = styled(Box)({
   paddingLeft: "24px",
   paddingRight: "16px",
   flexShrink: 0,
-});
+  [theme.breakpoints.down("md")]: {
+    flexDirection: "column",
+    gap: "24px",
+    paddingTop: "32px",
+    alignItems: "flex-start",
+  },
+  [theme.breakpoints.down("sm")]: {
+    paddingLeft: "16px",
+    paddingRight: "16px",
+    gap: "16px",
+  },
+}));
 
-const FooterLeft = styled(Box)({
+const FooterLeft = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: "16px",
   alignItems: "center",
   fontSize: "13px",
   fontWeight: 400,
   flexShrink: 0,
-});
+  flexWrap: "wrap",
+  [theme.breakpoints.down("sm")]: {
+    gap: "12px",
+    fontSize: "12px",
+  },
+}));
 
-const FooterLink = styled(Typography)({
+const FooterLink = styled(Typography)(({ theme }) => ({
   fontSize: "13px",
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent30,
   flexShrink: 0,
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "12px",
+  },
+}));
 
-const FooterLinkActive = styled(Typography)({
+const FooterLinkActive = styled(Typography)(({ theme }) => ({
   fontSize: "13px",
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
@@ -209,7 +275,10 @@ const FooterLinkActive = styled(Typography)({
   "&:hover": {
     color: canonHeaderTokens.foreground.accent10,
   },
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "12px",
+  },
+}));
 
 const FooterRight = styled(Box)({
   display: "flex",
@@ -225,14 +294,17 @@ const PublicGoodSection = styled(Box)({
   flexShrink: 0,
 });
 
-const PublicGoodText = styled(Typography)({
+const PublicGoodText = styled(Typography)(({ theme }) => ({
   fontSize: "13px",
   fontStyle: "italic",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent30,
   flexShrink: 0,
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "12px",
+  },
+}));
 
 const EthLogoContainer = styled(Box)({
   height: "14px",
@@ -247,10 +319,13 @@ const EthLogoContainer = styled(Box)({
   },
 });
 
-const EthereumText = styled(Typography)({
+const EthereumText = styled(Typography)(({ theme }) => ({
   fontSize: "13px",
   fontWeight: 600,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
   flexShrink: 0,
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "12px",
+  },
+}));
