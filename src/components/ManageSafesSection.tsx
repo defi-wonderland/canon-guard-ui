@@ -11,11 +11,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Address } from "viem";
-import { HeaderLogo } from "~/components/Header";
+import { Footer } from "~/components/Footer";
+import { Header } from "~/components/Header";
 import { SafeAccountCard } from "~/components/shared/SafeAccountCard";
 import {
   PageContainer,
-  SetupHeader,
   SetupContentArea,
   SetupFormWrapper,
   SetupSectionTitle,
@@ -133,21 +133,18 @@ export const ManageSafesSection = () => {
   if (isLoading) {
     return (
       <PageContainer>
-        <SetupHeader>
-          <HeaderLogo onClick={handleLogoClick} />
-        </SetupHeader>
+        <Header isMinimalMode onClearConfig={handleLogoClick} />
         <LoadingContainer>
           <CircularProgress size={32} sx={{ color: canonHeaderTokens.foreground.accent20 }} />
         </LoadingContainer>
+        <Footer />
       </PageContainer>
     );
   }
 
   return (
     <PageContainer data-testid='manage-safes-page'>
-      <SetupHeader>
-        <HeaderLogo onClick={handleLogoClick} />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={handleLogoClick} />
 
       <SetupContentArea>
         <SetupFormWrapper>
@@ -213,6 +210,7 @@ export const ManageSafesSection = () => {
           )}
         </SetupFormWrapper>
       </SetupContentArea>
+      <Footer />
     </PageContainer>
   );
 };
