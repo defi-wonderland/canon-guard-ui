@@ -8,7 +8,7 @@
 
 import { Box, styled } from "@mui/material";
 import { Address } from "viem";
-import { ChainIcon, ChevronRightIcon, ShieldCheckIcon } from "~/components/icons";
+import { ChainIcon, ChevronRightIcon, ShieldCheckIcon, WalletIcon } from "~/components/icons";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { truncateAddress } from "~/utils";
@@ -25,6 +25,8 @@ export interface SafeAccountCardProps {
   threshold?: number;
   /** Total number of signers */
   totalSigners?: number;
+  /** Whether the connected wallet is a signer of this safe */
+  isSigner?: boolean;
   /** Whether this is the currently active safe */
   isCurrentSafe?: boolean;
   /** Click handler for selecting this safe */
@@ -44,6 +46,7 @@ export const SafeAccountCard = ({
   queueCount,
   threshold,
   totalSigners,
+  isSigner,
   isCurrentSafe = false,
   onClick,
   variant = "full",
@@ -94,7 +97,15 @@ export const SafeAccountCard = ({
                 <AddressText>{truncateAddress(address)}</AddressText>
               </CopyableText>
             </AddressRow>
-            <ChainNameSubtle>{chainConfig?.name || "Unknown Chain"}</ChainNameSubtle>
+            <ProfileSubRow>
+              <ChainNameSubtle>{chainConfig?.name || "Unknown Chain"}</ChainNameSubtle>
+              {isSigner && (
+                <SignerBadge>
+                  <WalletIcon size={10} />
+                  Signer
+                </SignerBadge>
+              )}
+            </ProfileSubRow>
           </ProfileInfo>
         </ProfileContent>
       </ProfileSection>
@@ -258,12 +269,33 @@ const AddressText = styled("span")({
   color: canonHeaderTokens.foreground.accent0,
 });
 
+const ProfileSubRow = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+});
+
 const ChainNameSubtle = styled("span")({
   fontFamily: "Inter, sans-serif",
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
+});
+
+const SignerBadge = styled("span")({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "4px",
+  padding: "2px 8px",
+  borderRadius: "100px",
+  backgroundColor: `${canonHeaderTokens.brand.green}18`,
+  color: canonHeaderTokens.brand.green,
+  fontFamily: "Inter, sans-serif",
+  fontSize: "11px",
+  fontWeight: 600,
+  lineHeight: "14px",
+  letterSpacing: "0.3px",
 });
 
 const ChainStatsRow = styled(Box)({
