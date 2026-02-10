@@ -97,15 +97,6 @@ export const SafeAccountCard = ({
                 <AddressText>{truncateAddress(address)}</AddressText>
               </CopyableText>
             </AddressRow>
-            <ProfileSubRow>
-              <ChainNameSubtle>{chainConfig?.name || "Unknown Chain"}</ChainNameSubtle>
-              {isSigner && (
-                <SignerBadge>
-                  <WalletIcon size={10} />
-                  Signer
-                </SignerBadge>
-              )}
-            </ProfileSubRow>
           </ProfileInfo>
         </ProfileContent>
       </ProfileSection>
@@ -117,6 +108,12 @@ export const SafeAccountCard = ({
           <ChainName>{chainConfig?.shortName || chainConfig?.name || "Unknown"}</ChainName>
         </ChainInfo>
         <StatsSection>
+          {isSigner && (
+            <SignerBadge>
+              <WalletIcon size={10} />
+              Signer
+            </SignerBadge>
+          )}
           {queueCount !== undefined && (
             <StatItem>
               <StatValue>{queueCount}</StatValue>
@@ -267,12 +264,6 @@ const AddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
-});
-
-const ProfileSubRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
 });
 
 const ChainNameSubtle = styled("span")({
