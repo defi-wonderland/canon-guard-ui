@@ -49,6 +49,7 @@ Canon Guard UI uses Playwright with Walletless for fast, reliable E2E testing.
 ### Prerequisites
 
 1. Install dependencies:
+
    ```bash
    pnpm install
    pnpm playwright:install
@@ -91,12 +92,12 @@ pnpm test:e2e:debug tests/wallet-connection.spec.ts
 Example test:
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('should connect wallet', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: /connect/i }).click();
-  await page.getByText('E2E Test Wallet').click();
+test("should connect wallet", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /connect/i }).click();
+  await page.getByText("E2E Test Wallet").click();
   await expect(page.getByText(/0xf39f/i)).toBeVisible();
 });
 ```
