@@ -13,9 +13,10 @@ import type { Address } from "viem";
 interface EmergencyModePanelProps {
   isOpen: boolean;
   onClose: () => void;
+  testIdPrefix?: string;
 }
 
-export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps) => {
+export const EmergencyModePanel = ({ isOpen, onClose, testIdPrefix }: EmergencyModePanelProps) => {
   const config = useConfig();
   const navigateWithParams = useNavigateWithParams();
   const { guardAddress } = useStateContext();
@@ -23,6 +24,7 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
   const { emergencyMode, emergencyTrigger, emergencyCaller, refetch } = useCanonGuardConfig();
 
   const [isActivating, setIsActivating] = useState(false);
+  const buildTestId = (suffix: string) => (testIdPrefix ? `${testIdPrefix}-${suffix}` : suffix);
 
   // Permission checks
   const isTrigger =
@@ -70,10 +72,10 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
   return (
     <>
       <DrawerOverlay $isOpen={isOpen} onClick={onClose} />
-      <DrawerPanel $isOpen={isOpen}>
+      <DrawerPanel $isOpen={isOpen} data-testid={buildTestId("emergency-mode-panel")}>
         <PanelContent>
           {/* Close button */}
-          <CloseButton onClick={onClose}>
+          <CloseButton onClick={onClose} data-testid={buildTestId("emergency-mode-close-button")}>
             <XIcon size={16} color={canonHeaderTokens.foreground.accent0} />
           </CloseButton>
 
@@ -98,7 +100,9 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
                   <ShieldAlertIcon size={24} color={isEmergencyOn ? "#FFFFFF" : "#E1AB11"} />
                 </StatusIconWrapper>
                 <StatusInfo>
-                  <StatusTitle>Emergency Mode: {isEmergencyOn ? "ON" : "OFF"}</StatusTitle>
+                  <StatusTitle data-testid={buildTestId("emergency-mode-panel-status-title")}>
+                    Emergency Mode: {isEmergencyOn ? "ON" : "OFF"}
+                  </StatusTitle>
                   <StatusSubtitle>Limit who can execute transactions</StatusSubtitle>
                 </StatusInfo>
               </StatusSection>
@@ -141,13 +145,22 @@ export const EmergencyModePanel = ({ isOpen, onClose }: EmergencyModePanelProps)
               )}
 
               {canActivate && (
-                <ActivateButton onClick={handleActivateEmergencyMode} disabled={isActivating}>
+                <ActivateButton
+                  onClick={handleActivateEmergencyMode}
+                  disabled={isActivating}
+                  data-testid={buildTestId("activate-emergency-mode-button")}
+                >
                   {isActivating ? <CircularProgress size={16} sx={{ color: "#FFFFFF" }} /> : "ACTIVATE EMERGENCY MODE"}
                 </ActivateButton>
               )}
 
               {canDeactivate && (
-                <DeactivateButton onClick={handleDeactivateEmergencyMode}>TURN OFF EMERGENCY MODE</DeactivateButton>
+                <DeactivateButton
+                  onClick={handleDeactivateEmergencyMode}
+                  data-testid={buildTestId("deactivate-emergency-mode-button")}
+                >
+                  TURN OFF EMERGENCY MODE
+                </DeactivateButton>
               )}
 
               {isEmergencyOn && !isCaller && (
@@ -190,7 +203,10 @@ const DrawerPanel = styled(Box, {
   width: "496px",
   backgroundColor: canonHeaderTokens.background.layer1,
   transform: $isOpen ? "translateX(0)" : "translateX(calc(100% + 24px))",
-  transition: "transform 0.3s ease",
+  opacity: $isOpen ? 1 : 0,
+  visibility: $isOpen ? "visible" : "hidden",
+  pointerEvents: $isOpen ? "auto" : "none",
+  transition: "transform 0.3s ease, opacity 0.2s ease, visibility 0.2s ease",
   zIndex: 1001,
   display: "flex",
   flexDirection: "column",

@@ -192,23 +192,31 @@ export const SettingsSection = () => {
             <SettingInfo>
               <SettingTitleRow>
                 <SettingTitle>Emergency Mode:</SettingTitle>
-                <StatusIndicator>
+                <StatusIndicator data-testid='emergency-mode-status'>
                   <StatusDot
                     $color={emergencyMode ? canonHeaderTokens.status.red : canonHeaderTokens.foreground.accent30}
                   />
-                  <StatusLabel>{emergencyMode ? "ON" : "OFF"}</StatusLabel>
+                  <StatusLabel data-testid='emergency-mode-status-label'>{emergencyMode ? "ON" : "OFF"}</StatusLabel>
                 </StatusIndicator>
               </SettingTitleRow>
               <SettingDescription>Use this when keys are compromised or signers are under pressure.</SettingDescription>
             </SettingInfo>
           </SettingCardLeft>
-          <OutlineButton $width='108px' onClick={() => setEmergencyPanelOpen(true)}>
+          <OutlineButton
+            $width='108px'
+            onClick={() => setEmergencyPanelOpen(true)}
+            data-testid='settings-emergency-edit-button'
+          >
             EDIT
           </OutlineButton>
         </SettingCard>
 
         {/* Emergency Mode Panel */}
-        <EmergencyModePanel isOpen={emergencyPanelOpen} onClose={() => setEmergencyPanelOpen(false)} />
+        <EmergencyModePanel
+          isOpen={emergencyPanelOpen}
+          onClose={() => setEmergencyPanelOpen(false)}
+          testIdPrefix='settings'
+        />
 
         {/* Canon Guard Status Card */}
         <CanonGuardCard>

@@ -145,7 +145,11 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
       </SafeMenu>
 
       {/* Emergency Mode Panel */}
-      <EmergencyModePanel isOpen={emergencyPanelOpen} onClose={() => setEmergencyPanelOpen(false)} />
+      <EmergencyModePanel
+        isOpen={emergencyPanelOpen}
+        onClose={() => setEmergencyPanelOpen(false)}
+        testIdPrefix='header'
+      />
     </DropdownWrapper>
   );
 };
