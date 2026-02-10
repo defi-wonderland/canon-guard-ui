@@ -112,8 +112,8 @@ Overview of all application features and their current test coverage status.
 - [x] Deploy Canon Guard via in-app wizard — `deploy-canon-guard.spec.ts`
 - [x] Attach Canon Guard (initial setup flow) — `attach-canon-guard.spec.ts`
 - [x] Attach Canon Guard (Settings page) — `settings-attach-flow.spec.ts`
-- [ ] Detach Canon Guard from Safe
-- [ ] Detached mode banner and UX (partially verified in attach tests, no dedicated test)
+- [x] Detach Canon Guard from Safe — `settings-attach-flow.spec.ts`
+- [x] Detached mode banner and Learn More panel — `settings-attach-flow.spec.ts`
 
 ### Transaction Creation
 
