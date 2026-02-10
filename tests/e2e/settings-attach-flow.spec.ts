@@ -305,6 +305,141 @@ test.describe.serial("Settings Attach Flow", () => {
     await page.waitForTimeout(1000);
   });
 
+  test("should activate emergency mode from Settings page", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+
+    // Step 1: Navigate to the app
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner (also emergency trigger/caller)
+    await switchToDeployment(deployment);
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Wait for queue page (guard is attached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 3: Navigate to Settings
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 4: Open Emergency Mode panel
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("OFF", { timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-emergency-edit-button").click();
+
+    await expect(page.getByTestId("settings-emergency-mode-panel")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await expect(page.getByTestId("settings-emergency-mode-panel-status-title")).toHaveText("Emergency Mode: OFF", {
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
+
+    // Step 5: Activate emergency mode
+    await page.getByTestId("settings-activate-emergency-mode-button").click();
+
+    // Panel closes after tx confirmation and config refresh
+    await expect(page.getByTestId("settings-emergency-mode-panel")).not.toBeVisible({
+      timeout: TEST_TIMEOUTS.TRANSACTION,
+    });
+
+    // Step 6: Verify emergency mode is enabled in Settings and banner is shown
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("ON", { timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByText("Emergency Mode Activated")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+  });
+
+  test("should deactivate emergency mode from Settings page", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+
+    // Step 1: Navigate to the app (emergency mode was activated in previous test)
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner (also emergency caller)
+    await switchToDeployment(deployment);
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Wait for queue page and verify emergency banner is visible
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByText("Emergency Mode Activated")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    // Step 3: Navigate to Settings
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 4: Open Emergency Mode panel and start turn-off flow
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("ON", { timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-emergency-edit-button").click();
+
+    await expect(page.getByTestId("settings-emergency-mode-panel")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await expect(page.getByTestId("settings-deactivate-emergency-mode-button")).toBeVisible({
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
+    await page.getByTestId("settings-deactivate-emergency-mode-button").click();
+
+    // Step 5: Sign the two transactions (Queue + Sign)
+    await expect(page).toHaveURL(/\/create\/action\/turn-off-emergency/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText("1/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText("2/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    await page.waitForTimeout(1000);
+
+    // Step 6: Execute queued turn-off-emergency transaction
+    await page.getByTestId("view-queue-button").click();
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await page.getByTestId("execute-button").click();
+    await page.waitForTimeout(1000);
+
+    // Step 7: Verify emergency mode is disabled
+    await expect(page.getByText("Emergency Mode Activated")).not.toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("OFF", { timeout: TEST_TIMEOUTS.LONG });
+  });
+
   test("should detach Canon Guard via Settings page", async ({ page, deployments, switchToDeployment }) => {
     const deployment = deployments[2];
     const { safeAddress } = deployment.safe;

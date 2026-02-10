@@ -157,8 +157,8 @@ Overview of all application features and their current test coverage status.
 
 ### Emergency Mode
 
-- [ ] Activate emergency mode
-- [ ] Deactivate emergency mode
+- [x] Activate emergency mode — `settings-attach-flow.spec.ts`
+- [x] Deactivate emergency mode — `settings-attach-flow.spec.ts`
 
 ### Settings & Inspection
 
