@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Typography, styled, CircularProgress } from "@mui/material";
+import { ActionDetailModal } from "~/components/ActionDetailModal";
 import {
   SearchIcon,
   ShieldCheckIcon,
@@ -52,6 +53,9 @@ export const CanonListSection = () => {
   const [renameModalOpen, setRenameModalOpen] = useState(false);
   const [selectedEntityForRename, setSelectedEntityForRename] = useState<RegisteredEntity | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
+
+  // Action detail modal state
+  const [selectedEntityForDetail, setSelectedEntityForDetail] = useState<RegisteredEntity | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -411,6 +415,7 @@ export const CanonListSection = () => {
                     onProposePreApproval={() => handleProposePreApproval(entity)}
                     onDeployChild={entity.isHub ? () => handleDeployChild(entity) : undefined}
                     onRemove={() => handleRemove(entity)}
+                    onTitleClick={() => setSelectedEntityForDetail(entity)}
                     isRemoving={removingAddress === entity.address && isExecuting}
                     isConnected={isConnected}
                     isSigner={isSigner}
@@ -441,6 +446,7 @@ export const CanonListSection = () => {
                                 onRename={() => handleRename(child)}
                                 onProposePreApproval={undefined} // Children don't have pre-approval
                                 onRemove={undefined} // Children can't be removed directly
+                                onTitleClick={() => setSelectedEntityForDetail(child)}
                                 isRemoving={false}
                                 isConnected={isConnected}
                                 isSigner={isSigner}
@@ -515,6 +521,16 @@ export const CanonListSection = () => {
         currentLabel={selectedEntityForRename?.label || ""}
         isLoading={isRenaming}
       />
+
+      {/* Action Detail Modal */}
+      {selectedEntityForDetail && (
+        <ActionDetailModal
+          isOpen={!!selectedEntityForDetail}
+          onClose={() => setSelectedEntityForDetail(null)}
+          data={{ mode: "canonList", entity: selectedEntityForDetail }}
+          chainId={chainId}
+        />
+      )}
     </Container>
   );
 };

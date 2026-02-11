@@ -304,4 +304,320 @@ test.describe.serial("Settings Attach Flow", () => {
     // Wait for execution to complete
     await page.waitForTimeout(1000);
   });
+
+  test("should activate emergency mode from Settings page", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+
+    // Step 1: Navigate to the app
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner (also emergency trigger/caller)
+    await switchToDeployment(deployment);
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Wait for queue page (guard is attached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 3: Navigate to Settings
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 4: Open Emergency Mode panel
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("OFF", { timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-emergency-edit-button").click();
+
+    await expect(page.getByTestId("settings-emergency-mode-panel")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await expect(page.getByTestId("settings-emergency-mode-panel-status-title")).toHaveText("Emergency Mode: OFF", {
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
+
+    // Step 5: Activate emergency mode
+    await page.getByTestId("settings-activate-emergency-mode-button").click();
+
+    // Panel closes after tx confirmation and config refresh
+    await expect(page.getByTestId("settings-emergency-mode-panel")).not.toBeVisible({
+      timeout: TEST_TIMEOUTS.TRANSACTION,
+    });
+
+    // Step 6: Verify emergency mode is enabled in Settings and banner is shown
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("ON", { timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByText("Emergency Mode Activated")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+  });
+
+  test("should deactivate emergency mode from Settings page", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+
+    // Step 1: Navigate to the app (emergency mode was activated in previous test)
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner (also emergency caller)
+    await switchToDeployment(deployment);
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Wait for queue page and verify emergency banner is visible
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByText("Emergency Mode Activated")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    // Step 3: Navigate to Settings
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 4: Open Emergency Mode panel and start turn-off flow
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("ON", { timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-emergency-edit-button").click();
+
+    await expect(page.getByTestId("settings-emergency-mode-panel")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await expect(page.getByTestId("settings-deactivate-emergency-mode-button")).toBeVisible({
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
+    await page.getByTestId("settings-deactivate-emergency-mode-button").click();
+
+    // Step 5: Sign the two transactions (Queue + Sign)
+    await expect(page).toHaveURL(/\/create\/action\/turn-off-emergency/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText("1/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+    await expect(page.getByText("2/2")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    await page.waitForTimeout(1000);
+
+    // Step 6: Execute queued turn-off-emergency transaction
+    await page.getByTestId("view-queue-button").click();
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await page.getByTestId("execute-button").click();
+    await page.waitForTimeout(1000);
+
+    // Step 7: Verify emergency mode is disabled
+    await expect(page.getByText("Emergency Mode Activated")).not.toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByTestId("emergency-mode-status-label")).toHaveText("OFF", { timeout: TEST_TIMEOUTS.LONG });
+  });
+
+  test("should detach Canon Guard via Settings page", async ({ page, deployments, switchToDeployment }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+    const { guardAddress } = deployment.canonGuard;
+
+    // Step 1: Navigate to the app
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await switchToDeployment(deployment);
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Wait for the main app to load (guard is attached from previous tests)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+
+    // Verify guard is attached (no detached mode banner)
+    await expect(page.getByTestId("detached-mode-banner")).not.toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 3: Navigate to Settings via the Safe dropdown
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    // Wait for Settings page to load
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Verify the Canon Guard shows as "Attached" before detaching
+    await expect(page.getByTestId("canon-guard-status-label")).toHaveText("Attached", {
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
+
+    // Step 4: Click "DETACH" button in the Canon Guard section
+    await page.getByTestId("settings-detach-button").click();
+
+    // Step 5: Wait for the detach flow page to load
+    await page.waitForTimeout(1000);
+
+    // Step 6: Sign the first transaction (Deploy Detach Action)
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+
+    // Wait for the first transaction to complete
+    await expect(page.getByText("1/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    // Step 7: Sign the second transaction (Queue Detach Action)
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+
+    await expect(page.getByText("2/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    // Step 8: Sign the third transaction (Sign Detach Action)
+    await expect(page.getByTestId("sign-button")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("sign-button").click();
+
+    await expect(page.getByText("3/3")).toBeVisible({ timeout: TEST_TIMEOUTS.TRANSACTION });
+
+    await page.waitForTimeout(1000);
+
+    // Step 9: Click "View Queue" to go back to the queue
+    await page.getByTestId("view-queue-button").click();
+
+    // Wait for the queue page to load
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 10: Execute the detach transaction
+    await expect(page.getByTestId("execute-button")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await page.getByTestId("execute-button").click();
+
+    // After detaching, the Safe no longer has a guard on-chain.
+    // The app reloads and shows the "no guard" choice screen.
+    // Re-enter the guard address to continue in detached mode.
+    await expect(page.getByTestId("no-guard-message")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await page.getByTestId("use-existing-guard-button").click();
+
+    await expect(page.getByTestId("guard-address-label")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("guard-address-input").fill(guardAddress);
+
+    const continueButton = page.getByTestId("guard-continue-button");
+    await expect(continueButton).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
+    await continueButton.click();
+
+    // Step 11: Verify the detached mode banner appears (confirms guard is detached)
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByTestId("detached-mode-banner")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 12: Navigate to Settings and verify guard shows as "Detached"
+    await page.getByTestId("header-safe-dropdown-button").click();
+    await expect(page.getByTestId("safe-dropdown-menu")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await page.getByTestId("settings-menu-item").click();
+
+    await page.waitForURL(/\/settings/, { timeout: TEST_TIMEOUTS.MEDIUM });
+    await expect(page.getByText("General Settings")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Verify the Canon Guard shows as "Detached"
+    await expect(page.getByTestId("canon-guard-status-label")).toHaveText("Detached", {
+      timeout: TEST_TIMEOUTS.SHORT,
+    });
+
+    // Verify the button now says "ATTACH" (inverse of what it was before)
+    await expect(page.getByTestId("settings-attach-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+  });
+
+  test("should display detached mode banner with working Learn More panel", async ({
+    page,
+    deployments,
+    switchToDeployment,
+  }) => {
+    const deployment = deployments[2];
+    const { safeAddress } = deployment.safe;
+
+    // Step 1: Navigate to the app (guard was detached in previous test)
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    // Switch signing account to match this deployment's owner
+    await switchToDeployment(deployment);
+
+    // Verify setup form is visible
+    await expect(page.getByTestId("setup-form")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 2: Enter the Safe address and select OP Mainnet
+    await page.getByTestId("safe-address-input").fill(safeAddress);
+
+    const chainSelector = page.getByTestId("chain-selector");
+    await selectChain(page, chainSelector, CHAIN_CONFIG.OP_MAINNET.label);
+
+    // Click Continue
+    await page.getByTestId("continue-button").click();
+    await page.waitForTimeout(1000);
+
+    // Step 3: Wait for the choice screen (Safe has no guard on-chain after detach)
+    // Enter the guard address to continue in detached mode
+    await expect(page.getByTestId("no-guard-message")).toBeVisible({
+      timeout: TEST_TIMEOUTS.LONG,
+    });
+    await page.getByTestId("use-existing-guard-button").click();
+
+    await expect(page.getByTestId("guard-address-label")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+    await page.getByTestId("guard-address-input").fill(deployment.canonGuard.guardAddress);
+
+    const continueButton = page.getByTestId("guard-continue-button");
+    await expect(continueButton).toBeEnabled({ timeout: TEST_TIMEOUTS.LONG });
+    await continueButton.click();
+
+    // Step 4: Verify the detached mode banner is visible
+    await expect(page.getByTestId("queue-search-input")).toBeVisible({ timeout: TEST_TIMEOUTS.LONG });
+    await expect(page.getByTestId("detached-mode-banner")).toBeVisible({ timeout: TEST_TIMEOUTS.MEDIUM });
+
+    // Step 5: Click "Learn more" link in the detached mode banner
+    await page.getByTestId("learn-more-link").click();
+
+    // Step 6: Verify the Deployment Modes Panel opens with correct content
+    await expect(page.getByTestId("deployment-modes-panel")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+    await expect(page.getByText("Attached vs. Detached")).toBeVisible();
+    await expect(page.getByText("You can adopt Canon Guard in two modes.")).toBeVisible();
+
+    // Step 7: Verify the "Attach Canon Guard" button is present (only shown in detached mode)
+    await expect(page.getByTestId("attach-guard-button")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 8: Close the panel
+    await page.getByTestId("close-panel-button").click();
+    await expect(page.getByTestId("deployment-modes-panel")).not.toBeInViewport({ timeout: TEST_TIMEOUTS.SHORT });
+
+    // Step 9: Verify the banner is still visible after closing the panel
+    await expect(page.getByTestId("detached-mode-banner")).toBeVisible({ timeout: TEST_TIMEOUTS.SHORT });
+  });
 });

@@ -11,24 +11,25 @@ import { useCallback, useEffect, useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { Address } from "viem";
-import { HeaderLogo } from "~/components/Header";
+import { Footer } from "~/components/Footer";
+import { Header } from "~/components/Header";
 import { SafeAccountCard } from "~/components/shared/SafeAccountCard";
 import {
   PageContainer,
-  SetupHeader,
   SetupContentArea,
   SetupFormWrapper,
   SetupSectionTitle,
 } from "~/components/shared/StyledComponents";
 import { SupportedChainId, getRpcUrlForChain, getViemChain } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useSafeStorage } from "~/hooks";
+import { useSafeStorage, useWallet } from "~/hooks";
 import { ClientService, SafeService, SavedSafe, SafeStorageService } from "~/services";
 import { SafeInfo } from "~/types";
 
 export const ManageSafesSection = () => {
   const navigate = useNavigate();
   const { currentSafe, previousSafes, refresh } = useSafeStorage();
+  const { address: connectedAddress, isConnected } = useWallet();
 
   const [currentSafeInfo, setCurrentSafeInfo] = useState<SafeInfo | null>(null);
   const [previousSafesInfo, setPreviousSafesInfo] = useState<Map<string, SafeInfo>>(new Map());
@@ -65,6 +66,11 @@ export const ManageSafesSection = () => {
 
     loadSafeInfo();
   }, [currentSafe, previousSafes]);
+
+  const checkIsSigner = (safeInfo: SafeInfo | null | undefined): boolean => {
+    if (!isConnected || !connectedAddress || !safeInfo) return false;
+    return safeInfo.owners.some((owner) => owner.toLowerCase() === connectedAddress.toLowerCase());
+  };
 
   const fetchSafeInfo = async (address: Address, chainId: SupportedChainId): Promise<SafeInfo | null> => {
     try {
@@ -133,21 +139,18 @@ export const ManageSafesSection = () => {
   if (isLoading) {
     return (
       <PageContainer>
-        <SetupHeader>
-          <HeaderLogo onClick={handleLogoClick} />
-        </SetupHeader>
+        <Header isMinimalMode onClearConfig={handleLogoClick} />
         <LoadingContainer>
           <CircularProgress size={32} sx={{ color: canonHeaderTokens.foreground.accent20 }} />
         </LoadingContainer>
+        <Footer />
       </PageContainer>
     );
   }
 
   return (
     <PageContainer data-testid='manage-safes-page'>
-      <SetupHeader>
-        <HeaderLogo onClick={handleLogoClick} />
-      </SetupHeader>
+      <Header isMinimalMode onClearConfig={handleLogoClick} />
 
       <SetupContentArea>
         <SetupFormWrapper>
@@ -161,6 +164,7 @@ export const ManageSafesSection = () => {
                 queueCount={0} // TODO: Load actual queue count
                 threshold={currentSafeInfo?.threshold}
                 totalSigners={currentSafeInfo?.totalOwners}
+                isSigner={checkIsSigner(currentSafeInfo)}
                 isCurrentSafe
                 onClick={handleCurrentSafeClick}
                 testId='current-safe-card'
@@ -203,6 +207,7 @@ export const ManageSafesSection = () => {
                       queueCount={0} // TODO: Load actual queue count
                       threshold={info?.threshold}
                       totalSigners={info?.totalOwners}
+                      isSigner={checkIsSigner(info)}
                       onClick={() => handleSwitchSafe(safe)}
                       testId={`previous-safe-card-${index}`}
                     />
@@ -213,6 +218,7 @@ export const ManageSafesSection = () => {
           )}
         </SetupFormWrapper>
       </SetupContentArea>
+      <Footer />
     </PageContainer>
   );
 };

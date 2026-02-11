@@ -33,9 +33,8 @@ const getInitialViewState = (searchParams: URLSearchParams): ViewState => {
     return "loading";
   }
 
-  // Check if we have a saved current safe in localStorage
-  const currentSafe = SafeStorageService.getCurrentSafe();
-  if (currentSafe) {
+  // Check if we have any saved safes in localStorage - will redirect to manage safes page
+  if (SafeStorageService.hasSavedSafes()) {
     return "loading";
   }
 
@@ -87,25 +86,12 @@ export const SafeVault = () => {
       }
     }
 
-    // Priority 2: localStorage current safe (only if no URL params)
-    let loadedFromLocalStorage = false;
+    // Priority 2: If there are saved safes but no URL params, redirect to manage safes page
     if (!targetAddress) {
-      const currentSafe = SafeStorageService.getCurrentSafe();
-      if (currentSafe) {
-        targetAddress = currentSafe.address;
-        targetChainId = currentSafe.chainId;
-        targetGuardAddress = currentSafe.guardAddress || null;
-        loadedFromLocalStorage = true;
-
-        // Update URL params to reflect the loaded safe
-        const newParams: Record<string, string> = {
-          safeAddress: currentSafe.address,
-          chainId: String(currentSafe.chainId),
-        };
-        if (currentSafe.guardAddress) {
-          newParams.guardAddress = currentSafe.guardAddress;
-        }
-        setSearchParams(newParams, { replace: true });
+      if (SafeStorageService.hasSavedSafes()) {
+        initializedRef.current = true;
+        navigate("/settings/safes", { replace: true });
+        return;
       }
     }
 
@@ -165,8 +151,8 @@ export const SafeVault = () => {
         } catch (error) {
           console.error("Failed to load Safe info:", error);
 
-          // If loaded from localStorage and invalid, remove it to prevent persistent invalid entries
-          if (loadedFromLocalStorage && targetAddress && targetChainId) {
+          // Remove invalid safe from localStorage to prevent persistent invalid entries
+          if (targetAddress && targetChainId) {
             SafeStorageService.removeSafe(targetAddress, targetChainId);
           }
 
