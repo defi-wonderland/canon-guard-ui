@@ -1,5 +1,6 @@
 import { Box, styled } from "@mui/material";
 import { useLocation } from "react-router-dom";
+import { Address } from "viem";
 import { Chain } from "viem/chains";
 import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
@@ -33,7 +34,8 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
   const { isConnected } = useWallet();
   const isSigner = useIsSigner();
   const isCreateActive = location.pathname.startsWith("/create");
-  const hasActiveSessions = sessions.length > 0;
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const hasActiveSessions = safeSessions.length > 0;
 
   // Determine if CREATE button should be disabled and why
   const getCreateDisableReason = (): string | null => {

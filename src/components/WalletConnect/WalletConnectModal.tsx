@@ -101,7 +101,8 @@ export const WalletConnectModal = () => {
 
   if (!isModalOpen) return null;
 
-  const hasActiveSessions = sessions.length > 0;
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
+  const hasActiveSessions = safeSessions.length > 0;
 
   return (
     <Overlay>
@@ -121,7 +122,7 @@ export const WalletConnectModal = () => {
           {hasActiveSessions && (
             <SessionsSection>
               <SectionLabel>CONNECTED DAPPS</SectionLabel>
-              {sessions.map((session) => (
+              {safeSessions.map((session) => (
                 <SessionItem key={session.topic}>
                   <SessionInfo>
                     <SessionName>{session.peer?.metadata?.name || "Unknown dApp"}</SessionName>
