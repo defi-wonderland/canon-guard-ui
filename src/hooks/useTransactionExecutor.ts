@@ -727,6 +727,39 @@ export function useTransactionExecutor() {
   );
 
   /**
+   * Fetch the Safe transaction hash from the Canon Guard contract (read-only, no wallet interaction)
+   * Used to display the correct hash in the UI before signing.
+   *
+   * @param nonce - Optional nonce. If provided, uses getSafeTransactionHash(actionBuilder, nonce).
+   *                If not provided, uses getSafeTransactionHash(actionBuilder) which auto-detects current nonce.
+   */
+  const getSafeTxHash = useCallback(
+    async (guardAddress: Address, actionBuilderAddress: Address, nonce?: number): Promise<Hash | null> => {
+      try {
+        const safeTxHash =
+          nonce !== undefined
+            ? ((await readContract(config, {
+                address: guardAddress,
+                abi: canonGuardAbi,
+                functionName: "getSafeTransactionHash",
+                args: [actionBuilderAddress, BigInt(nonce)],
+              })) as Hash)
+            : ((await readContract(config, {
+                address: guardAddress,
+                abi: canonGuardAbi,
+                functionName: "getSafeTransactionHash",
+                args: [actionBuilderAddress],
+              })) as Hash);
+        return safeTxHash;
+      } catch (error) {
+        console.error("[useTransactionExecutor] Failed to get safeTxHash:", error);
+        return null;
+      }
+    },
+    [config],
+  );
+
+  /**
    * Execute the Sign Transaction step
    * 1. Get the safeTxHash from canonGuard.getSafeTransactionHash(actionBuilderAddress, nonce?)
    * 2. Call safe.approveHash(safeTxHash)
@@ -1032,6 +1065,7 @@ export function useTransactionExecutor() {
     executeCanonTransaction,
     executeRemoveFromRegistry,
     executeCancelTransaction,
+    getSafeTxHash,
     reset,
   };
 }

@@ -476,13 +476,13 @@ export const SigningFlowStep = ({
                     <DetailDivider />
                     <DetailRow>
                       <DetailLabel>Hash</DetailLabel>
-                      {currentStep?.data ? (
+                      {currentStep?.safeTxHash || currentStep?.data ? (
                         <CopyableText
-                          text={currentStep.data}
+                          text={currentStep.safeTxHash || currentStep.data}
                           iconSize={10}
                           iconColor={canonHeaderTokens.foreground.accent30}
                         >
-                          <HashValue>{currentStep.data}</HashValue>
+                          <HashValue>{currentStep.safeTxHash || currentStep.data}</HashValue>
                         </CopyableText>
                       ) : (
                         <HashValue></HashValue>

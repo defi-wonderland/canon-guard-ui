@@ -49,6 +49,8 @@ export interface TransactionStep {
   to: Address;
   data: Hex;
   hash?: Hex;
+  /** The actual Safe transaction hash for sign steps (displayed instead of raw calldata) */
+  safeTxHash?: Hex;
   value?: bigint;
 }
 
