@@ -736,21 +736,23 @@ export function useTransactionExecutor() {
   const getSafeTxHash = useCallback(
     async (guardAddress: Address, actionBuilderAddress: Address, nonce?: number): Promise<Hash | null> => {
       try {
-        const safeTxHash =
-          nonce !== undefined
-            ? ((await readContract(config, {
-                address: guardAddress,
-                abi: canonGuardAbi,
-                functionName: "getSafeTransactionHash",
-                args: [actionBuilderAddress, BigInt(nonce)],
-              })) as Hash)
-            : ((await readContract(config, {
-                address: guardAddress,
-                abi: canonGuardAbi,
-                functionName: "getSafeTransactionHash",
-                args: [actionBuilderAddress],
-              })) as Hash);
-        return safeTxHash;
+        const baseRequest = {
+          address: guardAddress,
+          abi: canonGuardAbi,
+          functionName: "getSafeTransactionHash",
+        } as const;
+
+        if (nonce !== undefined) {
+          return (await readContract(config, {
+            ...baseRequest,
+            args: [actionBuilderAddress, BigInt(nonce)],
+          })) as Hash;
+        }
+
+        return (await readContract(config, {
+          ...baseRequest,
+          args: [actionBuilderAddress],
+        })) as Hash;
       } catch (error) {
         console.error("[useTransactionExecutor] Failed to get safeTxHash:", error);
         return null;
@@ -787,21 +789,10 @@ export function useTransactionExecutor() {
         });
 
         // Step 1: Get the Safe transaction hash from the Canon Guard
-        // Use nonce-specific method if provided, otherwise auto-detect
-        const safeTxHash =
-          nonce !== undefined
-            ? ((await readContract(config, {
-                address: guardAddress,
-                abi: canonGuardAbi,
-                functionName: "getSafeTransactionHash",
-                args: [actionBuilderAddress, BigInt(nonce)],
-              })) as Hash)
-            : ((await readContract(config, {
-                address: guardAddress,
-                abi: canonGuardAbi,
-                functionName: "getSafeTransactionHash",
-                args: [actionBuilderAddress],
-              })) as Hash);
+        const safeTxHash = await getSafeTxHash(guardAddress, actionBuilderAddress, nonce);
+        if (!safeTxHash) {
+          throw new Error("Failed to fetch safe transaction hash");
+        }
 
         console.log("[useTransactionExecutor] Got safeTxHash:", safeTxHash, "for nonce:", nonce);
 
@@ -833,7 +824,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [config, writeContractAsync],
+    [getSafeTxHash, config, writeContractAsync],
   );
 
   /**
