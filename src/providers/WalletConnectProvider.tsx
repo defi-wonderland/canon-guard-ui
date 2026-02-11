@@ -79,6 +79,10 @@ interface WalletConnectProviderProps {
   children: ReactNode;
 }
 
+const normalizeSessions = (sessions: unknown): SessionTypes.Struct[] => {
+  return Array.isArray(sessions) ? (sessions as SessionTypes.Struct[]) : [];
+};
+
 export const WalletConnectProvider = ({ children }: WalletConnectProviderProps) => {
   const { chainId, safeAddress } = useStateContext();
 
@@ -191,7 +195,7 @@ export const WalletConnectProvider = ({ children }: WalletConnectProviderProps) 
             console.log("[WalletConnect] Session acknowledged");
 
             // Refresh sessions from client to get complete data
-            const updatedSessions = client.session.getAll();
+            const updatedSessions = normalizeSessions(client.session.getAll());
             setSessions(updatedSessions);
             setPairingError(null);
           } catch (error) {
@@ -279,7 +283,7 @@ export const WalletConnectProvider = ({ children }: WalletConnectProviderProps) 
         setIsInitialized(true);
 
         // Load existing sessions
-        const existingSessions = client.session.getAll();
+        const existingSessions = normalizeSessions(client.session.getAll());
         setSessions(existingSessions);
 
         console.log("[WalletConnect] Initialized with", existingSessions.length, "existing sessions");
@@ -358,7 +362,7 @@ export const WalletConnectProvider = ({ children }: WalletConnectProviderProps) 
   const disconnectAll = useCallback(async () => {
     if (!signClient) return;
 
-    for (const session of sessions) {
+    for (const session of normalizeSessions(sessions)) {
       await disconnect(session.topic);
     }
   }, [signClient, sessions, disconnect]);
@@ -384,7 +388,7 @@ export const WalletConnectProvider = ({ children }: WalletConnectProviderProps) 
     isInitialized,
     isPairing,
     pairingError,
-    sessions,
+    sessions: normalizeSessions(sessions),
     pairWithUri,
     disconnect,
     disconnectAll,
