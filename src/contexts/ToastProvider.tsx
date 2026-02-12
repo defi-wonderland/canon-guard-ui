@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useMemo, useState } from "react";
+import { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { Alert, Link, Snackbar } from "@mui/material";
 import { ToastContext, ToastInput, ToastItem } from "./toastContext";
 import type { SnackbarCloseReason } from "@mui/material";
@@ -13,6 +13,7 @@ interface ToastProviderProps {
 
 export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const nextToastIdRef = useRef(0);
 
   const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -30,7 +31,10 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
   );
 
   const showToast = useCallback((toast: ToastInput, severity: ToastItem["severity"]) => {
-    setToasts((prev) => [...prev, { id: Date.now() + Math.floor(Math.random() * 1000), severity, ...toast }]);
+    const toastId = nextToastIdRef.current;
+    nextToastIdRef.current += 1;
+
+    setToasts((prev) => [...prev, { id: toastId, severity, ...toast }]);
   }, []);
 
   const showSuccess = useCallback(
