@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { RouterProvider } from "react-router-dom";
 import { WalletConnectModal } from "~/components/WalletConnect";
+import { ToastProvider } from "~/contexts";
 import { router } from "~/router";
 import { StateProvider } from "./StateProvider";
 import { ThemeProvider } from "./ThemeProvider";
@@ -17,9 +18,11 @@ export const Providers = ({ children }: Props) => {
       <StateProvider>
         <WalletProvider>
           <WalletConnectProvider>
-            <RouterProvider router={router} />
-            <WalletConnectModal />
-            {children}
+            <ToastProvider>
+              <RouterProvider router={router} />
+              <WalletConnectModal />
+              {children}
+            </ToastProvider>
           </WalletConnectProvider>
         </WalletProvider>
       </StateProvider>

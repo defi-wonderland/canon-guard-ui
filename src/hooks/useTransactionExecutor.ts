@@ -23,6 +23,7 @@ import type {
   HubChildFormData,
 } from "~/components/NewAction/steps";
 import { getDeployFactory } from "~/config/canonGuardFactories";
+import { getChainConfig, isSupportedChain } from "~/config/chains";
 import { MULTI_SEND_CALL_ONLY } from "~/constants/addresses";
 import {
   SIMPLE_TRANSFERS_FACTORY,
@@ -33,8 +34,18 @@ import {
   PRE_APPROVE_ACTION_FACTORY,
   CHANGE_SAFE_GUARD_ACTION_FACTORY,
 } from "~/constants/canonGuard";
+import { useToast } from "~/contexts";
+import { useStateContext } from "~/hooks/useStateContext";
 import { zeroAddress } from "~/utils";
 import { EPOCH_TIME_MULTIPLIERS } from "~/utils/timeUnits";
+
+const getExplorerTxUrl = (chainId: number | null | undefined, hash: string): string | null => {
+  if (!chainId || !isSupportedChain(chainId)) {
+    return null;
+  }
+
+  return `${getChainConfig(chainId).blockExplorerUrl}/tx/${hash}`;
+};
 
 /**
  * Transaction execution states
@@ -99,6 +110,8 @@ export interface DeployCanonGuardParams {
 export function useTransactionExecutor() {
   const config = useConfig();
   const { writeContractAsync } = useWriteContract();
+  const { showSuccess, showError: showErrorToast } = useToast();
+  const { chainId } = useStateContext();
 
   const [status, setStatus] = useState<ExecutionStatus>("idle");
   const [error, setError] = useState<Error | null>(null);
@@ -183,16 +196,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Deploy successful:", { txHash: hash, deployedAddress });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Action deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
         console.error("Deploy transaction failed:", error);
+        showErrorToast({ message: "Failed to deploy action." });
         return null;
       }
     },
-    [config, writeContractAsync, getTokenDecimals],
+    [chainId, config, getTokenDecimals, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -262,16 +283,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Deploy ArbitraryAction successful:", { txHash: hash, deployedAddress });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Action deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
         console.error("Deploy ArbitraryAction failed:", error);
+        showErrorToast({ message: "Failed to deploy action." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -320,16 +349,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Deploy AllowanceClaimor successful:", { txHash: hash, deployedAddress });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Action deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
         console.error("Deploy AllowanceClaimor failed:", error);
+        showErrorToast({ message: "Failed to deploy action." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -387,16 +424,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Deploy Hub Child successful:", { txHash: hash, deployedAddress });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Action deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
         console.error("Deploy Hub Child failed:", error);
+        showErrorToast({ message: "Failed to deploy action." });
         return null;
       }
     },
-    [config, writeContractAsync, getTokenDecimals],
+    [chainId, config, getTokenDecimals, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -472,16 +517,24 @@ export function useTransactionExecutor() {
           deployedAddress,
         });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Action deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
         console.error("Deploy CappedTokenTransfersHub failed:", error);
+        showErrorToast({ message: "Failed to deploy action." });
         return null;
       }
     },
-    [config, writeContractAsync, getTokenDecimals],
+    [chainId, config, getTokenDecimals, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -533,16 +586,24 @@ export function useTransactionExecutor() {
           deployedAddress,
         });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Guard action deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Transaction failed");
         setError(error);
         setStatus("error");
         console.error("Deploy ChangeSafeGuardAction failed:", error);
+        showErrorToast({ message: "Failed to deploy guard action." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -561,6 +622,7 @@ export function useTransactionExecutor() {
         const error = new Error("No deploy factory configured");
         setError(error);
         setStatus("error");
+        showErrorToast({ message: "No deploy factory configured." });
         return null;
       }
 
@@ -614,16 +676,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Deploy Canon Guard successful:", { txHash: hash, deployedAddress });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Canon Guard deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, deployedAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Deploy Canon Guard failed");
         setError(error);
         setStatus("error");
         console.error("Deploy Canon Guard failed:", error);
+        showErrorToast({ message: "Failed to deploy Canon Guard." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -668,16 +738,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Registry record successful:", { txHash: hash });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Saved to registry successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Registry record failed");
         setError(error);
         setStatus("error");
         console.error("Registry record transaction failed:", error);
+        showErrorToast({ message: "Failed to save to registry." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -714,16 +792,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Queue successful:", { txHash: hash });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Transaction queued successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Queue transaction failed");
         setError(error);
         setStatus("error");
         console.error("Queue transaction failed:", error);
+        showErrorToast({ message: "Failed to queue transaction." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -791,16 +877,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Sign successful:", { txHash: hash, safeTxHash, nonce });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Transaction signed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, safeTxHash };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Sign transaction failed");
         setError(error);
         setStatus("error");
         console.error("Sign transaction failed:", error);
+        showErrorToast({ message: "Failed to sign transaction." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -846,16 +940,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Deploy pre-approval successful:", { txHash: hash, preApprovalAddress });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Pre-approval deployed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return { txHash: hash, preApprovalAddress };
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Deploy pre-approval failed");
         setError(error);
         setStatus("error");
         console.error("Deploy pre-approval failed:", error);
+        showErrorToast({ message: "Failed to deploy pre-approval." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -896,16 +998,24 @@ export function useTransactionExecutor() {
 
         console.log(`Execute transaction confirmed: ${hash}`);
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Transaction executed successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return hash;
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
         setStatus("error");
         console.error("Execute Canon Guard transaction failed:", error);
+        showErrorToast({ message: "Failed to execute transaction." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -942,16 +1052,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Remove from registry successful:", { txHash: hash });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Removed from registry successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return hash;
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Remove from registry failed");
         setError(error);
         setStatus("error");
         console.error("Remove from registry failed:", error);
+        showErrorToast({ message: "Failed to remove from registry." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -989,16 +1107,24 @@ export function useTransactionExecutor() {
 
         console.log("[useTransactionExecutor] Cancel enqueued transaction successful:", { txHash: hash });
         setStatus("success");
+
+        const explorerUrl = getExplorerTxUrl(chainId, hash);
+        showSuccess({
+          message: "Transaction cancelled successfully.",
+          actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+        });
+
         return hash;
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Cancel enqueued transaction failed");
         setError(error);
         setStatus("error");
         console.error("Cancel enqueued transaction failed:", error);
+        showErrorToast({ message: "Failed to cancel transaction." });
         return null;
       }
     },
-    [config, writeContractAsync],
+    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
