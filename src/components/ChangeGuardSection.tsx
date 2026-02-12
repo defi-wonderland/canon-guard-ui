@@ -54,7 +54,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
   const isSigner = useIsSigner();
   const config = MODE_CONFIG[mode];
 
-  const { executeDeployChangeSafeGuardAction, executeQueueTransaction, executeSignTransaction } =
+  const { executeDeployChangeSafeGuardAction, executeQueueTransaction, executeSignTransaction, getSafeTxHash } =
     useTransactionExecutor();
 
   // Flow state
@@ -208,12 +208,19 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
           console.log(`[ChangeGuardSection:${mode}] Deploy successful:`, result.deployedAddress);
           setDeployedActionAddress(result.deployedAddress);
 
-          // Update step to signed and move to next
+          // Re-encode queue step data with real deployed address
+          const realQueueData = encodeFunctionData({
+            abi: canonGuardAbi,
+            functionName: "queueTransaction",
+            args: [result.deployedAddress],
+          });
+
+          // Update step to signed and move to next (with real data)
           setTransactionSteps((prev) => {
             const updated = [...prev];
             updated[stepIndex] = { ...updated[stepIndex], status: "signed", hash: result.txHash };
             if (stepIndex + 1 < updated.length) {
-              updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
+              updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending", data: realQueueData };
             }
             return updated;
           });
@@ -246,11 +253,27 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
 
         if (result) {
           console.log(`[ChangeGuardSection:${mode}] Queue successful:`, result.txHash);
+
+          // Fetch the real safeTxHash for the sign step
+          const fetchedSafeTxHash = await getSafeTxHash(guardAddress as Address, deployedActionAddress);
+          const realSignData = fetchedSafeTxHash
+            ? encodeFunctionData({
+                abi: safeAbi,
+                functionName: "approveHash",
+                args: [fetchedSafeTxHash],
+              })
+            : undefined;
+
           setTransactionSteps((prev) => {
             const updated = [...prev];
             updated[stepIndex] = { ...updated[stepIndex], status: "signed", hash: result.txHash };
             if (stepIndex + 1 < updated.length) {
-              updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
+              updated[stepIndex + 1] = {
+                ...updated[stepIndex + 1],
+                status: "pending",
+                ...(realSignData && { data: realSignData }),
+                ...(fetchedSafeTxHash && { safeTxHash: fetchedSafeTxHash }),
+              };
             }
             return updated;
           });
@@ -314,6 +337,7 @@ export const ChangeGuardSection = ({ mode, onQueueCountChange }: ChangeGuardSect
       executeDeployChangeSafeGuardAction,
       executeQueueTransaction,
       executeSignTransaction,
+      getSafeTxHash,
       onQueueCountChange,
       mode,
     ],
