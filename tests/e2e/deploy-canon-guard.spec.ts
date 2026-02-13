@@ -1,6 +1,7 @@
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS } from "./constants";
 import { test, expect } from "./fixtures";
 import { selectChain } from "./utils/selectChain";
+import { selectOption } from "./utils/selectOption";
 
 // Use serial execution since we modify the Safe state
 test.describe.serial("In-App Canon Guard Deployment", () => {
@@ -56,11 +57,11 @@ test.describe.serial("In-App Canon Guard Deployment", () => {
     // Set short delay values for testing (1 second each)
     // Short execution delay: 1 second
     await page.getByTestId("shortTxExecutionDelay-input").fill("1");
-    await page.getByTestId("shortTxExecutionDelay-select").selectOption("seconds");
+    await selectOption(page, page.getByTestId("shortTxExecutionDelay-select"), "seconds");
 
     // Long execution delay: 2 seconds (Change Guard uses this path)
     await page.getByTestId("longTxExecutionDelay-input").fill("2");
-    await page.getByTestId("longTxExecutionDelay-select").selectOption("seconds");
+    await selectOption(page, page.getByTestId("longTxExecutionDelay-select"), "seconds");
 
     // Use the owner address for emergency trigger and caller
     const emergencyAddress = ANVIL_ACCOUNTS[deployment.index].address;
