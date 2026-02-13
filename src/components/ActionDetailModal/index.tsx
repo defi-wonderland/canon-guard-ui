@@ -35,6 +35,8 @@ interface ActionDetailModalProps {
   // Signer info
   connectedAddress?: Address;
   isSigner?: boolean;
+  emergencyMode?: boolean;
+  emergencyCaller?: Address | null;
 }
 
 export const ActionDetailModal = ({
@@ -50,6 +52,8 @@ export const ActionDetailModal = ({
   onQueue,
   connectedAddress,
   isSigner,
+  emergencyMode,
+  emergencyCaller,
 }: ActionDetailModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -170,6 +174,8 @@ export const ActionDetailModal = ({
               isRemoveLoading={isRemoveLoading}
               connectedAddress={connectedAddress}
               isSigner={isSigner}
+              emergencyMode={emergencyMode}
+              emergencyCaller={emergencyCaller}
             />
           )}
           {activeTab === "details" && <DetailsTab data={data} chainId={chainId} />}
