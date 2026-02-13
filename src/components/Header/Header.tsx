@@ -1,13 +1,16 @@
-import { Box, styled } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Close, Menu } from "@mui/icons-material";
+import { Box, Drawer, styled, useMediaQuery, useTheme } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Address } from "viem";
 import { Chain } from "viem/chains";
 import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { useNavigateWithParams, useWallet, useIsSigner } from "~/hooks";
+import { useNavigateWithParams, useSafeStorage, useWallet, useIsSigner } from "~/hooks";
 import { useStateContext } from "~/hooks/useStateContext";
 import { useWalletConnect } from "~/providers/WalletConnectProvider";
+import { truncateAddress } from "~/utils";
 import { HeaderLogo } from "./HeaderLogo";
 import { HeaderNav } from "./HeaderNav";
 import { HeaderSafeDropdown } from "./HeaderSafeDropdown";
@@ -28,12 +31,19 @@ interface HeaderProps {
 
 export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMinimalMode = false }: HeaderProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { guardAddress } = useStateContext();
   const { isInitialized, openModal, sessions } = useWalletConnect();
-  const { isConnected } = useWallet();
+  const { isConnected, address, connect, disconnect } = useWallet();
+  const { savedSafesCount } = useSafeStorage();
   const isSigner = useIsSigner();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isCreateActive = location.pathname.startsWith("/create");
+  const isQueueActive = location.pathname === "/queue" || location.pathname === "/";
+  const isCanonListActive = location.pathname === "/canon-list";
   const safeSessions = Array.isArray(sessions) ? sessions : [];
   const hasActiveSessions = safeSessions.length > 0;
 
@@ -43,6 +53,41 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
     return null;
   };
   const createDisableReason = getCreateDisableReason();
+  const mobileWalletLabel = isConnected ? truncateAddress(address || "") : "Connect Wallet";
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const handleMobileNavigate = (path: string) => {
+    navigateWithParams(path);
+    closeMobileMenu();
+  };
+
+  const handleMobileSettings = () => {
+    navigateWithParams("/settings");
+    closeMobileMenu();
+  };
+
+  const handleMobileManageSafes = () => {
+    navigate("/settings/safes");
+    closeMobileMenu();
+  };
+
+  const handleMobileCreate = () => {
+    if (createDisableReason) return;
+    navigateWithParams("/create");
+    closeMobileMenu();
+  };
+
+  const handleMobileWallet = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      connect();
+    }
+    closeMobileMenu();
+  };
 
   // In minimal mode, only show logo and wallet dropdown
   if (isMinimalMode) {
@@ -54,6 +99,95 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
           </LogoSection>
         </HeaderLeftSection>
         <HeaderWalletDropdown />
+      </HeaderContainer>
+    );
+  }
+
+  // Mobile mode: use hamburger drawer to avoid header overflow.
+  if (isMobile) {
+    return (
+      <HeaderContainer>
+        <HeaderLeftSection>
+          <LogoSection>
+            <HeaderLogo onClick={onClearConfig} />
+          </LogoSection>
+        </HeaderLeftSection>
+
+        {isInitialized && (
+          <WalletConnectButton
+            onClick={openModal}
+            $hasActiveSessions={hasActiveSessions}
+            aria-label='Open WalletConnect'
+          >
+            <WalletConnectIcon
+              size={24}
+              color={hasActiveSessions ? canonHeaderTokens.brand.green : canonHeaderTokens.foreground.accent20}
+            />
+          </WalletConnectButton>
+        )}
+
+        <MobileMenuButton
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label='Open menu'
+          data-testid='mobile-menu-button'
+        >
+          <Menu fontSize='small' />
+        </MobileMenuButton>
+
+        <MobileDrawer anchor='right' open={mobileMenuOpen} onClose={closeMobileMenu} ModalProps={{ keepMounted: true }}>
+          <MobileDrawerContent>
+            <MobileDrawerHeader>
+              <MobileDrawerTitle>Menu</MobileDrawerTitle>
+              <MobileIconButton onClick={closeMobileMenu} aria-label='Close menu'>
+                <Close fontSize='small' />
+              </MobileIconButton>
+            </MobileDrawerHeader>
+
+            <MobileSection>
+              <MobileSectionLabel>Navigation</MobileSectionLabel>
+              <MobileNavButton $isActive={isQueueActive} onClick={() => handleMobileNavigate("/queue")}>
+                Queue
+                {queueCount > 0 && <MobileQueueBadge>{queueCount}</MobileQueueBadge>}
+              </MobileNavButton>
+              <MobileNavButton $isActive={isCanonListActive} onClick={() => handleMobileNavigate("/canon-list")}>
+                Canon List
+              </MobileNavButton>
+              {isConnected && (
+                <StyledTooltip
+                  title={createDisableReason || ""}
+                  placement='top'
+                  disableHoverListener={!createDisableReason}
+                  disableInteractive={!!createDisableReason}
+                >
+                  <span>
+                    <MobileActionButton onClick={handleMobileCreate} disabled={!!createDisableReason}>
+                      Create
+                    </MobileActionButton>
+                  </span>
+                </StyledTooltip>
+              )}
+            </MobileSection>
+
+            <MobileSection>
+              <MobileSectionLabel>Safe</MobileSectionLabel>
+              <MobileSafeSummary>
+                <MobileSafeLine>Safe {truncateAddress(safeAddress || "")}</MobileSafeLine>
+                <MobileSafeSubLine>{chain?.name || "Unknown Chain"}</MobileSafeSubLine>
+              </MobileSafeSummary>
+              <MobileLinkButton onClick={handleMobileSettings}>Settings</MobileLinkButton>
+              <MobileLinkButton onClick={handleMobileManageSafes}>
+                Manage Safe Accounts{savedSafesCount > 0 ? ` (${savedSafesCount})` : ""}
+              </MobileLinkButton>
+            </MobileSection>
+
+            <MobileSection>
+              <MobileSectionLabel>Wallet</MobileSectionLabel>
+              <MobileWalletButton onClick={handleMobileWallet}>
+                {isConnected ? `Disconnect ${mobileWalletLabel}` : "Connect Wallet"}
+              </MobileWalletButton>
+            </MobileSection>
+          </MobileDrawerContent>
+        </MobileDrawer>
       </HeaderContainer>
     );
   }
@@ -84,7 +218,7 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
       {/* CREATE button: hidden if disconnected, disabled with tooltip if not signer */}
       {isConnected && (
         <StyledTooltip title={createDisableReason || ""} placement='bottom' disableHoverListener={!createDisableReason}>
-          <span style={{ display: "flex", height: "100%" }}>
+          <CreateButtonTooltipWrapper>
             <CreateButton
               $isActive={isCreateActive}
               $disabled={!!createDisableReason}
@@ -93,7 +227,7 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
             >
               CREATE
             </CreateButton>
-          </span>
+          </CreateButtonTooltipWrapper>
         </StyledTooltip>
       )}
       <HeaderSafeDropdown
@@ -136,6 +270,11 @@ const LogoSection = styled(Box)({
 const NavSection = styled(Box)({
   display: "flex",
   alignItems: "center",
+  height: "100%",
+});
+
+const CreateButtonTooltipWrapper = styled("span")({
+  display: "flex",
   height: "100%",
 });
 
@@ -189,3 +328,172 @@ const CreateButton = styled("button")<{ $isActive?: boolean; $disabled?: boolean
     opacity: $disabled ? 1 : 0.8,
   },
 }));
+
+const MobileMenuButton = styled("button")({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100%",
+  width: "64px",
+  border: "none",
+  background: canonHeaderTokens.background.layer1,
+  color: canonHeaderTokens.foreground.accent10,
+  cursor: "pointer",
+  "&:hover": {
+    opacity: 0.85,
+  },
+});
+
+const MobileDrawer = styled(Drawer)({
+  "& .MuiDrawer-paper": {
+    width: "320px",
+    maxWidth: "86vw",
+    borderLeft: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+    backgroundColor: canonHeaderTokens.background.layer1,
+  },
+});
+
+const MobileDrawerContent = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "18px",
+  padding: "16px",
+  backgroundColor: canonHeaderTokens.background.layer1,
+  height: "100%",
+});
+
+const MobileDrawerHeader = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+});
+
+const MobileDrawerTitle = styled("span")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "16px",
+  fontWeight: 600,
+  color: canonHeaderTokens.foreground.accent0,
+});
+
+const MobileIconButton = styled("button")({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "32px",
+  height: "32px",
+  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+  borderRadius: "8px",
+  background: canonHeaderTokens.background.layer1,
+  color: canonHeaderTokens.foreground.accent20,
+  cursor: "pointer",
+});
+
+const MobileSection = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  paddingTop: "10px",
+  borderTop: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+});
+
+const MobileSectionLabel = styled("span")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "11px",
+  fontWeight: 600,
+  letterSpacing: "0.5px",
+  textTransform: "uppercase",
+  color: canonHeaderTokens.foreground.accent10,
+});
+
+const MobileNavButton = styled("button", {
+  shouldForwardProp: (prop) => prop !== "$isActive",
+})<{ $isActive: boolean }>(({ $isActive }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+  minHeight: "40px",
+  padding: "0 12px",
+  borderRadius: "8px",
+  border: `1px solid ${$isActive ? canonHeaderTokens.brand.green : canonHeaderTokens.foreground.accent40}`,
+  backgroundColor: canonHeaderTokens.background.layer1,
+  color: canonHeaderTokens.foreground.accent0,
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  fontWeight: 600,
+  letterSpacing: "0.5px",
+  textTransform: "uppercase",
+  cursor: "pointer",
+}));
+
+const MobileQueueBadge = styled("span")({
+  fontSize: "11px",
+  color: canonHeaderTokens.brand.green,
+});
+
+const MobileActionButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
+  width: "100%",
+  minHeight: "40px",
+  borderRadius: "100px",
+  border: "none",
+  backgroundColor: disabled ? canonHeaderTokens.foreground.accent40 : canonHeaderTokens.brand.green,
+  color: "#ffffff",
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  fontWeight: 600,
+  letterSpacing: "0.5px",
+  textTransform: "uppercase",
+  cursor: disabled ? "not-allowed" : "pointer",
+  opacity: disabled ? 0.6 : 1,
+}));
+
+const MobileSafeSummary = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+  padding: "10px 12px",
+  borderRadius: "8px",
+  backgroundColor: canonHeaderTokens.background.layer1,
+  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+});
+
+const MobileSafeLine = styled("span")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "13px",
+  fontWeight: 500,
+  color: canonHeaderTokens.foreground.accent0,
+});
+
+const MobileSafeSubLine = styled("span")({
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  color: canonHeaderTokens.foreground.accent20,
+});
+
+const MobileLinkButton = styled("button")({
+  minHeight: "36px",
+  padding: "0 12px",
+  borderRadius: "8px",
+  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+  backgroundColor: canonHeaderTokens.background.layer1,
+  color: canonHeaderTokens.foreground.accent10,
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  fontWeight: 500,
+  textAlign: "left",
+  cursor: "pointer",
+});
+
+const MobileWalletButton = styled("button")({
+  minHeight: "40px",
+  padding: "0 12px",
+  borderRadius: "8px",
+  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
+  backgroundColor: canonHeaderTokens.background.layer1,
+  color: canonHeaderTokens.foreground.accent10,
+  fontFamily: "Inter, sans-serif",
+  fontSize: "12px",
+  fontWeight: 500,
+  textAlign: "left",
+  cursor: "pointer",
+});
