@@ -57,6 +57,7 @@ const FooterContainer = styled(Box)({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
+  flexShrink: 0,
   padding: "0 16px 24px 24px",
   width: "100%",
   background: "none",

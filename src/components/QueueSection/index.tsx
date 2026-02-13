@@ -462,22 +462,34 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
 };
 
 // Styled Components
-const Container = styled(Box)({
+const Container = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   width: "100%",
   padding: "32px 120px",
   minHeight: "100%",
-});
+  [theme.breakpoints.down("lg")]: {
+    padding: "24px 48px",
+  },
+  [theme.breakpoints.down("md")]: {
+    padding: "20px 24px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px 12px",
+  },
+}));
 
-const ContentWrapper = styled(Box)({
+const ContentWrapper = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: "20px",
   width: "1024px",
   maxWidth: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    gap: "12px",
+  },
+}));
 
 const LoadingContainer = styled(Box)({
   display: "flex",
@@ -492,21 +504,29 @@ const TitleSection = styled(Box)({
   width: "100%",
 });
 
-const TitleRow = styled(Box)({
+const TitleRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
   padding: "32px 8px 12px 8px",
-});
+  [theme.breakpoints.down("sm")]: {
+    gap: "8px",
+    padding: "12px 4px 8px 4px",
+  },
+}));
 
-const Title = styled("span")({
+const Title = styled("span")(({ theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "24px",
   fontWeight: 500,
   fontStyle: "italic",
   lineHeight: "32px",
   color: canonHeaderTokens.foreground.accent0,
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "20px",
+    lineHeight: "28px",
+  },
+}));
 
 const HelpIconWrapper = styled(Box)({
   display: "flex",
@@ -518,27 +538,40 @@ const HelpIconWrapper = styled(Box)({
   },
 });
 
-const SearchFilterBar = styled(Box)({
+const SearchFilterBar = styled(Box)(({ theme }) => ({
   display: "flex",
-  alignItems: "center",
+  alignItems: "stretch",
   height: "48px",
   borderRadius: "8px",
   overflow: "hidden",
   width: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexWrap: "wrap",
+    height: "auto",
+    rowGap: "1px",
+    backgroundColor: canonHeaderTokens.background.layer0,
+  },
+}));
 
-const SearchSection = styled(Box)({
+const SearchSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
   flex: 1,
   height: "100%",
-  padding: "16px",
+  padding: "0 16px",
+  boxSizing: "border-box",
   backgroundColor: canonHeaderTokens.background.layer1,
-});
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+    minHeight: "44px",
+    padding: "0 12px",
+  },
+}));
 
 const SearchInput = styled("input")({
   flex: 1,
+  minWidth: 0,
   background: "transparent",
   border: "none",
   outline: "none",
@@ -552,14 +585,17 @@ const SearchInput = styled("input")({
   },
 });
 
-const FilterDivider = styled(Box)({
+const FilterDivider = styled(Box)(({ theme }) => ({
   width: "1px",
   minWidth: "1px",
   height: "100%",
   backgroundColor: canonHeaderTokens.background.layer0,
-});
+  [theme.breakpoints.down("sm")]: {
+    display: "none",
+  },
+}));
 
-const FilterTab = styled("button")<{ $isActive: boolean }>(({ $isActive }) => ({
+const FilterTab = styled("button")<{ $isActive: boolean }>(({ $isActive, theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -573,22 +609,34 @@ const FilterTab = styled("button")<{ $isActive: boolean }>(({ $isActive }) => ({
   "&:hover": {
     opacity: 1,
   },
+  [theme.breakpoints.down("sm")]: {
+    flex: "1 1 33%",
+    minHeight: "44px",
+    padding: "0 8px",
+  },
 }));
 
-const FilterLabel = styled("span")<{ $isActive: boolean }>(({ $isActive }) => ({
+const FilterLabel = styled("span")<{ $isActive: boolean }>(({ $isActive, theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",
   color: $isActive ? canonHeaderTokens.foreground.accent0 : canonHeaderTokens.foreground.accent20,
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "11px",
+    lineHeight: "14px",
+  },
 }));
 
-const FilterCount = styled("span")<{ $isActive: boolean }>(({ $isActive }) => ({
+const FilterCount = styled("span")<{ $isActive: boolean }>(({ $isActive, theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "12px",
   fontWeight: 400,
   lineHeight: "16px",
   color: $isActive ? canonHeaderTokens.brand.green : canonHeaderTokens.foreground.accent30,
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "11px",
+  },
 }));
 
 const QueueItemsContainer = styled(Box)({
@@ -638,30 +686,41 @@ const EmptyState = styled(Box)({
   fontStyle: "italic",
 });
 
-const PaginationRow = styled(Box)({
+const PaginationRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   padding: "12px 0",
   borderRadius: "12px",
   width: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "10px",
+  },
+}));
 
-const PaginationInfo = styled("span")({
+const PaginationInfo = styled("span")(({ theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent30,
   padding: "0 16px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: 0,
+  },
+}));
 
-const PaginationControls = styled(Box)({
+const PaginationControls = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
   padding: "0 16px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: 0,
+  },
+}));
 
 const PaginationButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   display: "flex",

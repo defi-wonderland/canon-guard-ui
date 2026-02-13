@@ -1,6 +1,7 @@
 import { ANVIL_ACCOUNTS, CHAIN_CONFIG, TEST_TIMEOUTS, VITALIK_ADDRESS } from "./constants";
 import { test, expect } from "./fixtures";
 import { selectChain } from "./utils/selectChain";
+import { selectOption } from "./utils/selectOption";
 
 // Use serial execution to ensure tests run in order (attach must run before arbitrary action)
 test.describe.serial("Canon Guard E2E Flow", () => {
@@ -318,7 +319,7 @@ test.describe.serial("Canon Guard E2E Flow", () => {
 
     // Epoch length - select "1 month" by setting the input to 1 and selecting "Months"
     await page.getByTestId("hub-epoch-length-input").fill("1");
-    await page.getByTestId("hub-epoch-unit-select").selectOption({ label: "Months" });
+    await selectOption(page, page.getByTestId("hub-epoch-unit-select"), "Months");
 
     // Token address (USDC on Optimism)
     await page.getByTestId("hub-token-address-input").fill(USDC_OPTIMISM);

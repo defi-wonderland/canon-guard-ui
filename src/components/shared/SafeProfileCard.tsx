@@ -25,9 +25,9 @@ export const SafeProfileCard = ({ address, chainId }: SafeProfileCardProps) => {
         <Details>
           <AddressRow>
             <Label>Safe</Label>
-            <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent30}>
+            <AddressCopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent30}>
               <AddressText>{address}</AddressText>
-            </CopyableText>
+            </AddressCopyableText>
           </AddressRow>
           <ChainRow>
             <ChainIcon chainId={chainId as SupportedChainId} size={14} />
@@ -67,6 +67,7 @@ const IconWrapper = styled(Box)({
 
 const Details = styled(Box)({
   display: "flex",
+  flex: 1,
   flexDirection: "column",
   gap: "6px",
   minWidth: 0, // Allow text truncation
@@ -76,6 +77,8 @@ const AddressRow = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "6px",
+  minWidth: 0,
+  width: "100%",
 });
 
 const Label = styled("span")({
@@ -87,11 +90,27 @@ const Label = styled("span")({
 });
 
 const AddressText = styled("span")({
+  display: "block",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   fontFamily: "Inter, sans-serif",
   fontSize: "14px",
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
+});
+
+const AddressCopyableText = styled(CopyableText)({
+  display: "flex",
+  alignItems: "center",
+  minWidth: 0,
+  maxWidth: "100%",
+  flex: 1,
+  "& > .copyable-content": {
+    minWidth: 0,
+    overflow: "hidden",
+  },
 });
 
 const ChainRow = styled(Box)({
