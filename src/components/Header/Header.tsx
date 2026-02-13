@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Close, Menu } from "@mui/icons-material";
 import { Box, Drawer, styled, useMediaQuery, useTheme } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Address } from "viem";
 import { Chain } from "viem/chains";
 import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
@@ -31,7 +31,6 @@ interface HeaderProps {
 
 export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMinimalMode = false }: HeaderProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const navigateWithParams = useNavigateWithParams();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -70,7 +69,7 @@ export const Header = ({ safeAddress, chain, queueCount = 0, onClearConfig, isMi
   };
 
   const handleMobileManageSafes = () => {
-    navigate("/settings/safes");
+    navigateWithParams("/settings/safes");
     closeMobileMenu();
   };
 
