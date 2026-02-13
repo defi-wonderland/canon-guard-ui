@@ -68,7 +68,7 @@
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.6",
     "@vitejs/plugin-react": "4.5.1",
-    "@wonderland/walletless": "1.1.0",
+    "@wonderland/walletless": "1.2.0",
     "dotenv": "17.2.3",
     "eslint": "9.28.0",
     "eslint-config-prettier": "10.1.5",
