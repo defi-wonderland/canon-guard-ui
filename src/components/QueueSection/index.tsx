@@ -453,6 +453,8 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
           isRemoveLoading={removingItemAddress === selectedItem.actionBuilderAddress && isRemoving}
           connectedAddress={connectedAddress}
           isSigner={isSigner}
+          emergencyMode={emergencyMode ?? false}
+          emergencyCaller={emergencyCaller}
         />
       )}
     </Container>
