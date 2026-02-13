@@ -112,6 +112,7 @@ const HeaderContainer = styled(Box)({
   display: "flex",
   alignItems: "center",
   height: "72px",
+  flexShrink: 0,
   backgroundColor: canonHeaderTokens.background.layer0,
   width: "100%",
   gap: "1px",

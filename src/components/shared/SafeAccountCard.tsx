@@ -69,12 +69,12 @@ export const SafeAccountCard = ({
             </StatItem>
           )}
           {threshold !== undefined && totalSigners !== undefined && (
-            <StatItem>
+            <SignersStatItem>
               <StatValue>
                 {threshold}/{totalSigners}
               </StatValue>
               <StatLabel>Signers</StatLabel>
-            </StatItem>
+            </SignersStatItem>
           )}
           {onClick && <ChevronRightIcon size={16} color={canonHeaderTokens.foreground.accent30} />}
         </StatsSection>
@@ -121,12 +121,12 @@ export const SafeAccountCard = ({
             </StatItem>
           )}
           {threshold !== undefined && totalSigners !== undefined && (
-            <StatItem>
+            <SignersStatItem>
               <StatValue>
                 {threshold}/{totalSigners}
               </StatValue>
               <StatLabel>Signers</StatLabel>
-            </StatItem>
+            </SignersStatItem>
           )}
           <ChevronRightIcon size={16} color={canonHeaderTokens.foreground.accent30} />
         </StatsSection>
@@ -344,6 +344,12 @@ const StatItem = styled(Box)({
   alignItems: "center",
   gap: "8px",
 });
+
+const SignersStatItem = styled(StatItem)(({ theme }) => ({
+  [theme.breakpoints.down("sm")]: {
+    display: "none",
+  },
+}));
 
 const StatValue = styled("span")({
   fontFamily: "Inter, sans-serif",
