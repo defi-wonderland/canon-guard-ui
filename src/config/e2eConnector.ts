@@ -2,7 +2,12 @@
 // This file uses @wonderland/walletless which has package.json export issues
 // that cause ESLint's import resolver to fail. Disabling ESLint for this file.
 import { Wallet, WalletDetailsParams } from "@rainbow-me/rainbowkit";
-import { createE2EProvider, e2eConnector as createE2EConnector, setSigningAccount } from "@wonderland/walletless";
+import {
+  createE2EProvider,
+  e2eConnector as createE2EConnector,
+  setSigningAccount,
+  E2EProviderWithInternal,
+} from "@wonderland/walletless";
 import { createConnector } from "wagmi";
 import { mainnet, optimism } from "wagmi/chains";
 import { TEST_RPC_URLS } from "./chains";
@@ -16,12 +21,7 @@ export const e2eProvider = createE2EProvider({
 // Expose provider globally for E2E tests to call setSigningAccount
 // This allows tests to switch accounts using page.evaluate()
 if (typeof window !== "undefined") {
-  (
-    window as typeof window & { __e2eProvider?: typeof e2eProvider; __setSigningAccount?: typeof setSigningAccount }
-  ).__e2eProvider = e2eProvider;
-  (
-    window as typeof window & { __e2eProvider?: typeof e2eProvider; __setSigningAccount?: typeof setSigningAccount }
-  ).__setSigningAccount = setSigningAccount;
+  (window as typeof window & { __e2eTestProvider?: E2EProviderWithInternal }).__e2eTestProvider = e2eProvider;
 }
 
 // Export setSigningAccount for tests to use
