@@ -94,31 +94,50 @@ const DrawerOverlay = styled(Box, {
 // Drawer Panel
 const DrawerPanel = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isOpen",
-})<{ $isOpen: boolean }>(({ $isOpen }) => ({
+})<{ $isOpen: boolean }>(({ $isOpen, theme }) => ({
   position: "fixed",
   top: "12px",
   right: "12px",
   bottom: "12px",
+  left: "auto",
   width: "496px",
+  maxWidth: "calc(100vw - 24px)",
   backgroundColor: canonHeaderTokens.background.layer1,
   transform: $isOpen ? "translateX(0)" : "translateX(calc(100% + 24px))",
-  transition: "transform 0.3s ease",
+  opacity: $isOpen ? 1 : 0,
+  visibility: $isOpen ? "visible" : "hidden",
+  pointerEvents: $isOpen ? "auto" : "none",
+  transition: "transform 0.3s ease, opacity 0.2s ease, visibility 0.2s ease",
   zIndex: 1001,
   display: "flex",
   flexDirection: "column",
   boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.3)",
   borderRadius: "8px",
   overflow: "hidden",
+  [theme.breakpoints.down("sm")]: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "100vw",
+    maxWidth: "100vw",
+    borderRadius: 0,
+    transform: $isOpen ? "translateX(0)" : "translateX(100%)",
+  },
 }));
 
-const PanelContent = styled(Box)({
+const PanelContent = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   flex: 1,
   padding: "24px",
   position: "relative",
   overflowY: "auto",
-});
+  overflowX: "hidden",
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px",
+  },
+}));
 
 const CloseButton = styled("button")({
   position: "absolute",
@@ -139,14 +158,17 @@ const CloseButton = styled("button")({
 });
 
 // Inner wrapper with padding containing all content
-const InnerWrapper = styled(Box)({
+const InnerWrapper = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: "16px",
   padding: "16px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "12px",
+  },
+}));
 
-const PanelTitle = styled("h2")({
+const PanelTitle = styled("h2")(({ theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "20px",
   fontWeight: 600,
@@ -154,7 +176,11 @@ const PanelTitle = styled("h2")({
   color: canonHeaderTokens.foreground.accent0,
   margin: 0,
   whiteSpace: "pre-line",
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "18px",
+    lineHeight: "24px",
+  },
+}));
 
 const DescriptionText = styled("p")({
   fontFamily: "Inter, sans-serif",

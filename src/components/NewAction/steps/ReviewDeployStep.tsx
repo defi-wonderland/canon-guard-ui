@@ -11,7 +11,14 @@ import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { humanizeDuration } from "~/hooks/useCanonGuardConfig";
 import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
-import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  ActionButton,
+  ButtonRow,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { TransferFormData, ArbitraryActionFormData } from "./index";
 
 // Type guard to detect transfer form data
@@ -366,23 +373,6 @@ export const ReviewDeployStep = ({
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
 
 const ActionPreviewCard = styled(Box)({
   display: "flex",

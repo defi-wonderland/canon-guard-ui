@@ -16,7 +16,14 @@ import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType, CappedTokenTransfersHubInfo } from "~/types/canon-guard";
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  ActionButton,
+  ButtonRow,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { HubChildFormData } from "./DeployHubChildFormStep";
 
 // Tooltip content
@@ -185,23 +192,6 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
 
 const ActionPreviewCard = styled(Box)({
   display: "flex",
