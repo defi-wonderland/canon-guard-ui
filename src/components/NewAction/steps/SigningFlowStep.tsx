@@ -467,13 +467,13 @@ export const SigningFlowStep = ({
                     <DetailRow>
                       <DetailLabel>Address</DetailLabel>
                       {currentStep?.to ? (
-                        <CopyableText
+                        <DetailCopyableText
                           text={currentStep.to}
                           iconSize={10}
                           iconColor={canonHeaderTokens.foreground.accent30}
                         >
                           <DetailValue>{currentStep.to}</DetailValue>
-                        </CopyableText>
+                        </DetailCopyableText>
                       ) : (
                         <DetailValue></DetailValue>
                       )}
@@ -482,13 +482,13 @@ export const SigningFlowStep = ({
                     <DetailRow>
                       <DetailLabel>Hash</DetailLabel>
                       {currentStep?.safeTxHash || currentStep?.data ? (
-                        <CopyableText
+                        <HashCopyableText
                           text={currentStep.safeTxHash || currentStep.data}
                           iconSize={10}
                           iconColor={canonHeaderTokens.foreground.accent30}
                         >
                           <HashValue>{currentStep.safeTxHash || currentStep.data}</HashValue>
-                        </CopyableText>
+                        </HashCopyableText>
                       ) : (
                         <HashValue></HashValue>
                       )}
@@ -549,12 +549,14 @@ const DrawerOverlay = styled(Box, {
 
 const DrawerPanel = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isOpen",
-})<{ $isOpen: boolean }>(({ $isOpen }) => ({
+})<{ $isOpen: boolean }>(({ $isOpen, theme }) => ({
   position: "fixed",
   top: "12px",
   right: "12px",
   bottom: "12px",
+  left: "auto",
   width: "440px",
+  maxWidth: "calc(100vw - 24px)",
   backgroundColor: canonHeaderTokens.background.layer1,
   transform: $isOpen ? "translateX(0)" : "translateX(calc(100% + 24px))",
   transition: "transform 0.3s ease",
@@ -565,6 +567,17 @@ const DrawerPanel = styled(Box, {
   boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.3)",
   borderRadius: "16px",
   padding: "24px",
+  [theme.breakpoints.down("sm")]: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "100vw",
+    maxWidth: "100vw",
+    borderRadius: 0,
+    padding: "16px",
+    transform: $isOpen ? "translateX(0)" : "translateX(100%)",
+  },
 }));
 
 const DrawerHeader = styled(Box)({
@@ -601,6 +614,7 @@ const DrawerContent = styled(Box)({
   flexDirection: "column",
   flex: 1,
   overflow: "auto",
+  overflowX: "hidden",
 });
 
 const DrawerActionInfo = styled(Box)({
@@ -682,6 +696,8 @@ const DrawerTransactionLabelRow = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "6px",
+  minWidth: 0,
+  flexWrap: "wrap",
 });
 
 const DrawerTransactionLabelBold = styled(Typography)({
@@ -719,12 +735,14 @@ const ActionTitle = styled(Typography)({
   fontWeight: 600,
   lineHeight: "28px",
   color: canonHeaderTokens.foreground.accent0,
+  overflowWrap: "anywhere",
 });
 
 const FactoryInfo = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "8px",
+  flexWrap: "wrap",
 });
 
 const FactoryLabel = styled(Typography)({
@@ -846,7 +864,7 @@ const StatusBar = styled(Box)({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  width: "576px",
+  width: "100%",
   padding: "16px",
   backgroundColor: canonHeaderTokens.background.layer1,
   borderRadius: "8px",
@@ -879,7 +897,7 @@ const ProgressBarFill = styled(Box, {
 }));
 
 const StatusShadow1 = styled(Box)({
-  width: "544px",
+  width: "94%",
   height: "6px",
   backgroundColor: canonHeaderTokens.background.layer1,
   borderRadius: "0 0 8px 8px",
@@ -887,7 +905,7 @@ const StatusShadow1 = styled(Box)({
 });
 
 const StatusShadow2 = styled(Box)({
-  width: "512px",
+  width: "88%",
   height: "6px",
   backgroundColor: canonHeaderTokens.background.layer1,
   borderRadius: "0 0 8px 8px",
@@ -935,10 +953,10 @@ const SignTransactionCardWrapper = styled(Box)({
   flexDirection: "column",
   position: "relative",
   isolation: "isolate",
-  width: "576px",
+  width: "100%",
 });
 
-const SignItemHeader = styled(Box)({
+const SignItemHeader = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "16px",
@@ -948,7 +966,11 @@ const SignItemHeader = styled(Box)({
   boxShadow: "0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)",
   position: "relative",
   zIndex: 2,
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px",
+    gap: "12px",
+  },
+}));
 
 const SignItemIcon = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isWaiting",
@@ -962,6 +984,8 @@ const SignItemTitleRow = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "6px",
+  minWidth: 0,
+  flexWrap: "wrap",
 });
 
 const SignItemTitleBold = styled(Typography)({
@@ -976,6 +1000,7 @@ const SignItemTitleNormal = styled(Typography)({
   fontWeight: 400,
   lineHeight: "24px",
   color: canonHeaderTokens.foreground.accent0,
+  overflowWrap: "anywhere",
 });
 
 const SignItemDetailsWrapper = styled(Box)({
@@ -1005,15 +1030,19 @@ const SignItemDetails = styled(Box)({
   boxSizing: "border-box",
 });
 
-const DetailRow = styled(Box)({
+const DetailRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "flex-start",
   gap: "4px",
   width: "100%",
   minWidth: 0,
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    gap: "8px",
+  },
+}));
 
-const DetailLabel = styled(Typography)({
+const DetailLabel = styled(Typography)(({ theme }) => ({
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",
@@ -1021,13 +1050,19 @@ const DetailLabel = styled(Typography)({
   width: "84px",
   flexShrink: 0,
   whiteSpace: "pre-wrap",
-});
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+  },
+}));
 
 const DetailValue = styled(Typography)({
   fontSize: "13px",
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent10,
+  overflowWrap: "anywhere",
+  wordBreak: "break-all",
+  maxWidth: "100%",
 });
 
 const HashValue = styled(Typography)({
@@ -1038,6 +1073,33 @@ const HashValue = styled(Typography)({
   wordBreak: "break-all",
   maxWidth: "100%",
   overflow: "hidden",
+});
+
+const DetailCopyableText = styled(CopyableText)({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "6px",
+  minWidth: 0,
+  maxWidth: "100%",
+  width: "100%",
+  "& .copyable-content": {
+    minWidth: 0,
+    maxWidth: "100%",
+  },
+});
+
+const HashCopyableText = styled(CopyableText)({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "6px",
+  minWidth: 0,
+  maxWidth: "100%",
+  width: "100%",
+  "& .copyable-content": {
+    minWidth: 0,
+    maxWidth: "100%",
+    overflowWrap: "anywhere",
+  },
 });
 
 const DetailDivider = styled(Box)({
@@ -1118,7 +1180,7 @@ const WaitingButton = styled("button")({
 const SuccessCardWrapper = styled(Box)({
   display: "flex",
   flexDirection: "column",
-  width: "576px",
+  width: "100%",
   borderRadius: "8px",
   overflow: "hidden",
 });
@@ -1173,11 +1235,14 @@ const SuccessButtonSection = styled(Box)({
   borderTop: `1px dashed ${canonHeaderTokens.foreground.accent50}`,
 });
 
-const SuccessButtonRow = styled(Box)({
+const SuccessButtonRow = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: "12px",
   width: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+  },
+}));
 
 const OutlineButton = styled("button")({
   display: "flex",
