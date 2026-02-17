@@ -18,6 +18,8 @@ import {
   AddItemRow,
   ActionButtonRow,
   ButtonsContainer,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
 } from "../shared";
 import type { ArbitraryActionFormData, ArbitraryActionItem } from "./index";
 
@@ -263,23 +265,6 @@ export const ArbitraryActionFormStep = ({
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
 
 const FactorySelector = styled(Box)({
   display: "flex",

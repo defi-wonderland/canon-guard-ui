@@ -5,7 +5,14 @@ import { Layers2Icon, AsteriskIcon, PlusIcon, TrashIcon, InfoIcon } from "~/comp
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection, FormInput, ActionButton } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  FormInput,
+  ActionButton,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { CappedTransferHubFormData, TimeUnit } from "./index";
 
 // Validation helpers
@@ -258,23 +265,6 @@ export const CappedTransferHubFormStep = ({
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
 
 const HubSelector = styled(Box)({
   display: "flex",

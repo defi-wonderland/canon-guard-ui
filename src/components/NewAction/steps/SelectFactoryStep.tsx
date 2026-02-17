@@ -3,7 +3,12 @@ import { BoxIcon, ChevronRightIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { FACTORY_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { FactoryType } from "./index";
 
 interface FactoryOption {
@@ -55,23 +60,6 @@ export const SelectFactoryStep = ({ onSelectFactory, onNavigateToCreate }: Selec
   );
 };
 
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
 const FactoryList = styled(Box)({
   display: "flex",
   flexDirection: "column",
@@ -79,7 +67,7 @@ const FactoryList = styled(Box)({
   width: "100%",
 });
 
-const FactoryItem = styled(Box)({
+const FactoryItem = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -91,12 +79,16 @@ const FactoryItem = styled(Box)({
   "&:hover": {
     opacity: 0.85,
   },
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "14px 12px",
+  },
+}));
 
 const LeftContent = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "8px",
+  minWidth: 0,
 });
 
 const FactoryLabel = styled(Typography)({
@@ -105,4 +97,5 @@ const FactoryLabel = styled(Typography)({
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent10,
   textTransform: "uppercase",
+  overflowWrap: "anywhere",
 });

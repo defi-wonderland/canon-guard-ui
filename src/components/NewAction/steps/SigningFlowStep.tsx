@@ -18,7 +18,12 @@ import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useWallet, useStateContext, useNavigateWithParams, useIsSigner } from "~/hooks";
 import type { QueueItem } from "~/services/queueService";
 import type { TransactionStep } from "~/services/transactionBuilderService";
-import { Breadcrumb, ParametersDisplay } from "../shared";
+import {
+  Breadcrumb,
+  ParametersDisplay,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { TransferFormData, ArbitraryActionFormData, CappedTransferHubFormData } from "./index";
 
 interface SigningFlowStepProps {
@@ -526,23 +531,6 @@ export const SigningFlowStep = ({
 };
 
 // Styled Components
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
 // Drawer Styles
 const DrawerOverlay = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isOpen",
