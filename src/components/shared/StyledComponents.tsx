@@ -1,4 +1,4 @@
-import { styled, Box, Tooltip, tooltipClasses } from "@mui/material";
+import { styled, Box, Tooltip, tooltipClasses, useMediaQuery } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import type { TooltipProps } from "@mui/material";
 
@@ -6,9 +6,47 @@ import type { TooltipProps } from "@mui/material";
  * Styled tooltip with consistent dark theme styling
  * Use this across the app for all tooltips
  */
-export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
-  <Tooltip {...props} classes={{ popper: className }} />
-))({
+export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => {
+  const isTouchDevice = useMediaQuery("(pointer: coarse)");
+  const resolvedPlacement = isTouchDevice ? "bottom" : props.placement;
+
+  return (
+    <Tooltip
+      {...props}
+      placement={resolvedPlacement}
+      classes={{ popper: className }}
+      PopperProps={{
+        ...props.PopperProps,
+        modifiers: [
+          {
+            name: "preventOverflow",
+            options: {
+              boundary: "viewport",
+              padding: 12,
+              altAxis: true,
+              tether: true,
+            },
+          },
+          {
+            name: "flip",
+            options: {
+              fallbackPlacements: ["bottom", "top", "right", "left"],
+            },
+          },
+          {
+            name: "offset",
+            options: {
+              offset: [0, 8],
+            },
+          },
+          ...(props.PopperProps?.modifiers || []),
+        ],
+      }}
+      enterTouchDelay={props.enterTouchDelay ?? 0}
+      leaveTouchDelay={props.leaveTouchDelay ?? 3000}
+    />
+  );
+})({
   [`& .${tooltipClasses.tooltip}`]: {
     backgroundColor: "#37373e",
     color: "#b5b5b7",
@@ -17,7 +55,8 @@ export const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
     lineHeight: "20px",
     padding: "12px 16px",
     borderRadius: "6px",
-    maxWidth: "347px",
+    maxWidth: "min(347px, calc(100vw - 24px))",
+    overflowWrap: "anywhere",
     boxShadow: "0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)",
   },
 });
