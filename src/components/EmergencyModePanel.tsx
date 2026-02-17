@@ -195,12 +195,14 @@ const DrawerOverlay = styled(Box, {
 // Drawer Panel
 const DrawerPanel = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isOpen",
-})<{ $isOpen: boolean }>(({ $isOpen }) => ({
+})<{ $isOpen: boolean }>(({ $isOpen, theme }) => ({
   position: "fixed",
   top: "12px",
   right: "12px",
   bottom: "12px",
+  left: "auto",
   width: "496px",
+  maxWidth: "calc(100vw - 24px)",
   backgroundColor: canonHeaderTokens.background.layer1,
   transform: $isOpen ? "translateX(0)" : "translateX(calc(100% + 24px))",
   opacity: $isOpen ? 1 : 0,
@@ -213,15 +215,30 @@ const DrawerPanel = styled(Box, {
   boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.3)",
   borderRadius: "8px",
   overflow: "hidden",
+  [theme.breakpoints.down("sm")]: {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "100vw",
+    maxWidth: "100vw",
+    borderRadius: 0,
+    transform: $isOpen ? "translateX(0)" : "translateX(100%)",
+  },
 }));
 
-const PanelContent = styled(Box)({
+const PanelContent = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   flex: 1,
   padding: "24px",
   position: "relative",
-});
+  overflowY: "auto",
+  overflowX: "hidden",
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px",
+  },
+}));
 
 const CloseButton = styled("button")({
   position: "absolute",
@@ -242,12 +259,16 @@ const CloseButton = styled("button")({
 });
 
 // Inner wrapper with 16px padding containing all content
-const InnerWrapper = styled(Box)({
+const InnerWrapper = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: "32px",
   padding: "16px",
-});
+  [theme.breakpoints.down("sm")]: {
+    gap: "20px",
+    padding: "12px",
+  },
+}));
 
 const PanelTitle = styled("h2")({
   fontFamily: "Inter, sans-serif",
@@ -258,15 +279,18 @@ const PanelTitle = styled("h2")({
   margin: 0,
 });
 
-const PanelDescription = styled("p")({
+const PanelDescription = styled("p")(({ theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "14px",
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent20,
   margin: 0,
-  maxWidth: "295px",
-});
+  maxWidth: "360px",
+  [theme.breakpoints.down("sm")]: {
+    maxWidth: "100%",
+  },
+}));
 
 const ContentSection = styled(Box)({
   display: "flex",
@@ -281,11 +305,15 @@ const Divider = styled(Box)({
 });
 
 // Status Section
-const StatusSection = styled(Box)({
+const StatusSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "16px",
-});
+  [theme.breakpoints.down("sm")]: {
+    alignItems: "flex-start",
+    gap: "12px",
+  },
+}));
 
 const StatusIconWrapper = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isActive",
@@ -343,6 +371,7 @@ const AddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
+  wordBreak: "break-all",
 });
 
 // Warning Box
@@ -351,7 +380,7 @@ const WarningBox = styled(Box)({
   alignItems: "center",
   justifyContent: "center",
   padding: "20px",
-  height: "48px",
+  minHeight: "48px",
   borderRadius: "8px",
   backgroundColor: "rgba(225, 171, 17, 0.1)",
 });
