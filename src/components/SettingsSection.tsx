@@ -23,6 +23,7 @@ import {
   useWallet,
   useIsSigner,
 } from "~/hooks";
+import { truncateAddress } from "~/utils";
 
 export const SettingsSection = () => {
   const { safeAddress, guardAddress, chainId, isDetached } = useStateContext();
@@ -37,6 +38,7 @@ export const SettingsSection = () => {
   const [deploymentModesPanelOpen, setDeploymentModesPanelOpen] = useState(false);
 
   const chainConfig = getChainConfig(chainId as SupportedChainId);
+  const truncatedSafeAddress = safeAddress ? truncateAddress(safeAddress) : "";
 
   const isAttachDetachDisabled = !isSigner;
 
@@ -95,7 +97,7 @@ export const SettingsSection = () => {
                     iconSize={10}
                     iconColor={canonHeaderTokens.foreground.accent30}
                   >
-                    <AddressText>{safeAddress || ""}</AddressText>
+                    <AddressText>{truncatedSafeAddress}</AddressText>
                   </CopyableText>
                 </SafeAddressRow>
                 <ChainRow>
@@ -281,14 +283,23 @@ export const SettingsSection = () => {
 };
 
 // Layout
-const PageContainer = styled(Box)({
+const PageContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   width: "100%",
   padding: "32px 120px",
   minHeight: "calc(100vh - 72px)",
-});
+  [theme.breakpoints.down("lg")]: {
+    padding: "24px 48px",
+  },
+  [theme.breakpoints.down("md")]: {
+    padding: "20px 24px",
+  },
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px 12px",
+  },
+}));
 
 const ContentContainer = styled(Box)({
   display: "flex",
@@ -306,14 +317,17 @@ const LoadingContainer = styled(Box)({
 });
 
 // Title
-const TitleRow = styled(Box)({
+const TitleRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
   padding: "32px 8px 12px 8px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "20px 4px 10px 4px",
+  },
+}));
 
-const PageTitle = styled("h1")({
+const PageTitle = styled("h1")(({ theme }) => ({
   fontFamily: "Inter, sans-serif",
   fontSize: "24px",
   fontWeight: 500,
@@ -321,7 +335,11 @@ const PageTitle = styled("h1")({
   lineHeight: "32px",
   color: canonHeaderTokens.foreground.accent0,
   margin: 0,
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "20px",
+    lineHeight: "28px",
+  },
+}));
 
 const HelpIconWrapper = styled(Box)({
   display: "flex",
@@ -354,18 +372,28 @@ const SafeProfileCard = styled(Box)({
   backgroundColor: canonHeaderTokens.background.layer1,
 });
 
-const SafeProfileRow = styled(Box)({
+const SafeProfileRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   padding: "24px",
-});
+  gap: "16px",
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    padding: "16px",
+  },
+}));
 
-const SafeProfileLeft = styled(Box)({
+const SafeProfileLeft = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "16px",
-});
+  minWidth: 0,
+  [theme.breakpoints.down("sm")]: {
+    alignItems: "flex-start",
+  },
+}));
 
 const SafeIconWrapper = styled(Box)({
   display: "flex",
@@ -388,6 +416,7 @@ const SafeAddressRow = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "6px",
+  flexWrap: "wrap",
 });
 
 const SafeLabel = styled("span")({
@@ -404,6 +433,7 @@ const AddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent0,
+  wordBreak: "break-all",
 });
 
 const ChainRow = styled(Box)({
@@ -421,22 +451,34 @@ const ChainName = styled("span")({
 });
 
 // Config Stats
-const ConfigStatsRow = styled(Box)({
+const ConfigStatsRow = styled(Box)(({ theme }) => ({
   borderTop: `1px dashed ${canonHeaderTokens.foreground.accent50}`,
   padding: "24px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px",
+  },
+}));
 
-const ConfigStatsContent = styled(Box)({
+const ConfigStatsContent = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "32px",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexWrap: "wrap",
+    alignItems: "stretch",
+    gap: "12px",
+  },
+}));
 
-const ConfigStat = styled(Box)({
+const ConfigStat = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: "4px",
-});
+  [theme.breakpoints.down("sm")]: {
+    width: "calc(50% - 6px)",
+    minWidth: "140px",
+  },
+}));
 
 const ConfigStatValue = styled(Box)({
   display: "flex",
@@ -460,11 +502,14 @@ const ConfigStatLabel = styled("span")({
   color: canonHeaderTokens.foreground.accent20,
 });
 
-const ConfigDivider = styled(Box)({
+const ConfigDivider = styled(Box)(({ theme }) => ({
   width: "1px",
   height: "40px",
   backgroundColor: canonHeaderTokens.foreground.accent40,
-});
+  [theme.breakpoints.down("sm")]: {
+    display: "none",
+  },
+}));
 
 // Status Dot
 const StatusDot = styled("div")<{ $color: string }>(({ $color }) => ({
@@ -475,7 +520,7 @@ const StatusDot = styled("div")<{ $color: string }>(({ $color }) => ({
 }));
 
 // Buttons
-const OutlineButton = styled("button")<{ $width?: string; $disabled?: boolean }>(({ $width, $disabled }) => ({
+const OutlineButton = styled("button")<{ $width?: string; $disabled?: boolean }>(({ $width, $disabled, theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -496,57 +541,92 @@ const OutlineButton = styled("button")<{ $width?: string; $disabled?: boolean }>
   "&:hover": {
     backgroundColor: $disabled ? "transparent" : `${canonHeaderTokens.foreground.accent40}20`,
   },
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+  },
 }));
 
 // Setting Cards
-const SettingCard = styled(Box)({
+const SettingCard = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   padding: "20px",
   borderRadius: "8px",
   backgroundColor: canonHeaderTokens.background.layer1,
-});
+  gap: "12px",
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    padding: "16px",
+  },
+}));
 
-const SettingCardLeft = styled(Box)({
+const SettingCardLeft = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "16px",
-});
+  minWidth: 0,
+  [theme.breakpoints.down("sm")]: {
+    alignItems: "flex-start",
+  },
+}));
 
-const IconCircle = styled(Box)({
+const IconCircle = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   width: "48px",
   height: "48px",
-  borderRadius: "1000px",
+  minWidth: "48px",
+  minHeight: "48px",
+  flexShrink: 0,
+  aspectRatio: "1 / 1",
+  borderRadius: "50%",
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-});
+  [theme.breakpoints.down("sm")]: {
+    width: "44px",
+    height: "44px",
+    minWidth: "44px",
+    minHeight: "44px",
+  },
+}));
 
 const EmergencyIconCircle = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isActive",
-})<{ $isActive: boolean }>(({ $isActive }) => ({
+})<{ $isActive: boolean }>(({ $isActive, theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   width: "48px",
   height: "48px",
-  borderRadius: "1000px",
+  minWidth: "48px",
+  minHeight: "48px",
+  flexShrink: 0,
+  aspectRatio: "1 / 1",
+  borderRadius: "50%",
   backgroundColor: $isActive ? "#DA2828" : "transparent",
   border: $isActive ? "none" : `1px solid ${canonHeaderTokens.foreground.accent40}`,
+  [theme.breakpoints.down("sm")]: {
+    width: "44px",
+    height: "44px",
+    minWidth: "44px",
+    minHeight: "44px",
+  },
 }));
 
 const SettingInfo = styled(Box)({
   display: "flex",
   flexDirection: "column",
   gap: "6px",
+  minWidth: 0,
 });
 
 const SettingTitleRow = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "8px",
+  flexWrap: "wrap",
 });
 
 const SettingTitle = styled("span")({
@@ -581,20 +661,28 @@ const SettingDescription = styled("p")({
 });
 
 // Canon Guard Card (with additional address row)
-const CanonGuardCard = styled(Box)({
+const CanonGuardCard = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   padding: "20px",
   borderRadius: "8px",
   backgroundColor: canonHeaderTokens.background.layer1,
   gap: "20px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px",
+  },
+}));
 
-const CanonGuardTop = styled(Box)({
+const CanonGuardTop = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-});
+  gap: "12px",
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
+}));
 
 const LearnMoreLink = styled("button")({
   display: "inline",
@@ -625,4 +713,5 @@ const GuardAddressText = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
+  wordBreak: "break-all",
 });
