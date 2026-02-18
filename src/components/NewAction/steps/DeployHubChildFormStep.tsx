@@ -391,8 +391,8 @@ const TokenOptionRow = styled(Box)({
 
 const TokenOptionInfo = styled(Box)({
   display: "flex",
-  flexDirection: "column",
-  gap: "2px",
+  alignItems: "baseline",
+  gap: "8px",
   minWidth: 0,
 });
 
