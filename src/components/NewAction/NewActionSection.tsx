@@ -1044,6 +1044,12 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
             return updated;
           });
           setCurrentStepIndex(stepIndex + 1);
+          // Advance nonce so the next sign step (e.g. pre-approval) uses nonce + 1
+          setCurrentSafeNonce((prev) => prev + 1);
+          // Mark the signed nonce as occupied so calculateRecommendedNonce skips it
+          if (nonce !== undefined) {
+            setQueueItems((prev) => [...prev, { nonce, approversCount: 1 } as QueueItem]);
+          }
           // Notify that queue count may have changed
           onQueueCountChange?.();
         } else {
