@@ -9,6 +9,7 @@ import {
   Breadcrumb,
   FormSection,
   FormInput,
+  TokenSelector,
   ActionButton,
   HubSelector,
   LeftContent,
@@ -221,9 +222,8 @@ export const CappedTransferHubFormStep = ({
 
                 {/* Token Fields */}
                 <TokenFieldsSection>
-                  <FormInput
+                  <TokenSelector
                     label='Token Address'
-                    placeholder='0x...'
                     value={token.address}
                     onChange={(value) => updateToken(index, "address", value)}
                     error={errors.tokens[index]?.address}

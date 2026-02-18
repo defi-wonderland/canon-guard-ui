@@ -75,4 +75,7 @@ export {
 // Chain icons
 export { EthereumIcon, OptimismIcon, InkIcon, ChainIcon, ChainBadge } from "./ChainIcons";
 
+// Token icons
+export { TokenIcon } from "./TokenIcon";
+
 // Re-export the type for convenience

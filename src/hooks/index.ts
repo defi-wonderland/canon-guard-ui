@@ -5,3 +5,4 @@ export * from "./useTransactionExecutor";
 export * from "./useCanonGuardConfig";
 export * from "./useSafeStorage";
 export * from "./useIsSigner";
+export * from "./useTokenLookup";
