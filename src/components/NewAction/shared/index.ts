@@ -1,5 +1,6 @@
 export { Breadcrumb } from "./Breadcrumb";
 export { FormInput } from "./FormInput";
+export { TokenSelector } from "./TokenSelector";
 export { FormSection, ButtonRow, ActionButton } from "./FormCard";
 export { ParametersDisplay } from "./ParametersDisplay";
 export {

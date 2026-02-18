@@ -9,6 +9,7 @@ import {
   Breadcrumb,
   FormSection,
   FormInput,
+  TokenSelector,
   ActionButton,
   ButtonRow,
   FactorySelector,
@@ -119,9 +120,8 @@ export const ClaimAllowanceFormStep = ({
         <FormSection label='SET ACTION PARAMETERS'>
           <ParametersCard>
             <CardContent>
-              <FormInput
+              <TokenSelector
                 label='Token Address'
-                placeholder='0x...'
                 value={formData.token}
                 onChange={(value) => updateField("token", value)}
                 error={errors.token}

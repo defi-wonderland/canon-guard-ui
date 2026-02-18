@@ -9,6 +9,7 @@ import {
   Breadcrumb,
   FormSection,
   FormInput,
+  TokenSelector,
   ActionButton,
   ItemsCard,
   ItemSection,
@@ -154,9 +155,8 @@ export const TransferFormStep = ({
 
                 {/* Transfer Fields */}
                 <ItemFieldsSection>
-                  <FormInput
+                  <TokenSelector
                     label='Token Address'
-                    placeholder='0x...'
                     value={transfer.tokenAddress}
                     onChange={(value) => updateTransfer(index, "tokenAddress", value)}
                     error={errors[index]?.tokenAddress}
