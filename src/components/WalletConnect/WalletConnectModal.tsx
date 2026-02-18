@@ -1,13 +1,10 @@
-/**
- * WalletConnect Modal
- * Input field for pasting WalletConnect URI from dApps
- */
-
 import { useRef, useEffect, useState } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { XIcon } from "~/components/icons";
 import { WalletConnectIcon } from "~/components/icons/WalletConnectIcon";
+import { ModalOverlay, ModalHeaderLeft, ModalTitle, ModalCloseButton } from "~/components/shared/ModalComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { useModalClose } from "~/hooks";
 import { useWalletConnect } from "~/providers/WalletConnectProvider";
 
 export const WalletConnectModal = () => {
@@ -18,48 +15,13 @@ export const WalletConnectModal = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Focus input when modal opens
   useEffect(() => {
     if (isModalOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isModalOpen]);
 
-  // Close modal when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        closeModal();
-      }
-    };
-
-    if (isModalOpen) {
-      setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isModalOpen, closeModal]);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeModal();
-      }
-    };
-
-    if (isModalOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isModalOpen, closeModal]);
+  useModalClose(isModalOpen, closeModal, modalRef);
 
   const handlePaste = async () => {
     try {
@@ -67,7 +29,6 @@ export const WalletConnectModal = () => {
       setPairingCode(text);
       clearPairingError();
 
-      // Auto-connect if it looks like a valid WC URI
       if (text.startsWith("wc:")) {
         await pairWithUri(text);
       }
@@ -81,7 +42,6 @@ export const WalletConnectModal = () => {
     setPairingCode(value);
     clearPairingError();
 
-    // Auto-connect when a valid WC URI is pasted/typed
     if (value.startsWith("wc:") && value.includes("@")) {
       pairWithUri(value);
     }
@@ -93,10 +53,9 @@ export const WalletConnectModal = () => {
     }
   };
 
-  // Handle disconnect and clear the pairing code
   const handleDisconnect = async (topic: string) => {
     await disconnect(topic);
-    setPairingCode(""); // Clear the old URI when disconnecting
+    setPairingCode("");
   };
 
   if (!isModalOpen) return null;
@@ -105,20 +64,19 @@ export const WalletConnectModal = () => {
   const hasActiveSessions = safeSessions.length > 0;
 
   return (
-    <Overlay>
+    <ModalOverlay>
       <ModalContainer ref={modalRef}>
         <ModalHeader>
-          <HeaderLeft>
+          <ModalHeaderLeft>
             <WalletConnectIcon size={24} color={canonHeaderTokens.brand.green} />
             <ModalTitle>WalletConnect</ModalTitle>
-          </HeaderLeft>
-          <CloseButton onClick={closeModal}>
+          </ModalHeaderLeft>
+          <ModalCloseButton onClick={closeModal}>
             <XIcon size={18} color={canonHeaderTokens.foreground.accent20} />
-          </CloseButton>
+          </ModalCloseButton>
         </ModalHeader>
 
         <ModalContent>
-          {/* Active Sessions Section */}
           {hasActiveSessions && (
             <SessionsSection>
               <SectionLabel>CONNECTED DAPPS</SectionLabel>
@@ -134,13 +92,12 @@ export const WalletConnectModal = () => {
             </SessionsSection>
           )}
 
-          {/* Pairing Code Input Section - only show when not connected */}
           {!hasActiveSessions && (
             <PairingSection>
               <InstructionText>Paste the pairing code below to connect to your dApp via WalletConnect</InstructionText>
 
               <InputWrapper $hasError={!!pairingError}>
-                <InputLabel $hasError={!!pairingError}>Pairing code</InputLabel>
+                <FloatingInputLabel $hasError={!!pairingError}>Pairing code</FloatingInputLabel>
                 <InputRow>
                   <PairingInput
                     ref={inputRef}
@@ -175,22 +132,9 @@ export const WalletConnectModal = () => {
           )}
         </ModalContent>
       </ModalContainer>
-    </Overlay>
+    </ModalOverlay>
   );
 };
-
-const Overlay = styled(Box)({
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.6)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-});
 
 const ModalContainer = styled(Box)({
   width: "420px",
@@ -210,34 +154,6 @@ const ModalHeader = styled(Box)({
   justifyContent: "space-between",
   padding: "20px 24px 16px 24px",
   borderBottom: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-});
-
-const HeaderLeft = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-});
-
-const ModalTitle = styled("span")({
-  fontFamily: "Inter, sans-serif",
-  fontSize: "18px",
-  fontWeight: 600,
-  lineHeight: "24px",
-  color: canonHeaderTokens.foreground.accent0,
-});
-
-const CloseButton = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "4px",
-  backgroundColor: "transparent",
-  border: "none",
-  cursor: "pointer",
-  borderRadius: "4px",
-  "&:hover": {
-    backgroundColor: canonHeaderTokens.background.layer1Variation,
-  },
 });
 
 const ModalContent = styled(Box)({
@@ -351,7 +267,7 @@ const InputWrapper = styled(Box, {
   border: `1px solid ${$hasError ? "#ff6b6b" : canonHeaderTokens.brand.green}`,
 }));
 
-const InputLabel = styled("span", {
+const FloatingInputLabel = styled("span", {
   shouldForwardProp: (prop) => prop !== "$hasError",
 })<{ $hasError?: boolean }>(({ $hasError }) => ({
   position: "absolute",
