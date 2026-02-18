@@ -199,7 +199,6 @@ export const TokenSelector = ({
             <StyledTextField
               {...params}
               placeholder='Search token or paste address...'
-              data-testid={testId}
               slotProps={{
                 input: {
                   ...params.InputProps,
@@ -209,9 +208,9 @@ export const TokenSelector = ({
                         <CircularProgress size={16} sx={{ color: canonHeaderTokens.foreground.accent20 }} />
                       )}
                       {selectedToken && !isLookingUp && (
-                        <SelectedTokenIcon>
-                          <TokenIcon logoURI={selectedToken.logoURI} symbol={selectedToken.symbol} size={20} />
-                        </SelectedTokenIcon>
+                        <TruncatedAddress>
+                          {selectedToken.address.slice(0, 6)}...{selectedToken.address.slice(-4)}
+                        </TruncatedAddress>
                       )}
                     </>
                   ),
@@ -220,6 +219,10 @@ export const TokenSelector = ({
                       <TokenIcon logoURI={selectedToken.logoURI} symbol={selectedToken.symbol} size={20} />
                     </SelectedTokenIcon>
                   ) : undefined,
+                },
+                htmlInput: {
+                  ...params.inputProps,
+                  "data-testid": testId,
                 },
               }}
             />
@@ -358,6 +361,15 @@ const OptionName = styled(Typography)({
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
+});
+
+const TruncatedAddress = styled(Typography)({
+  fontSize: "13px",
+  fontWeight: 400,
+  lineHeight: "20px",
+  color: canonHeaderTokens.foreground.accent20,
+  whiteSpace: "nowrap",
+  fontFamily: "monospace",
 });
 
 const ErrorMessage = styled(Typography)({
