@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { RouterProvider } from "react-router-dom";
 import { WalletConnectModal } from "~/components/WalletConnect";
-import { ToastProvider } from "~/contexts";
 import { router } from "~/router";
 import { StateProvider } from "./StateProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import { ToastProvider } from "./ToastProvider";
 import { WalletConnectProvider } from "./WalletConnectProvider";
 import { WalletProvider } from "./WalletProvider";
 

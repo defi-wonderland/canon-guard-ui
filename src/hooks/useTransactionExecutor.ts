@@ -34,8 +34,8 @@ import {
   PRE_APPROVE_ACTION_FACTORY,
   CHANGE_SAFE_GUARD_ACTION_FACTORY,
 } from "~/constants/canonGuard";
-import { useToast } from "~/contexts";
 import { useStateContext } from "~/hooks/useStateContext";
+import { useToast } from "~/hooks/useToast";
 import { zeroAddress } from "~/utils";
 import { EPOCH_TIME_MULTIPLIERS } from "~/utils/timeUnits";
 
