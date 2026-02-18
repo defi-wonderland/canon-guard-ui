@@ -75,13 +75,18 @@ const SectionLabel = styled(Typography)({
   textTransform: "uppercase",
 });
 
-const ButtonRowContainer = styled(Box)({
+const ButtonRowContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: "16px",
   width: "100%",
   padding: "24px",
   borderTop: `1px dashed ${canonHeaderTokens.background.layer0}`,
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    gap: "10px",
+    padding: "16px",
+  },
+}));
 
 const buttonBaseStyles = {
   display: "flex",

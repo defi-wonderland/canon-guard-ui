@@ -13,7 +13,14 @@ import { humanizeDuration } from "~/hooks/useCanonGuardConfig";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
 import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
-import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  ActionButton,
+  ButtonRow,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { CappedTransferHubFormData } from "./index";
 
 // Tooltip content
@@ -303,23 +310,6 @@ export const HubReviewStep = ({
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
 
 const HubPreviewCard = styled(Box)({
   display: "flex",

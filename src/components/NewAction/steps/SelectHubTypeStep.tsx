@@ -3,7 +3,12 @@ import { Layers2Icon, ChevronRightIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { HubType } from "./index";
 
 interface HubOption {
@@ -49,23 +54,6 @@ export const SelectHubTypeStep = ({ onSelectHub, onNavigateToCreate }: SelectHub
   );
 };
 
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
 const HubList = styled(Box)({
   display: "flex",
   flexDirection: "column",
@@ -73,7 +61,7 @@ const HubList = styled(Box)({
   width: "100%",
 });
 
-const HubItem = styled(Box)({
+const HubItem = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -85,12 +73,16 @@ const HubItem = styled(Box)({
   "&:hover": {
     opacity: 0.85,
   },
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "14px 12px",
+  },
+}));
 
 const LeftContent = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "8px",
+  minWidth: 0,
 });
 
 const HubLabel = styled(Typography)({
@@ -99,4 +91,5 @@ const HubLabel = styled(Typography)({
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent10,
   textTransform: "uppercase",
+  overflowWrap: "anywhere",
 });

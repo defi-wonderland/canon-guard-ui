@@ -18,11 +18,10 @@ export const AppLayout = () => {
 };
 
 const MainContent = styled("div")`
-  display: flex;
-  flex-direction: column;
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
   margin: 0;
   padding: 0;
 `;

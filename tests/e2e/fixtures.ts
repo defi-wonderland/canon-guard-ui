@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import type { DeploymentsConfig, Deployment } from "./global-setup";
+import type { E2EProviderWithInternal } from "@wonderland/walletless";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,11 +19,10 @@ async function switchSigningAccount(page: Page, accountIndex: number): Promise<v
   await page.evaluate((index) => {
     // The app exposes these on window when IS_PLAYWRIGHT is true
     const win = window as typeof window & {
-      __e2eProvider?: unknown;
-      __setSigningAccount?: (provider: unknown, index: number) => void;
+      __e2eTestProvider?: E2EProviderWithInternal;
     };
-    if (win.__e2eProvider && win.__setSigningAccount) {
-      win.__setSigningAccount(win.__e2eProvider, index);
+    if (win.__e2eTestProvider) {
+      win.__e2eTestProvider.setSigningAccount(index);
     }
   }, accountIndex);
 }
