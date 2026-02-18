@@ -292,6 +292,7 @@ const InputContainer = styled(Box, {
 const StyledTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
     padding: "8px 12px !important",
+    backgroundColor: "transparent",
     "& fieldset": {
       border: "none",
     },
@@ -301,6 +302,7 @@ const StyledTextField = styled(TextField)({
     fontWeight: 400,
     lineHeight: "24px",
     color: canonHeaderTokens.foreground.accent0,
+    backgroundColor: "transparent",
     padding: "0 !important",
     "&::placeholder": {
       color: canonHeaderTokens.foreground.accent20,
