@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { Box, CircularProgress, Typography, styled } from "@mui/material";
 import { ExternalLink as ExternalLinkIcon } from "lucide-react";
-import { formatUnits } from "viem";
+import { formatUnits, zeroAddress } from "viem";
 import { TokenIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
@@ -38,17 +38,9 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
     );
   }
 
-  if (error) {
-    return (
-      <Container>
-        <ErrorText>{error}</ErrorText>
-      </Container>
-    );
-  }
+  if (error || !data) return null;
 
-  if (!data) return null;
-
-  // Transfers
+  // ---- Transfers ----
   if (data.transfers && data.transfers.length > 0) {
     return (
       <Container>
@@ -99,7 +91,7 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
     );
   }
 
-  // Arbitrary Actions
+  // ---- Arbitrary Actions ----
   if (data.arbitraryActions && data.arbitraryActions.length > 0) {
     return (
       <Container>
@@ -147,7 +139,7 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
     );
   }
 
-  // Allowance Claim
+  // ---- Allowance Claim ----
   if (data.allowanceClaim) {
     const ac = data.allowanceClaim;
     const tokenMeta = findTokenByAddress(ac.token, chainId ?? 1);
@@ -199,7 +191,7 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
     );
   }
 
-  // Capped Transfer
+  // ---- Capped Transfer (child) ----
   if (data.cappedTransfer) {
     const ct = data.cappedTransfer;
     const tokenMeta = findTokenByAddress(ct.token, chainId ?? 1);
@@ -240,6 +232,175 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
             <ParamValue>
               {ct.formattedAmount} {ct.symbol}
             </ParamValue>
+          </ParamRow>
+        </ParamCard>
+      </Container>
+    );
+  }
+
+  // ---- Hub Config ----
+  if (data.hubConfig) {
+    const hc = data.hubConfig;
+    const epochDays = Number(hc.epochLength) / 86400;
+    const epochDisplay =
+      epochDays >= 1
+        ? `${epochDays} day${epochDays !== 1 ? "s" : ""}`
+        : `${Number(hc.epochLength) / 3600} hour${Number(hc.epochLength) / 3600 !== 1 ? "s" : ""}`;
+
+    return (
+      <Container>
+        <SectionLabel>HUB CONFIGURATION</SectionLabel>
+        <ParamCard>
+          <ParamRow>
+            <ParamLabel>Recipient</ParamLabel>
+            <ParamValueRow>
+              <CopyableText text={hc.recipient} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
+                <AddressValue>{truncateAddress(hc.recipient)}</AddressValue>
+              </CopyableText>
+              <ExplorerButton onClick={() => openExplorer(hc.recipient)}>
+                <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
+              </ExplorerButton>
+            </ParamValueRow>
+          </ParamRow>
+          <ParamDivider />
+          <ParamRow>
+            <ParamLabel>Epoch Length</ParamLabel>
+            <ParamValue>{epochDisplay}</ParamValue>
+          </ParamRow>
+        </ParamCard>
+
+        {hc.tokens.map((t, i) => {
+          const tokenMeta = findTokenByAddress(t.token, chainId ?? 1);
+          return (
+            <ParamCard key={i}>
+              <ParamRow>
+                <TokenIcon logoURI={tokenMeta?.logoURI} symbol={t.symbol} size={18} />
+                <ParamValue style={{ fontWeight: 600 }}>{t.symbol}</ParamValue>
+                <AddressChip>
+                  <CopyableText text={t.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent30}>
+                    <ChipText>{truncateAddress(t.token)}</ChipText>
+                  </CopyableText>
+                  <ExplorerButton onClick={() => openExplorer(t.token)}>
+                    <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent30} />
+                  </ExplorerButton>
+                </AddressChip>
+              </ParamRow>
+              <ParamDivider />
+              <ParamRow>
+                <ParamLabel>Cap</ParamLabel>
+                <ParamValue>
+                  {t.formattedCap} {t.symbol}
+                </ParamValue>
+              </ParamRow>
+              <ParamDivider />
+              <ParamRow>
+                <ParamLabel>Cap Left</ParamLabel>
+                <ParamValue>
+                  {t.formattedCapLeft} {t.symbol}
+                </ParamValue>
+              </ParamRow>
+              <ParamDivider />
+              <ParamRow>
+                <ParamLabel>Total Spent</ParamLabel>
+                <ParamValue>
+                  {t.formattedTotalSpent} {t.symbol}
+                </ParamValue>
+              </ParamRow>
+            </ParamCard>
+          );
+        })}
+      </Container>
+    );
+  }
+
+  // ---- Pre-Approve ----
+  if (data.preApprove) {
+    const pa = data.preApprove;
+    const durationSeconds = Number(pa.approvalDuration);
+    const durationDays = durationSeconds / 86400;
+    const durationDisplay =
+      durationDays >= 1
+        ? `${durationDays} day${durationDays !== 1 ? "s" : ""}`
+        : `${durationSeconds / 3600} hour${durationSeconds / 3600 !== 1 ? "s" : ""}`;
+
+    return (
+      <Container>
+        <SectionLabel>ACTION PARAMETERS</SectionLabel>
+        <ParamCard>
+          <ParamRow>
+            <ParamLabel>Action Builder</ParamLabel>
+            <ParamValueRow>
+              <CopyableText text={pa.actionsBuilder} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
+                <AddressValue>{truncateAddress(pa.actionsBuilder)}</AddressValue>
+              </CopyableText>
+              <ExplorerButton onClick={() => openExplorer(pa.actionsBuilder)}>
+                <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
+              </ExplorerButton>
+            </ParamValueRow>
+          </ParamRow>
+          <ParamDivider />
+          <ParamRow>
+            <ParamLabel>Approval Duration</ParamLabel>
+            <ParamValue>{durationDisplay}</ParamValue>
+          </ParamRow>
+        </ParamCard>
+      </Container>
+    );
+  }
+
+  // ---- Change Safe Guard ----
+  if (data.changeSafeGuard) {
+    const csg = data.changeSafeGuard;
+    const isRemove = csg.safeGuard === zeroAddress;
+
+    return (
+      <Container>
+        <SectionLabel>ACTION PARAMETERS</SectionLabel>
+        <ParamCard>
+          <ParamRow>
+            <ParamLabel>Action</ParamLabel>
+            <ParamValue>{isRemove ? "Remove Guard" : "Set Guard"}</ParamValue>
+          </ParamRow>
+          {!isRemove && (
+            <>
+              <ParamDivider />
+              <ParamRow>
+                <ParamLabel>Guard Address</ParamLabel>
+                <ParamValueRow>
+                  <CopyableText text={csg.safeGuard} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
+                    <AddressValue>{truncateAddress(csg.safeGuard)}</AddressValue>
+                  </CopyableText>
+                  <ExplorerButton onClick={() => openExplorer(csg.safeGuard)}>
+                    <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
+                  </ExplorerButton>
+                </ParamValueRow>
+              </ParamRow>
+            </>
+          )}
+        </ParamCard>
+      </Container>
+    );
+  }
+
+  // ---- Emergency Caller / Trigger ----
+  if (data.emergencyAddress) {
+    const ea = data.emergencyAddress;
+    const roleLabel = ea.role === "caller" ? "Emergency Caller" : "Emergency Trigger";
+
+    return (
+      <Container>
+        <SectionLabel>ACTION PARAMETERS</SectionLabel>
+        <ParamCard>
+          <ParamRow>
+            <ParamLabel>{roleLabel}</ParamLabel>
+            <ParamValueRow>
+              <CopyableText text={ea.address} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
+                <AddressValue>{truncateAddress(ea.address)}</AddressValue>
+              </CopyableText>
+              <ExplorerButton onClick={() => openExplorer(ea.address)}>
+                <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
+              </ExplorerButton>
+            </ParamValueRow>
           </ParamRow>
         </ParamCard>
       </Container>
@@ -328,6 +489,7 @@ const AddressValue = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
+  cursor: "pointer",
 });
 
 const AddressChip = styled(Box)({
@@ -335,6 +497,7 @@ const AddressChip = styled(Box)({
   alignItems: "center",
   gap: "4px",
   marginLeft: "auto",
+  cursor: "pointer",
 });
 
 const ChipText = styled("span")({
@@ -392,15 +555,6 @@ const LoadingText = styled(Typography)({
   fontSize: "13px",
   fontWeight: 400,
   color: canonHeaderTokens.foreground.accent20,
-});
-
-const ErrorText = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  color: canonHeaderTokens.status.red,
-  padding: "16px 20px",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
 });
 
 const ExplorerButton = styled("button")({

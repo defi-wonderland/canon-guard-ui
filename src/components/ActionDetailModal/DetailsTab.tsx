@@ -19,17 +19,27 @@ interface DetailsTabProps {
 
 export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
   const isQueue = data.mode === "queue";
-  const [technicalOpen, setTechnicalOpen] = useState(false);
 
   const factoryType = isQueue ? data.item.factoryType : data.entity.factoryType;
   const factoryLabel = isQueue ? data.item.factoryLabel : data.entity.factoryLabel;
   const address = (isQueue ? data.item.actionBuilderAddress : data.entity.address) as Address;
+  const isHub = !isQueue && data.entity.isHub;
 
   const factoryDisplayName = getFactoryDisplayName(factoryType);
   const displayFactory = factoryDisplayName !== "Unknown" ? factoryDisplayName : factoryLabel || "Unknown";
 
-  // Fetch decoded action parameters
-  const { data: paramsData, isLoading: paramsLoading, error: paramsError } = useActionParameters(address, factoryType);
+  // Fetch decoded action parameters (isHub flag enables hub-specific fetching)
+  const {
+    data: paramsData,
+    isLoading: paramsLoading,
+    error: paramsError,
+  } = useActionParameters(address, factoryType, isHub);
+
+  // Auto-open technical details when there are no decoded parameters to show
+  const hasParams = paramsData !== null && !paramsError;
+  const [technicalOpen, setTechnicalOpen] = useState(false);
+  const shouldAutoOpen = !paramsLoading && !hasParams;
+  const isTechnicalOpen = technicalOpen || shouldAutoOpen;
 
   const openExplorer = useCallback(
     (addr: string) => {
@@ -45,18 +55,18 @@ export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
       {/* Human-readable action parameters */}
       <ActionParametersDisplay data={paramsData} isLoading={paramsLoading} error={paramsError} chainId={chainId} />
 
-      {/* Technical Details - Collapsible */}
+      {/* Technical Details - Collapsible (auto-opens when no params available) */}
       <TechnicalSection>
-        <TechnicalHeader onClick={() => setTechnicalOpen(!technicalOpen)}>
+        <TechnicalHeader onClick={() => setTechnicalOpen(!isTechnicalOpen)}>
           <TechnicalLabel>TECHNICAL DETAILS</TechnicalLabel>
-          {technicalOpen ? (
+          {isTechnicalOpen ? (
             <ChevronUpIcon size={14} color={canonHeaderTokens.foreground.accent30} />
           ) : (
             <ChevronDownIcon size={14} color={canonHeaderTokens.foreground.accent30} />
           )}
         </TechnicalHeader>
 
-        {technicalOpen && (
+        {isTechnicalOpen && (
           <InfoSection>
             <InfoRows>
               {/* Action Builder Address */}

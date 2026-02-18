@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { type Address, type Hex, erc20Abi, formatUnits } from "viem";
 import {
+  actionBuilderAbi,
   allowanceClaimorAbi,
   cappedTokenTransfersAbi,
+  cappedTokenTransfersHubAbi,
+  changeSafeGuardActionAbi,
+  preApproveActionViewAbi,
+  setEmergencyCallerActionAbi,
+  setEmergencyTriggerActionAbi,
   simpleActionsViewAbi,
   transferActionsViewAbi,
 } from "~/abis/canonGuard";
@@ -45,12 +51,49 @@ export interface CappedTransferParam {
   decimals: number;
 }
 
+export interface HubTokenParam {
+  token: Address;
+  symbol: string;
+  decimals: number;
+  cap: bigint;
+  formattedCap: string;
+  capLeft: bigint;
+  formattedCapLeft: string;
+  totalSpent: bigint;
+  formattedTotalSpent: string;
+}
+
+export interface HubConfigParam {
+  recipient: Address;
+  epochLength: bigint;
+  tokens: HubTokenParam[];
+}
+
+export interface PreApproveParam {
+  actionsBuilder: Address;
+  approvalDuration: bigint;
+}
+
+export interface ChangeSafeGuardParam {
+  safeGuard: Address;
+}
+
+export interface EmergencyAddressParam {
+  address: Address;
+  role: "caller" | "trigger";
+}
+
 export interface ActionParametersData {
   type: ActionFactoryType;
+  isHub?: boolean;
   transfers?: TransferParam[];
   arbitraryActions?: ArbitraryActionParam[];
   allowanceClaim?: AllowanceClaimParam;
   cappedTransfer?: CappedTransferParam;
+  hubConfig?: HubConfigParam;
+  preApprove?: PreApproveParam;
+  changeSafeGuard?: ChangeSafeGuardParam;
+  emergencyAddress?: EmergencyAddressParam;
 }
 
 interface UseActionParametersResult {
@@ -62,10 +105,15 @@ interface UseActionParametersResult {
 // ---- Hook ----
 
 /**
- * Fetches and decodes human-readable parameters for an action builder contract.
+ * Fetches and decodes human-readable parameters for an action builder or hub contract.
  * Only fetches when the hook is mounted (i.e., when the Details tab is active).
+ * All errors are handled gracefully -- on failure, returns null so technical details auto-open.
  */
-export function useActionParameters(address: Address, factoryType: ActionFactoryType): UseActionParametersResult {
+export function useActionParameters(
+  address: Address,
+  factoryType: ActionFactoryType,
+  isHub = false,
+): UseActionParametersResult {
   const clientService = useClientService();
   const { chainId } = useStateContext();
   const [data, setData] = useState<ActionParametersData | null>(null);
@@ -73,18 +121,6 @@ export function useActionParameters(address: Address, factoryType: ActionFactory
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Only fetch for supported factory types
-    const supported = [
-      ActionFactoryType.SIMPLE_TRANSFERS,
-      ActionFactoryType.ARBITRARY_ACTIONS,
-      ActionFactoryType.ALLOWANCE_CLAIMOR,
-      ActionFactoryType.CAPPED_TOKEN_TRANSFERS,
-    ];
-    if (!supported.includes(factoryType)) {
-      setData(null);
-      return;
-    }
-
     let cancelled = false;
     const resolvedChainId = chainId ?? 1;
 
@@ -96,7 +132,10 @@ export function useActionParameters(address: Address, factoryType: ActionFactory
         const client = clientService.getClient();
         let result: ActionParametersData | null = null;
 
-        if (factoryType === ActionFactoryType.SIMPLE_TRANSFERS) {
+        // Hub entities get hub-specific fetching
+        if (isHub && factoryType === ActionFactoryType.CAPPED_TOKEN_TRANSFERS) {
+          result = await fetchHubConfigParams(client, address, resolvedChainId);
+        } else if (factoryType === ActionFactoryType.SIMPLE_TRANSFERS) {
           result = await fetchTransferParams(client, address, resolvedChainId);
         } else if (factoryType === ActionFactoryType.ARBITRARY_ACTIONS) {
           result = await fetchArbitraryParams(client, address);
@@ -104,20 +143,24 @@ export function useActionParameters(address: Address, factoryType: ActionFactory
           result = await fetchAllowanceClaimParams(client, address, resolvedChainId);
         } else if (factoryType === ActionFactoryType.CAPPED_TOKEN_TRANSFERS) {
           result = await fetchCappedTransferParams(client, address, resolvedChainId);
+        } else if (factoryType === ActionFactoryType.APPROVE_ACTION) {
+          result = await fetchPreApproveParams(client, address);
+        } else if (factoryType === ActionFactoryType.CHANGE_SAFE_GUARD) {
+          result = await fetchChangeSafeGuardParams(client, address);
+        } else if (factoryType === ActionFactoryType.SET_EMERGENCY_CALLER) {
+          result = await fetchEmergencyCallerParams(client, address);
+        } else if (factoryType === ActionFactoryType.SET_EMERGENCY_TRIGGER) {
+          result = await fetchEmergencyTriggerParams(client, address);
         }
 
-        if (!cancelled) {
-          setData(result);
-        }
+        if (!cancelled) setData(result);
       } catch (err) {
+        // Contract call may revert if the factory type classification is wrong or
+        // the entity is a wrapper. Silently fall back to technical details.
         console.error("Failed to fetch action parameters:", err);
-        if (!cancelled) {
-          setError("Failed to load action parameters");
-        }
+        if (!cancelled) setData(null);
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       }
     };
 
@@ -125,12 +168,12 @@ export function useActionParameters(address: Address, factoryType: ActionFactory
     return () => {
       cancelled = true;
     };
-  }, [address, factoryType, clientService, chainId]);
+  }, [address, factoryType, clientService, chainId, isHub]);
 
   return { data, isLoading, error };
 }
 
-// ---- Fetch helpers ----
+// ---- Helpers ----
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Client = any;
@@ -140,13 +183,9 @@ async function fetchTokenMetadata(
   tokenAddress: Address,
   chainId: number,
 ): Promise<{ symbol: string; decimals: number }> {
-  // Check static list first
   const known = findTokenByAddress(tokenAddress, chainId);
-  if (known) {
-    return { symbol: known.symbol, decimals: known.decimals };
-  }
+  if (known) return { symbol: known.symbol, decimals: known.decimals };
 
-  // Fallback to onchain fetch
   try {
     const [symbol, decimals] = await Promise.all([
       client.readContract({ address: tokenAddress, abi: erc20Abi, functionName: "symbol" }),
@@ -154,18 +193,12 @@ async function fetchTokenMetadata(
     ]);
     return { symbol: symbol as string, decimals: decimals as number };
   } catch {
-    // If metadata fetch fails, return fallback
-    return {
-      symbol: `${tokenAddress.slice(0, 6)}...${tokenAddress.slice(-4)}`,
-      decimals: 18,
-    };
+    return { symbol: `${tokenAddress.slice(0, 6)}...${tokenAddress.slice(-4)}`, decimals: 18 };
   }
 }
 
-/**
- * Fetch transfer parameters using SimpleTransfers.transferActions() view.
- * Returns TransferAction[] = { token: address, to: address, amount: uint256 }
- */
+// ---- Fetch functions per factory type ----
+
 async function fetchTransferParams(
   client: Client,
   actionAddress: Address,
@@ -178,7 +211,6 @@ async function fetchTransferParams(
   })) as readonly { token: Address; to: Address; amount: bigint }[];
 
   const transfers: TransferParam[] = [];
-
   for (const action of transferActions) {
     const meta = await fetchTokenMetadata(client, action.token, chainId);
     transfers.push({
@@ -193,31 +225,43 @@ async function fetchTransferParams(
   return { type: ActionFactoryType.SIMPLE_TRANSFERS, transfers };
 }
 
-/**
- * Fetch arbitrary action parameters using SimpleActions.simpleActions() view.
- * Returns SimpleAction[] = { target: address, signature: string, data: bytes, value: uint256 }
- */
 async function fetchArbitraryParams(client: Client, actionAddress: Address): Promise<ActionParametersData> {
-  const simpleActions = (await client.readContract({
-    address: actionAddress,
-    abi: simpleActionsViewAbi,
-    functionName: "simpleActions",
-  })) as readonly { target: Address; signature: string; data: Hex; value: bigint }[];
+  // Try simpleActions() first (newer contracts store the original constructor inputs)
+  try {
+    const simpleActions = (await client.readContract({
+      address: actionAddress,
+      abi: simpleActionsViewAbi,
+      functionName: "simpleActions",
+    })) as readonly { target: Address; signature: string; data: Hex; value: bigint }[];
 
-  const arbitraryActions: ArbitraryActionParam[] = simpleActions.map((action) => ({
-    target: action.target,
-    signature: action.signature,
-    data: action.data,
-    value: action.value,
-  }));
+    const arbitraryActions: ArbitraryActionParam[] = simpleActions.map((action) => ({
+      target: action.target,
+      signature: action.signature,
+      data: action.data,
+      value: action.value,
+    }));
 
-  return { type: ActionFactoryType.ARBITRARY_ACTIONS, arbitraryActions };
+    return { type: ActionFactoryType.ARBITRARY_ACTIONS, arbitraryActions };
+  } catch {
+    // Fallback to getActions() for older contracts that don't have simpleActions()
+    // getActions() returns Action[] {target, data (full calldata), value}
+    const actions = (await client.readContract({
+      address: actionAddress,
+      abi: actionBuilderAbi,
+      functionName: "getActions",
+    })) as readonly { target: Address; data: Hex; value: bigint }[];
+
+    const arbitraryActions: ArbitraryActionParam[] = actions.map((action) => ({
+      target: action.target,
+      signature: "", // No signature available from getActions()
+      data: action.data,
+      value: action.value,
+    }));
+
+    return { type: ActionFactoryType.ARBITRARY_ACTIONS, arbitraryActions };
+  }
 }
 
-/**
- * Fetch allowance claim parameters using AllowanceClaimor views.
- * Reads TOKEN(), TOKEN_OWNER(), TOKEN_RECIPIENT() immutable getters.
- */
 async function fetchAllowanceClaimParams(
   client: Client,
   actionAddress: Address,
@@ -246,10 +290,6 @@ async function fetchAllowanceClaimParams(
   };
 }
 
-/**
- * Fetch capped transfer parameters using CappedTokenTransfers views.
- * Reads TOKEN(), AMOUNT(), RECIPIENT() immutable getters.
- */
 async function fetchCappedTransferParams(
   client: Client,
   actionAddress: Address,
@@ -277,5 +317,123 @@ async function fetchCappedTransferParams(
       symbol: meta.symbol,
       decimals: meta.decimals,
     },
+  };
+}
+
+async function fetchHubConfigParams(
+  client: Client,
+  hubAddress: Address,
+  chainId: number,
+): Promise<ActionParametersData> {
+  // Fetch hub-level info
+  const [recipient, epochLength, tokenAddresses] = await client.multicall({
+    contracts: [
+      { address: hubAddress, abi: cappedTokenTransfersHubAbi, functionName: "RECIPIENT" },
+      { address: hubAddress, abi: cappedTokenTransfersHubAbi, functionName: "EPOCH_LENGTH" },
+      { address: hubAddress, abi: cappedTokenTransfersHubAbi, functionName: "tokens" },
+    ],
+    allowFailure: false,
+  });
+
+  const tokens = tokenAddresses as Address[];
+  const hubTokens: HubTokenParam[] = [];
+
+  if (tokens.length > 0) {
+    // Batch fetch cap, capLeft, totalSpent for all tokens
+    const tokenCalls = tokens.flatMap((token) => [
+      { address: hubAddress, abi: cappedTokenTransfersHubAbi, functionName: "cap" as const, args: [token] },
+      { address: hubAddress, abi: cappedTokenTransfersHubAbi, functionName: "capLeft" as const, args: [token] },
+      { address: hubAddress, abi: cappedTokenTransfersHubAbi, functionName: "totalSpent" as const, args: [token] },
+    ]);
+
+    const tokenResults = await client.multicall({ contracts: tokenCalls, allowFailure: false });
+
+    for (let i = 0; i < tokens.length; i++) {
+      const tokenAddr = tokens[i];
+      const cap = tokenResults[i * 3] as bigint;
+      const capLeft = tokenResults[i * 3 + 1] as bigint;
+      const totalSpent = tokenResults[i * 3 + 2] as bigint;
+
+      const meta = await fetchTokenMetadata(client, tokenAddr, chainId);
+
+      hubTokens.push({
+        token: tokenAddr,
+        symbol: meta.symbol,
+        decimals: meta.decimals,
+        cap,
+        formattedCap: formatUnits(cap, meta.decimals),
+        capLeft,
+        formattedCapLeft: formatUnits(capLeft, meta.decimals),
+        totalSpent,
+        formattedTotalSpent: formatUnits(totalSpent, meta.decimals),
+      });
+    }
+  }
+
+  return {
+    type: ActionFactoryType.CAPPED_TOKEN_TRANSFERS,
+    isHub: true,
+    hubConfig: {
+      recipient: recipient as Address,
+      epochLength: epochLength as bigint,
+      tokens: hubTokens,
+    },
+  };
+}
+
+async function fetchPreApproveParams(client: Client, actionAddress: Address): Promise<ActionParametersData> {
+  const [actionsBuilder, approvalDuration] = await client.multicall({
+    contracts: [
+      { address: actionAddress, abi: preApproveActionViewAbi, functionName: "ACTIONS_BUILDER" },
+      { address: actionAddress, abi: preApproveActionViewAbi, functionName: "APPROVAL_DURATION" },
+    ],
+    allowFailure: false,
+  });
+
+  return {
+    type: ActionFactoryType.APPROVE_ACTION,
+    preApprove: {
+      actionsBuilder: actionsBuilder as Address,
+      approvalDuration: approvalDuration as bigint,
+    },
+  };
+}
+
+async function fetchChangeSafeGuardParams(client: Client, actionAddress: Address): Promise<ActionParametersData> {
+  const safeGuard = await client.readContract({
+    address: actionAddress,
+    abi: changeSafeGuardActionAbi,
+    functionName: "SAFE_GUARD",
+  });
+
+  return {
+    type: ActionFactoryType.CHANGE_SAFE_GUARD,
+    changeSafeGuard: { safeGuard: safeGuard as Address },
+  };
+}
+
+async function fetchEmergencyCallerParams(client: Client, actionAddress: Address): Promise<ActionParametersData> {
+  const emergencyCaller = await client.readContract({
+    address: actionAddress,
+    abi: setEmergencyCallerActionAbi,
+    functionName: "EMERGENCY_CALLER",
+  });
+
+  return {
+    type: ActionFactoryType.SET_EMERGENCY_CALLER,
+    emergencyAddress: { address: emergencyCaller as Address, role: "caller" },
+  };
+}
+
+async function fetchEmergencyTriggerParams(client: Client, actionAddress: Address): Promise<ActionParametersData> {
+  const emergencyTrigger = await client.readContract({
+    address: actionAddress,
+    abi: setEmergencyTriggerActionAbi,
+    functionName: "EMERGENCY_TRIGGER",
+  });
+
+  return {
+    type: ActionFactoryType.SET_EMERGENCY_TRIGGER,
+    emergencyAddress: { address: emergencyTrigger as Address, role: "trigger" },
   };
 }

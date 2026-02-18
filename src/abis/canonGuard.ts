@@ -768,6 +768,46 @@ export const changeSafeGuardActionAbi = [
   },
 ] as const;
 
+// PreApproveAction ABI - for reading pre-approve action parameters
+export const preApproveActionViewAbi = [
+  {
+    type: "function",
+    name: "ACTIONS_BUILDER",
+    inputs: [],
+    outputs: [{ name: "_actionsBuilder", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "APPROVAL_DURATION",
+    inputs: [],
+    outputs: [{ name: "_approvalDuration", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// SetEmergencyCallerAction ABI - for reading the emergency caller address
+export const setEmergencyCallerActionAbi = [
+  {
+    type: "function",
+    name: "EMERGENCY_CALLER",
+    inputs: [],
+    outputs: [{ name: "_emergencyCaller", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// SetEmergencyTriggerAction ABI - for reading the emergency trigger address
+export const setEmergencyTriggerActionAbi = [
+  {
+    type: "function",
+    name: "EMERGENCY_TRIGGER",
+    inputs: [],
+    outputs: [{ name: "_emergencyTrigger", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
 // ChangeSafeGuardActionFactory ABI - for detaching the Canon Guard from a Safe
 export const changeSafeGuardActionFactoryAbi = [
   // createChangeSafeGuardAction - deploys a ChangeSafeGuardAction contract
