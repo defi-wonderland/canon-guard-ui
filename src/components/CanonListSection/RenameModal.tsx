@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { XIcon, SquarePenIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { useModalClose } from "~/hooks";
 
 interface RenameModalProps {
   isOpen: boolean;
@@ -27,41 +28,7 @@ export const RenameModal = ({ isOpen, onClose, onSubmit, currentLabel, isLoading
     return { isValid: true, errorMessage: null };
   }, [newLabel]);
 
-  // Close modal when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
+  useModalClose(isOpen, onClose, modalRef);
 
   // Reset state and focus input when modal opens
   useEffect(() => {

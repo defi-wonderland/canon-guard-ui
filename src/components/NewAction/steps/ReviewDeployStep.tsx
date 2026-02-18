@@ -1,16 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { Box, Typography, styled } from "@mui/material";
 import { Address } from "viem";
-import { useConfig } from "wagmi";
-import { readContract } from "wagmi/actions";
-import { canonGuardAbi } from "~/abis/canonGuard";
 import { BoxIcon, PlusIcon, MinusIcon, CheckIcon, InfoIcon, ZapOffIcon, LockIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { DurationInput } from "~/components/shared/DurationInput";
 import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { humanizeDuration } from "~/hooks/useCanonGuardConfig";
-import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
+import { usePreApprovalDuration } from "~/hooks";
 import {
   Breadcrumb,
   FormSection,
@@ -53,59 +49,19 @@ export const ReviewDeployStep = ({
   onNavigateToCreate,
   onEdit,
 }: ReviewDeployStepProps) => {
-  const config = useConfig();
-
   const [parametersExpanded, setParametersExpanded] = useState(false);
   const [proposeTransaction, setProposeTransaction] = useState(true);
   const [proposePreApproval, setProposePreApproval] = useState(false);
 
-  // Pre-approval duration state
-  const [durationAmount, setDurationAmount] = useState<string>("1");
-  const [durationUnit, setDurationUnit] = useState<DurationTimeUnit>("hours");
-  const [maxApprovalDuration, setMaxApprovalDuration] = useState<bigint | null>(null);
-
-  // Fetch MAX_APPROVAL_DURATION from Canon Guard contract
-  useEffect(() => {
-    const fetchMaxDuration = async () => {
-      if (!guardAddress || !chainId) return;
-
-      try {
-        const maxDuration = await readContract(config, {
-          address: guardAddress,
-          abi: canonGuardAbi,
-          functionName: "MAX_APPROVAL_DURATION",
-          chainId: chainId,
-        });
-        setMaxApprovalDuration(maxDuration as bigint);
-      } catch (error) {
-        console.error("[ReviewDeployStep] Failed to fetch MAX_APPROVAL_DURATION:", error);
-      }
-    };
-
-    fetchMaxDuration();
-  }, [config, guardAddress, chainId]);
-
-  // Calculate total duration in seconds and validate
-  const { totalDurationSeconds, isValid, errorMessage } = useMemo(() => {
-    const amount = parseFloat(durationAmount) || 0;
-    if (amount <= 0) {
-      return { totalDurationSeconds: 0n, isValid: false, errorMessage: "Duration must be greater than 0" };
-    }
-
-    const multiplier = DURATION_TIME_MULTIPLIERS[durationUnit];
-    const totalSeconds = BigInt(Math.floor(amount * multiplier));
-
-    if (maxApprovalDuration !== null && totalSeconds > maxApprovalDuration) {
-      const maxHumanized = humanizeDuration(maxApprovalDuration);
-      return {
-        totalDurationSeconds: totalSeconds,
-        isValid: false,
-        errorMessage: `Exceeds maximum duration of ${maxHumanized}`,
-      };
-    }
-
-    return { totalDurationSeconds: totalSeconds, isValid: true, errorMessage: null };
-  }, [durationAmount, durationUnit, maxApprovalDuration]);
+  const {
+    durationAmount,
+    setDurationAmount,
+    durationUnit,
+    setDurationUnit,
+    totalDurationSeconds,
+    isValid,
+    errorMessage,
+  } = usePreApprovalDuration(guardAddress, chainId);
 
   // Handle initiate with duration
   const handleInitiate = () => {

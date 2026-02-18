@@ -1,13 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Box, styled } from "@mui/material";
-import { useConfig } from "wagmi";
-import { readContract } from "wagmi/actions";
-import { canonGuardAbi } from "~/abis/canonGuard";
 import { XIcon, ZapIcon } from "~/components/icons";
 import { DurationInput } from "~/components/shared/DurationInput";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
-import { humanizeDuration } from "~/hooks/useCanonGuardConfig";
-import { DURATION_TIME_MULTIPLIERS, type DurationTimeUnit } from "~/utils/timeUnits";
+import { useModalClose, usePreApprovalDuration } from "~/hooks";
 import type { Address } from "viem";
 
 interface PreApproveDurationModalProps {
@@ -27,98 +23,20 @@ export const PreApproveDurationModal = ({
   guardAddress,
   chainId,
 }: PreApproveDurationModalProps) => {
-  const config = useConfig();
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Duration state
-  const [durationAmount, setDurationAmount] = useState<string>("1");
-  const [durationUnit, setDurationUnit] = useState<DurationTimeUnit>("hours");
-  const [maxApprovalDuration, setMaxApprovalDuration] = useState<bigint | null>(null);
-  const [isLoadingMax, setIsLoadingMax] = useState(false);
+  const {
+    durationAmount,
+    setDurationAmount,
+    durationUnit,
+    setDurationUnit,
+    totalDurationSeconds,
+    isValid,
+    errorMessage,
+    isLoading: isLoadingMax,
+  } = usePreApprovalDuration(guardAddress, chainId, isOpen);
 
-  // Fetch MAX_APPROVAL_DURATION from Canon Guard contract
-  useEffect(() => {
-    const fetchMaxDuration = async () => {
-      if (!guardAddress || !chainId) return;
-
-      setIsLoadingMax(true);
-      try {
-        const maxDuration = await readContract(config, {
-          address: guardAddress,
-          abi: canonGuardAbi,
-          functionName: "MAX_APPROVAL_DURATION",
-          chainId: chainId,
-        });
-        setMaxApprovalDuration(maxDuration as bigint);
-      } catch (error) {
-        console.error("[PreApproveDurationModal] Failed to fetch MAX_APPROVAL_DURATION:", error);
-      } finally {
-        setIsLoadingMax(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchMaxDuration();
-    }
-  }, [config, guardAddress, chainId, isOpen]);
-
-  // Calculate total duration in seconds and validate
-  const { totalDurationSeconds, isValid, errorMessage } = useMemo(() => {
-    const amount = parseFloat(durationAmount) || 0;
-    if (amount <= 0) {
-      return { totalDurationSeconds: 0n, isValid: false, errorMessage: "Duration must be greater than 0" };
-    }
-
-    const multiplier = DURATION_TIME_MULTIPLIERS[durationUnit];
-    const totalSeconds = BigInt(Math.floor(amount * multiplier));
-
-    if (maxApprovalDuration !== null && totalSeconds > maxApprovalDuration) {
-      const maxHumanized = humanizeDuration(maxApprovalDuration);
-      return {
-        totalDurationSeconds: totalSeconds,
-        isValid: false,
-        errorMessage: `Exceeds maximum duration of ${maxHumanized}`,
-      };
-    }
-
-    return { totalDurationSeconds: totalSeconds, isValid: true, errorMessage: null };
-  }, [durationAmount, durationUnit, maxApprovalDuration]);
-
-  // Close modal when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  // Close on escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
+  useModalClose(isOpen, onClose, modalRef);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -126,7 +44,7 @@ export const PreApproveDurationModal = ({
       setDurationAmount("1");
       setDurationUnit("hours");
     }
-  }, [isOpen]);
+  }, [isOpen, setDurationAmount, setDurationUnit]);
 
   const handleSubmit = () => {
     if (!isValid) return;

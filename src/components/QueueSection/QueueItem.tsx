@@ -178,13 +178,13 @@ export const QueueItem = ({
           </TitleSection>
           <ActionSection>
             {showRemoveButton && (isHovered || isRemoveLoading) && (
-              <RemoveButton onClick={onRemove} disabled={isRemoveLoading}>
+              <QueueActionButton onClick={onRemove} disabled={isRemoveLoading}>
                 {isRemoveLoading ? (
                   <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent10 }} />
                 ) : (
                   "REMOVE"
                 )}
-              </RemoveButton>
+              </QueueActionButton>
             )}
             {showExecuteButton && (
               <StyledTooltip
@@ -208,13 +208,13 @@ export const QueueItem = ({
               </StyledTooltip>
             )}
             {showSignButton && (
-              <SignButton onClick={onSign} disabled={isSignLoading} data-testid='sign-button'>
+              <QueueActionButton onClick={onSign} disabled={isSignLoading} data-testid='sign-button'>
                 {isSignLoading ? (
                   <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent10 }} />
                 ) : (
                   "SIGN"
                 )}
-              </SignButton>
+              </QueueActionButton>
             )}
             {showNoAction && !showRemoveButton && <EmptyAction />}
           </ActionSection>
@@ -530,30 +530,7 @@ const ExecuteButton = styled("button")<{ disabled?: boolean }>(({ disabled }) =>
   },
 }));
 
-const SignButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: "80px",
-  height: "28px",
-  padding: "8px 20px",
-  borderRadius: "100px",
-  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  backgroundColor: "transparent",
-  cursor: disabled ? "not-allowed" : "pointer",
-  fontFamily: "Inter, sans-serif",
-  fontSize: "12px",
-  fontWeight: 600,
-  letterSpacing: "0.6px",
-  textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent10,
-  opacity: disabled ? 0.6 : 1,
-  "&:hover": {
-    opacity: disabled ? 0.6 : 0.8,
-  },
-}));
-
-const RemoveButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
+const QueueActionButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

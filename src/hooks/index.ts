@@ -8,3 +8,5 @@ export * from "./useSafeStorage";
 export * from "./useIsSigner";
 export * from "./useTokenLookup";
 export * from "./useActionParameters";
+export * from "./useModalClose";
+export * from "./usePreApprovalDuration";
