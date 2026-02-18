@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-type ToastSeverity = "success" | "error";
+export type ToastSeverity = "success" | "error";
 
 interface ToastActionLink {
   label: string;

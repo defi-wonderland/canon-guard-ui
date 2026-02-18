@@ -117,6 +117,23 @@ export function useTransactionExecutor() {
   const [error, setError] = useState<Error | null>(null);
   const [txHash, setTxHash] = useState<Hash | null>(null);
 
+  /** Handle a reverted transaction by showing an error toast with explorer link. */
+  const handleRevert = useCallback(
+    (hash: Hash) => {
+      const revertError = new Error("Transaction failed on chain.");
+      setError(revertError);
+      setStatus("error");
+      console.error("Transaction reverted:", hash);
+
+      const explorerUrl = getExplorerTxUrl(chainId, hash);
+      showErrorToast({
+        message: "Transaction failed on chain.",
+        actionLink: explorerUrl ? { label: "View on Explorer", href: explorerUrl } : undefined,
+      });
+    },
+    [chainId, showErrorToast],
+  );
+
   /**
    * Fetch token decimals from the ERC20 contract
    */
@@ -181,7 +198,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the SimpleTransfersCreated event to get the deployed address
@@ -213,7 +231,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, getTokenDecimals, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, getTokenDecimals, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -269,7 +287,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the ArbitraryActionsCreated event to get the deployed address
@@ -300,7 +319,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -335,7 +354,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the AllowanceClaimorCreated event to get the deployed address
@@ -366,7 +386,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -410,7 +430,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the CappedTokenTransfersCreated event to get the deployed address
@@ -441,7 +462,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, getTokenDecimals, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, getTokenDecimals, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -500,7 +521,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the CappedTokenTransfersHubCreated event to get the deployed address
@@ -534,7 +556,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, getTokenDecimals, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, getTokenDecimals, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -569,7 +591,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the ChangeSafeGuardActionCreated event to get the deployed address
@@ -603,7 +626,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -662,7 +685,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the CanonGuardCreated event to get the deployed address
@@ -693,7 +717,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -733,7 +757,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         console.log("[useTransactionExecutor] Registry record successful:", { txHash: hash });
@@ -755,7 +780,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -787,7 +812,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Queue transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         console.log("[useTransactionExecutor] Queue successful:", { txHash: hash });
@@ -809,7 +835,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -896,7 +922,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Sign transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         console.log("[useTransactionExecutor] Sign successful:", { txHash: hash, safeTxHash, nonce });
@@ -918,7 +945,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, getSafeTxHash, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, getSafeTxHash, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -950,7 +977,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Deploy pre-approval reverted");
+          handleRevert(hash);
+          return null;
         }
 
         // Parse the PreApproveActionCreated event to get the deployed address
@@ -981,7 +1009,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -1017,7 +1045,8 @@ export function useTransactionExecutor() {
         });
 
         if (receipt.status === "reverted") {
-          throw new Error("Execute transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         console.log(`Execute transaction confirmed: ${hash}`);
@@ -1039,7 +1068,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -1071,7 +1100,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Remove from registry transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         console.log("[useTransactionExecutor] Remove from registry successful:", { txHash: hash });
@@ -1093,7 +1123,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
@@ -1126,7 +1156,8 @@ export function useTransactionExecutor() {
         const receipt = await waitForTransactionReceipt(config, { hash });
 
         if (receipt.status === "reverted") {
-          throw new Error("Cancel enqueued transaction reverted");
+          handleRevert(hash);
+          return null;
         }
 
         console.log("[useTransactionExecutor] Cancel enqueued transaction successful:", { txHash: hash });
@@ -1148,7 +1179,7 @@ export function useTransactionExecutor() {
         return null;
       }
     },
-    [chainId, config, showErrorToast, showSuccess, writeContractAsync],
+    [chainId, config, handleRevert, showErrorToast, showSuccess, writeContractAsync],
   );
 
   /**
