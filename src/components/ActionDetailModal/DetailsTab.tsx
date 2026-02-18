@@ -37,9 +37,10 @@ export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
 
   // Auto-open technical details when there are no decoded parameters to show
   const hasParams = paramsData !== null && !paramsError;
-  const [technicalOpen, setTechnicalOpen] = useState(false);
   const shouldAutoOpen = !paramsLoading && !hasParams;
-  const isTechnicalOpen = technicalOpen || shouldAutoOpen;
+  const [technicalOpen, setTechnicalOpen] = useState(false);
+  const [userToggled, setUserToggled] = useState(false);
+  const isTechnicalOpen = userToggled ? technicalOpen : technicalOpen || shouldAutoOpen;
 
   const openExplorer = useCallback(
     (addr: string) => {
@@ -57,7 +58,12 @@ export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
 
       {/* Technical Details - Collapsible (auto-opens when no params available) */}
       <TechnicalSection>
-        <TechnicalHeader onClick={() => setTechnicalOpen(!isTechnicalOpen)}>
+        <TechnicalHeader
+          onClick={() => {
+            setUserToggled(true);
+            setTechnicalOpen(!isTechnicalOpen);
+          }}
+        >
           <TechnicalLabel>TECHNICAL DETAILS</TechnicalLabel>
           {isTechnicalOpen ? (
             <ChevronUpIcon size={14} color={canonHeaderTokens.foreground.accent30} />
