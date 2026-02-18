@@ -385,7 +385,7 @@ const SafeProfileRow = styled(Box)(({ theme }) => ({
   },
 }));
 
-const SafeProfileLeft = styled(Box)(({ theme }) => ({
+const BaseCardLeft = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "16px",
@@ -394,6 +394,10 @@ const SafeProfileLeft = styled(Box)(({ theme }) => ({
     alignItems: "flex-start",
   },
 }));
+
+const SafeProfileLeft = styled(BaseCardLeft)({});
+
+const SettingCardLeft = styled(BaseCardLeft)({});
 
 const SafeIconWrapper = styled(Box)({
   display: "flex",
@@ -559,16 +563,6 @@ const SettingCard = styled(Box)(({ theme }) => ({
     flexDirection: "column",
     alignItems: "stretch",
     padding: "16px",
-  },
-}));
-
-const SettingCardLeft = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: "16px",
-  minWidth: 0,
-  [theme.breakpoints.down("sm")]: {
-    alignItems: "flex-start",
   },
 }));
 
