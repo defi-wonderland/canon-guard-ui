@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { styled } from "@mui/material";
 
 interface TokenIconProps {
@@ -13,6 +13,11 @@ interface TokenIconProps {
  */
 export const TokenIcon = ({ logoURI, symbol, size = 20 }: TokenIconProps) => {
   const [hasError, setHasError] = useState(false);
+
+  // Reset error state when logoURI changes so a new URL can be attempted
+  useEffect(() => {
+    setHasError(false);
+  }, [logoURI]);
 
   if (!logoURI || hasError) {
     return <FallbackIcon size={size} symbol={symbol} />;

@@ -51,7 +51,7 @@ const ETHEREUM_TOKENS: TokenInfo[] = [
     name: "Uniswap",
     symbol: "UNI",
     decimals: 18,
-    logoURI: "ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg",
+    logoURI: "https://cloudflare-ipfs.com/ipfs/QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg",
   },
   {
     chainId: 1,

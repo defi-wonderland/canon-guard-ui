@@ -48,6 +48,16 @@ export const TokenSelector = ({
     return findToken(value) ?? null;
   }, [value, findToken]);
 
+  // Clear debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (lookupTimeout.current) {
+        clearTimeout(lookupTimeout.current);
+        lookupTimeout.current = null;
+      }
+    };
+  }, []);
+
   // Sync input text when the external value changes (e.g. form reset)
   useEffect(() => {
     if (selectedToken) {
@@ -175,8 +185,13 @@ export const TokenSelector = ({
         clearOnBlur={false}
         handleHomeEndKeys={false}
         onBlur={() => {
-          // If user typed/pasted an address directly without selecting, keep it as the value
           const trimmed = inputValue.trim();
+          // If input was cleared, reset the parent value
+          if (!trimmed && value) {
+            onChange("");
+            return;
+          }
+          // If user typed/pasted an address directly without selecting, resolve it
           if (trimmed && isAddress(trimmed) && trimmed.toLowerCase() !== value.toLowerCase()) {
             handleAddressLookup(trimmed);
           }

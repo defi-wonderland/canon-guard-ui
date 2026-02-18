@@ -19,7 +19,7 @@ interface TokenLookupResult {
 export function useTokenLookup(chainId: number) {
   const config = useConfig();
   const [customTokens, setCustomTokens] = useState<Map<string, TokenInfo>>(new Map());
-  const pendingLookups = useRef<Set<string>>(new Set());
+  const pendingLookups = useRef<Map<string, Promise<TokenLookupResult>>>(new Map());
 
   /** Get all tokens for the current chain (static list + custom fetched tokens) */
   const getTokensForChain = useCallback((): TokenInfo[] => {
@@ -55,50 +55,58 @@ export function useTokenLookup(chainId: number) {
         return { token: existing, isLoading: false, error: null };
       }
 
-      // Prevent duplicate concurrent lookups for the same address
+      // Deduplicate concurrent lookups: if already in-flight, await the existing promise
       const key = `${chainId}:${address.toLowerCase()}`;
-      if (pendingLookups.current.has(key)) {
-        return { token: null, isLoading: true, error: null };
+      const existing$ = pendingLookups.current.get(key);
+      if (existing$) {
+        return existing$;
       }
 
-      pendingLookups.current.add(key);
+      const lookup = (async (): Promise<TokenLookupResult> => {
+        try {
+          // Fetch symbol and decimals onchain
+          const [symbol, decimals] = await Promise.all([
+            readContract(config, {
+              address: address as Address,
+              abi: erc20Abi,
+              functionName: "symbol",
+            }),
+            readContract(config, {
+              address: address as Address,
+              abi: erc20Abi,
+              functionName: "decimals",
+            }),
+          ]);
 
-      try {
-        // Fetch symbol and decimals onchain
-        const [symbol, decimals] = await Promise.all([
-          readContract(config, {
+          const token: TokenInfo = {
+            chainId,
             address: address as Address,
-            abi: erc20Abi,
-            functionName: "symbol",
-          }),
-          readContract(config, {
-            address: address as Address,
-            abi: erc20Abi,
-            functionName: "decimals",
-          }),
-        ]);
+            name: symbol, // Use symbol as name for unknown tokens
+            symbol,
+            decimals,
+            logoURI: "", // No logo for custom tokens - fallback icon will be used
+          };
 
-        const token: TokenInfo = {
-          chainId,
-          address: address as Address,
-          name: symbol, // Use symbol as name for unknown tokens
-          symbol,
-          decimals,
-          logoURI: "", // No logo for custom tokens - fallback icon will be used
-        };
+          setCustomTokens((prev) => {
+            const next = new Map(prev);
+            next.set(key, token);
+            return next;
+          });
 
-        setCustomTokens((prev) => {
-          const next = new Map(prev);
-          next.set(key, token);
-          return next;
-        });
+          return { token, isLoading: false, error: null };
+        } catch {
+          return {
+            token: null,
+            isLoading: false,
+            error: "Could not fetch token data. Verify the address is correct.",
+          };
+        } finally {
+          pendingLookups.current.delete(key);
+        }
+      })();
 
-        return { token, isLoading: false, error: null };
-      } catch {
-        return { token: null, isLoading: false, error: "Could not fetch token data. Verify the address is correct." };
-      } finally {
-        pendingLookups.current.delete(key);
-      }
+      pendingLookups.current.set(key, lookup);
+      return lookup;
     },
     [chainId, config, findToken],
   );
