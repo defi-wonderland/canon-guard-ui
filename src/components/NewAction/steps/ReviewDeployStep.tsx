@@ -1,6 +1,39 @@
 import { useState } from "react";
-import { Box, Typography, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import { Address } from "viem";
+import {
+  PreviewCard,
+  PreviewHeader,
+  PreviewTitle,
+  PreviewRow,
+  PreviewInfo,
+  PreviewLabel,
+  PreviewValue,
+  EditButton,
+  ParametersToggle,
+  ToggleContent,
+  ToggleLabel,
+  ParametersContent,
+  ParameterRow,
+  ParameterLabel,
+  ParameterValue,
+  DeployOptionsCard,
+  CheckboxRow,
+  CheckboxLeft,
+  LockedCheckbox,
+  CheckIconWrapper,
+  LockIconWrapper,
+  Checkbox,
+  CheckboxLabel,
+  RightContent,
+  SlowPathTag,
+  SlowPathLabel,
+  InfoIconWrapper,
+  DurationInputSection,
+  DurationLabel,
+  DurationError,
+  ErrorText,
+} from "~/components/NewAction/shared/SharedStyledComponents";
 import { BoxIcon, PlusIcon, MinusIcon, CheckIcon, InfoIcon, ZapOffIcon, LockIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { DurationInput } from "~/components/shared/DurationInput";
@@ -17,12 +50,10 @@ import {
 } from "../shared";
 import type { TransferFormData, ArbitraryActionFormData } from "./index";
 
-// Type guard to detect transfer form data
 const isTransferFormData = (data: TransferFormData | ArbitraryActionFormData): data is TransferFormData => {
   return "transfers" in data;
 };
 
-// Tooltip content
 const TOOLTIP_DEPLOY_SAVE =
   "Deploy and save for future use. Once deployed, you can propose or pre-approve it later. Deploying and saving doesn't require multisig.";
 const TOOLTIP_PROPOSE_TRANSACTION =
@@ -63,7 +94,6 @@ export const ReviewDeployStep = ({
     errorMessage,
   } = usePreApprovalDuration(guardAddress, chainId);
 
-  // Handle initiate with duration
   const handleInitiate = () => {
     if (proposePreApproval && !isValid) return;
     onInitiate(proposeTransaction, proposePreApproval, proposePreApproval ? totalDurationSeconds : undefined);
@@ -74,22 +104,20 @@ export const ReviewDeployStep = ({
       <ContentWrapper>
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='New Action' />
 
-        {/* Preview Action Section */}
         <FormSection label='PREVIEW ACTION' data-testid='preview-action-title'>
-          <ActionPreviewCard>
+          <PreviewCard>
             <PreviewHeader>
-              <ActionTitle>{formData.title || "Untitled Transaction"}</ActionTitle>
+              <PreviewTitle>{formData.title || "Untitled Transaction"}</PreviewTitle>
               <PreviewRow>
-                <FactoryInfo>
-                  <FactoryLabel>CANON FACTORY</FactoryLabel>
+                <PreviewInfo>
+                  <PreviewLabel>CANON FACTORY</PreviewLabel>
                   <BoxIcon size={16} color={canonHeaderTokens.foreground.accent20} />
-                  <FactoryValue>{isTransferFormData(formData) ? "TRANSFER" : "ARBITRARY ACTION"}</FactoryValue>
-                </FactoryInfo>
+                  <PreviewValue>{isTransferFormData(formData) ? "TRANSFER" : "ARBITRARY ACTION"}</PreviewValue>
+                </PreviewInfo>
                 <EditButton onClick={onEdit}>EDIT</EditButton>
               </PreviewRow>
             </PreviewHeader>
 
-            {/* Parameters Expandable Section */}
             <ParametersToggle onClick={() => setParametersExpanded(!parametersExpanded)}>
               <ToggleContent>
                 {parametersExpanded ? (
@@ -104,12 +132,11 @@ export const ReviewDeployStep = ({
             {parametersExpanded && (
               <ParametersContent>
                 {isTransferFormData(formData)
-                  ? // Render Transfer parameters
-                    formData.transfers.map((transfer, index) => {
+                  ? formData.transfers.map((transfer, index) => {
                       const prefix = formData.transfers.length > 1 ? `Token ${index + 1} - ` : "";
                       const isLast = index === formData.transfers.length - 1;
                       return (
-                        <ItemGroup key={transfer.id}>
+                        <ItemGroup key={index}>
                           <ParameterRow>
                             <ParameterLabel>{prefix}Token Address</ParameterLabel>
                             {transfer.tokenAddress ? (
@@ -155,12 +182,11 @@ export const ReviewDeployStep = ({
                         </ItemGroup>
                       );
                     })
-                  : // Render Simple Action parameters
-                    formData.actions.map((action, index) => {
+                  : formData.actions.map((action, index) => {
                       const prefix = formData.actions.length > 1 ? `Action ${index + 1} - ` : "";
                       const isLast = index === formData.actions.length - 1;
                       return (
-                        <ItemGroup key={action.id}>
+                        <ItemGroup key={index}>
                           <ParameterRow>
                             <ParameterLabel>{prefix}Target Address</ParameterLabel>
                             {action.target ? (
@@ -222,13 +248,11 @@ export const ReviewDeployStep = ({
                     })}
               </ParametersContent>
             )}
-          </ActionPreviewCard>
+          </PreviewCard>
         </FormSection>
 
-        {/* Setup Action Deploy Section */}
         <FormSection label='SETUP ACTION DEPLOY'>
           <DeployOptionsCard>
-            {/* Deploy & Save Transaction - Locked */}
             <CheckboxRow>
               <CheckboxLeft>
                 <LockedCheckbox>
@@ -248,7 +272,6 @@ export const ReviewDeployStep = ({
               </StyledTooltip>
             </CheckboxRow>
 
-            {/* Propose Transaction */}
             <CheckboxRow>
               <CheckboxLeft>
                 <Checkbox checked={proposeTransaction} onClick={() => setProposeTransaction(!proposeTransaction)}>
@@ -269,7 +292,6 @@ export const ReviewDeployStep = ({
               </RightContent>
             </CheckboxRow>
 
-            {/* Propose Pre-Approval */}
             <CheckboxRow style={{ borderBottom: proposePreApproval ? "none" : "none" }}>
               <CheckboxLeft>
                 <Checkbox checked={proposePreApproval} onClick={() => setProposePreApproval(!proposePreApproval)}>
@@ -290,7 +312,6 @@ export const ReviewDeployStep = ({
               </RightContent>
             </CheckboxRow>
 
-            {/* Duration Input - shown when Pre-Approval is checked */}
             {proposePreApproval && (
               <DurationInputSection>
                 <DurationLabel>Duration</DurationLabel>
@@ -330,265 +351,7 @@ export const ReviewDeployStep = ({
   );
 };
 
-const ActionPreviewCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
-});
-
-const PreviewHeader = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "20px",
-  padding: "16px",
-});
-
-const ActionTitle = styled(Typography)({
-  fontSize: "18px",
-  fontWeight: 600,
-  lineHeight: "28px",
-  color: canonHeaderTokens.foreground.accent0,
-});
-
-const PreviewRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-});
-
-const FactoryInfo = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const FactoryLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const FactoryValue = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const EditButton = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-  cursor: "pointer",
-  "&:hover": {
-    color: canonHeaderTokens.foreground.accent10,
-  },
-});
-
-const ParametersToggle = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  height: "36px",
-  backgroundColor: canonHeaderTokens.background.layer1Variation,
-  borderTop: `0.5px solid ${canonHeaderTokens.foreground.accent50}`,
-  cursor: "pointer",
-  "&:hover": {
-    opacity: 0.9,
-  },
-});
-
-const ToggleContent = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  padding: "12px",
-});
-
-const ToggleLabel = styled(Typography)({
-  fontSize: "11px",
-  fontWeight: 600,
-  lineHeight: "12px",
-  color: canonHeaderTokens.foreground.accent30,
-  textTransform: "uppercase",
-});
-
-const ParametersContent = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-});
-
 const ItemGroup = styled(Box)({
   display: "flex",
   flexDirection: "column",
-});
-
-const ParameterRow = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$noBorder",
-})<{ $noBorder?: boolean }>(({ $noBorder }) => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-  padding: "16px 16px 16px 36px",
-  borderTop: $noBorder ? "none" : `0.5px solid ${canonHeaderTokens.foreground.accent50}`,
-}));
-
-const ParameterLabel = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const ParameterValue = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent0,
-  fontFamily: "monospace",
-  wordBreak: "break-all",
-});
-
-const DeployOptionsCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
-});
-
-const CheckboxRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "16px",
-  borderBottom: `1px dashed ${canonHeaderTokens.foreground.accent50}`,
-});
-
-const CheckboxLeft = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "20px",
-});
-
-const LockedCheckbox = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "28px",
-  height: "28px",
-  borderRadius: "8px",
-  backgroundColor: canonHeaderTokens.brand.green,
-  position: "relative",
-  "&:hover": {
-    "& .check-icon": {
-      opacity: 0,
-    },
-    "& .lock-icon": {
-      opacity: 1,
-    },
-  },
-});
-
-const CheckIconWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  transition: "opacity 0.15s ease",
-});
-
-const LockIconWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  position: "absolute",
-  opacity: 0,
-  transition: "opacity 0.15s ease",
-});
-
-const Checkbox = styled(Box)<{ checked: boolean }>(({ checked }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "28px",
-  height: "28px",
-  borderRadius: "8px",
-  backgroundColor: checked ? canonHeaderTokens.brand.green : "transparent",
-  border: checked ? "none" : `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-  "&:hover": {
-    opacity: 0.9,
-  },
-}));
-
-const CheckboxLabel = styled(Typography)({
-  fontSize: "14px",
-  fontWeight: 600,
-  lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent0,
-});
-
-const RightContent = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const SlowPathTag = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const SlowPathLabel = styled(Typography)({
-  fontSize: "11px",
-  fontWeight: 400,
-  lineHeight: "12px",
-  color: canonHeaderTokens.status.red,
-});
-
-const InfoIconWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-});
-
-// Duration input styles
-const DurationInputSection = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-  padding: "16px",
-  paddingLeft: "64px", // Align with checkbox labels
-  backgroundColor: canonHeaderTokens.background.layer1Variation,
-  borderTop: `1px dashed ${canonHeaderTokens.foreground.accent50}`,
-});
-
-const DurationLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 600,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-  textTransform: "uppercase",
-  letterSpacing: "0.5px",
-});
-
-const DurationError = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "6px",
-  marginTop: "4px",
-});
-
-const ErrorText = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.status.red,
 });
