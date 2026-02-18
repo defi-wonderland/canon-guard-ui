@@ -3,7 +3,7 @@ import { Box, styled } from "@mui/material";
 import { ExternalLink as ShareIcon } from "lucide-react";
 import { XIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
-import { StyledTooltip } from "~/components/shared/StyledComponents";
+// import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { QueueItem } from "~/services";
@@ -147,12 +147,12 @@ export const ActionDetailModal = ({
               <TabLabel $isActive={activeTab === "details"}>DETAILS</TabLabel>
             </Tab>
             <TabDivider />
-            <StyledTooltip title='Transaction simulation coming soon' placement='top'>
+            {/* <StyledTooltip title='Transaction simulation coming soon' placement='top'>
               <TabDisabled>
                 <TabLabel $isActive={false}>SIMULATE</TabLabel>
               </TabDisabled>
-            </StyledTooltip>
-            <TabDivider />
+            </StyledTooltip> */}
+            {/* <TabDivider /> */}
             <TabSpacer />
             <ShareButton onClick={handleShare}>
               <TabLabel $isActive={false}>SHARE</TabLabel>
@@ -306,16 +306,16 @@ const Tab = styled("button", {
   },
 }));
 
-const TabDisabled = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "16px 20px",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  cursor: "not-allowed",
-  opacity: 0.5,
-  flexShrink: 0,
-});
+// const TabDisabled = styled(Box)({
+//   display: "flex",
+//   alignItems: "center",
+//   justifyContent: "center",
+//   padding: "16px 20px",
+//   backgroundColor: canonHeaderTokens.background.layer1,
+//   cursor: "not-allowed",
+//   opacity: 0.5,
+//   flexShrink: 0,
+// });
 
 const TabLabel = styled("span", {
   shouldForwardProp: (prop) => prop !== "$isActive",
