@@ -72,6 +72,73 @@ export interface TransactionStepsResult {
 // Default pre-approval duration (1 hour = 3600 seconds) - used only if not specified
 const DEFAULT_PRE_APPROVAL_DURATION = 3600n;
 
+function buildQueueStep(
+  guardAddress: Address,
+  actionBuilderAddress: Address,
+  options?: { id?: string; title?: string },
+): TransactionStep {
+  const queueData = encodeFunctionData({
+    abi: canonGuardEntrypointAbi,
+    functionName: "queueTransaction",
+    args: [actionBuilderAddress],
+  });
+
+  return {
+    id: options?.id ?? "queue-action",
+    title: options?.title ?? "Queue Transaction",
+    description: "Add the transaction to the Canon Guard queue",
+    status: "pending",
+    to: guardAddress,
+    data: queueData,
+  };
+}
+
+function buildSignStep(safeAddress: Address, options?: { id?: string; title?: string }): TransactionStep {
+  const approveHashData = encodeFunctionData({
+    abi: safeAbi,
+    functionName: "approveHash",
+    args: [zeroHash],
+  });
+
+  return {
+    id: options?.id ?? "sign-safe-tx",
+    title: options?.title ?? "Sign Transaction",
+    description: "Sign the transaction in your Safe wallet",
+    status: "pending",
+    to: safeAddress,
+    data: approveHashData,
+  };
+}
+
+function buildProposeTransactionSteps(guardAddress: Address, safeAddress: Address): TransactionStep[] {
+  return [buildQueueStep(guardAddress, zeroAddress), buildSignStep(safeAddress)];
+}
+
+function buildProposePreApprovalSteps(
+  guardAddress: Address,
+  safeAddress: Address,
+  preApprovalDuration: bigint,
+): TransactionStep[] {
+  const deployPreApproveData = encodeFunctionData({
+    abi: preApproveActionFactoryAbi,
+    functionName: "createPreApproveAction",
+    args: [zeroAddress, preApprovalDuration],
+  });
+
+  return [
+    {
+      id: "deploy-preapprove",
+      title: "Deploy Pre-Approval",
+      description: "Deploy the pre-approval action contract",
+      status: "pending",
+      to: PRE_APPROVE_ACTION_FACTORY,
+      data: deployPreApproveData,
+    },
+    buildQueueStep(guardAddress, zeroAddress, { id: "queue-preapprove", title: "Queue Pre-Approval" }),
+    buildSignStep(safeAddress, { id: "sign-preapprove", title: "Sign Pre-Approval" }),
+  ];
+}
+
 /**
  * Builds the list of transaction steps based on checkbox selections
  */
@@ -134,103 +201,12 @@ export function buildTransactionSteps(options: BuildTransactionStepsOptions): Tr
 
   // 3. OPTIONAL: Propose Transaction (queue + sign)
   if (proposeTransaction) {
-    // Queue the action in the guard
-    const queueData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [
-        zeroAddress, // _actionsBuilder - placeholder
-      ],
-    });
-
-    steps.push({
-      id: "queue-action",
-      title: "Queue Transaction",
-      description: "Add the transaction to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queueData,
-    });
-
-    // Sign the transaction in the Safe
-    // For Safe signing, we need to call approveHash with the safeTxHash
-    // This requires computing the hash, which depends on the action being queued
-    // For now, we use a placeholder
-    const approveHashData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [
-        zeroHash, // hash - placeholder
-      ],
-    });
-
-    steps.push({
-      id: "sign-safe-tx",
-      title: "Sign Transaction",
-      description: "Sign the transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: approveHashData,
-    });
+    steps.push(...buildProposeTransactionSteps(guardAddress, safeAddress));
   }
 
   // 4. OPTIONAL: Propose Pre-Approval
   if (proposePreApproval) {
-    // Deploy the pre-approve action
-    // createPreApproveAction takes: _actionsBuilder, _approvalDuration
-    const deployPreApproveData = encodeFunctionData({
-      abi: preApproveActionFactoryAbi,
-      functionName: "createPreApproveAction",
-      args: [
-        zeroAddress, // _actionsBuilder - placeholder (the action to approve)
-        preApprovalDuration, // _approvalDuration (user-provided duration)
-      ],
-    });
-
-    steps.push({
-      id: "deploy-preapprove",
-      title: "Deploy Pre-Approval",
-      description: "Deploy the pre-approval action contract",
-      status: "pending",
-      to: PRE_APPROVE_ACTION_FACTORY,
-      data: deployPreApproveData,
-    });
-
-    // Queue the pre-approve action
-    const queuePreApproveData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [
-        zeroAddress, // _preApproveAction - placeholder
-      ],
-    });
-
-    steps.push({
-      id: "queue-preapprove",
-      title: "Queue Pre-Approval",
-      description: "Add the pre-approval to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queuePreApproveData,
-    });
-
-    // Sign the pre-approve transaction
-    const signPreApproveData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [
-        zeroHash, // hash - placeholder
-      ],
-    });
-
-    steps.push({
-      id: "sign-preapprove",
-      title: "Sign Pre-Approval",
-      description: "Sign the pre-approval transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: signPreApproveData,
-    });
+    steps.push(...buildProposePreApprovalSteps(guardAddress, safeAddress, preApprovalDuration));
   }
 
   return { steps };
@@ -309,83 +285,12 @@ export function buildArbitraryActionSteps(options: BuildArbitraryActionStepsOpti
 
   // 3. OPTIONAL: Propose Transaction (queue + sign)
   if (proposeTransaction) {
-    const queueData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [zeroAddress],
-    });
-
-    steps.push({
-      id: "queue-action",
-      title: "Queue Transaction",
-      description: "Add the transaction to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queueData,
-    });
-
-    const approveHashData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [zeroHash],
-    });
-
-    steps.push({
-      id: "sign-safe-tx",
-      title: "Sign Transaction",
-      description: "Sign the transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: approveHashData,
-    });
+    steps.push(...buildProposeTransactionSteps(guardAddress, safeAddress));
   }
 
   // 4. OPTIONAL: Propose Pre-Approval
   if (proposePreApproval) {
-    const deployPreApproveData = encodeFunctionData({
-      abi: preApproveActionFactoryAbi,
-      functionName: "createPreApproveAction",
-      args: [zeroAddress, preApprovalDuration],
-    });
-
-    steps.push({
-      id: "deploy-preapprove",
-      title: "Deploy Pre-Approval",
-      description: "Deploy the pre-approval action contract",
-      status: "pending",
-      to: PRE_APPROVE_ACTION_FACTORY,
-      data: deployPreApproveData,
-    });
-
-    const queuePreApproveData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [zeroAddress],
-    });
-
-    steps.push({
-      id: "queue-preapprove",
-      title: "Queue Pre-Approval",
-      description: "Add the pre-approval to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queuePreApproveData,
-    });
-
-    const signPreApproveData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [zeroHash],
-    });
-
-    steps.push({
-      id: "sign-preapprove",
-      title: "Sign Pre-Approval",
-      description: "Sign the pre-approval transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: signPreApproveData,
-    });
+    steps.push(...buildProposePreApprovalSteps(guardAddress, safeAddress, preApprovalDuration));
   }
 
   return { steps };
@@ -445,83 +350,12 @@ export function buildClaimAllowanceSteps(options: BuildClaimAllowanceStepsOption
 
   // 3. OPTIONAL: Propose Transaction (queue + sign)
   if (proposeTransaction) {
-    const queueData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [zeroAddress],
-    });
-
-    steps.push({
-      id: "queue-action",
-      title: "Queue Transaction",
-      description: "Add the transaction to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queueData,
-    });
-
-    const approveHashData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [zeroHash],
-    });
-
-    steps.push({
-      id: "sign-safe-tx",
-      title: "Sign Transaction",
-      description: "Sign the transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: approveHashData,
-    });
+    steps.push(...buildProposeTransactionSteps(guardAddress, safeAddress));
   }
 
   // 4. OPTIONAL: Propose Pre-Approval
   if (proposePreApproval) {
-    const deployPreApproveData = encodeFunctionData({
-      abi: preApproveActionFactoryAbi,
-      functionName: "createPreApproveAction",
-      args: [zeroAddress, preApprovalDuration],
-    });
-
-    steps.push({
-      id: "deploy-preapprove",
-      title: "Deploy Pre-Approval",
-      description: "Deploy the pre-approval action contract",
-      status: "pending",
-      to: PRE_APPROVE_ACTION_FACTORY,
-      data: deployPreApproveData,
-    });
-
-    const queuePreApproveData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [zeroAddress],
-    });
-
-    steps.push({
-      id: "queue-preapprove",
-      title: "Queue Pre-Approval",
-      description: "Add the pre-approval to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queuePreApproveData,
-    });
-
-    const signPreApproveData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [zeroHash],
-    });
-
-    steps.push({
-      id: "sign-preapprove",
-      title: "Sign Pre-Approval",
-      description: "Sign the pre-approval transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: signPreApproveData,
-    });
+    steps.push(...buildProposePreApprovalSteps(guardAddress, safeAddress, preApprovalDuration));
   }
 
   return { steps };
@@ -594,50 +428,7 @@ export function buildCappedTransferHubSteps(options: BuildCappedTransferHubSteps
 
   // 3. OPTIONAL: Propose Pre-Approval
   if (proposePreApproval) {
-    const deployPreApproveData = encodeFunctionData({
-      abi: preApproveActionFactoryAbi,
-      functionName: "createPreApproveAction",
-      args: [zeroAddress, preApprovalDuration],
-    });
-
-    steps.push({
-      id: "deploy-preapprove",
-      title: "Deploy Pre-Approval",
-      description: "Deploy the pre-approval action contract",
-      status: "pending",
-      to: PRE_APPROVE_ACTION_FACTORY,
-      data: deployPreApproveData,
-    });
-
-    const queuePreApproveData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [zeroAddress],
-    });
-
-    steps.push({
-      id: "queue-preapprove",
-      title: "Queue Pre-Approval",
-      description: "Add the pre-approval to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queuePreApproveData,
-    });
-
-    const signPreApproveData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [zeroHash],
-    });
-
-    steps.push({
-      id: "sign-preapprove",
-      title: "Sign Pre-Approval",
-      description: "Sign the pre-approval transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: signPreApproveData,
-    });
+    steps.push(...buildProposePreApprovalSteps(guardAddress, safeAddress, preApprovalDuration));
   }
 
   return { steps };
@@ -697,35 +488,7 @@ export function buildDeployHubChildSteps(options: BuildDeployHubChildStepsOption
 
   // 3. OPTIONAL: Propose Transaction (queue + sign)
   if (proposeTransaction) {
-    const queueData = encodeFunctionData({
-      abi: canonGuardEntrypointAbi,
-      functionName: "queueTransaction",
-      args: [zeroAddress],
-    });
-
-    steps.push({
-      id: "queue-action",
-      title: "Queue Transaction",
-      description: "Add the transaction to the Canon Guard queue",
-      status: "pending",
-      to: guardAddress,
-      data: queueData,
-    });
-
-    const approveHashData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "approveHash",
-      args: [zeroHash],
-    });
-
-    steps.push({
-      id: "sign-safe-tx",
-      title: "Sign Transaction",
-      description: "Sign the transaction in your Safe wallet",
-      status: "pending",
-      to: safeAddress,
-      data: approveHashData,
-    });
+    steps.push(...buildProposeTransactionSteps(guardAddress, safeAddress));
   }
 
   return { steps };
