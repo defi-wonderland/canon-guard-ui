@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { Box, Typography, styled, CircularProgress } from "@mui/material";
 import { Address, formatUnits } from "viem";
-import { VectorSquareIcon, AsteriskIcon, ChevronDownIcon } from "~/components/icons";
+import { VectorSquareIcon, AsteriskIcon, ChevronDownIcon, TokenIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { findTokenByAddress } from "~/constants/tokenList";
+import { useStateContext } from "~/hooks/useStateContext";
 import { ActionFactoryType, CappedTokenTransfersHubInfo, HubTokenConfig } from "~/types/canon-guard";
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
 import {
@@ -45,7 +47,11 @@ interface DeployHubChildFormStepProps {
 export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
   const { hubLabel, hubInfo, isLoadingHubInfo, formData, onFormDataChange, onContinue, onBack, onNavigateToCreate } =
     props;
+  const { chainId } = useStateContext();
   const [tokenDropdownOpen, setTokenDropdownOpen] = useState(false);
+
+  /** Resolve token metadata from the static list for display */
+  const resolveToken = (address: string) => findTokenByAddress(address, chainId ?? 1);
 
   const updateField = (field: keyof HubChildFormData, value: string) => {
     onFormDataChange({ ...formData, [field]: value });
@@ -162,23 +168,50 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
                     <InputLabel>Token</InputLabel>
                     <TokenDropdownContainer onClick={(e) => e.stopPropagation()}>
                       <TokenDropdownButton onClick={() => setTokenDropdownOpen(!tokenDropdownOpen)}>
-                        <TokenDropdownText $hasValue={!!formData.token}>
-                          {formData.token || "Select a token"}
-                        </TokenDropdownText>
+                        {formData.token ? (
+                          <TokenDisplayRow>
+                            <TokenIcon
+                              logoURI={resolveToken(formData.token)?.logoURI}
+                              symbol={resolveToken(formData.token)?.symbol}
+                              size={20}
+                            />
+                            <TokenDropdownText $hasValue>
+                              {resolveToken(formData.token)?.symbol ?? formData.token}
+                            </TokenDropdownText>
+                            <TokenAddressTruncated>
+                              {formData.token.slice(0, 6)}...{formData.token.slice(-4)}
+                            </TokenAddressTruncated>
+                          </TokenDisplayRow>
+                        ) : (
+                          <TokenDropdownText $hasValue={false}>Select a token</TokenDropdownText>
+                        )}
                         <ChevronDownIcon size={16} color={canonHeaderTokens.foreground.accent20} />
                       </TokenDropdownButton>
                       {tokenDropdownOpen && (
                         <TokenDropdownMenu>
-                          {hubInfo.tokens.map((tokenConfig) => (
-                            <TokenDropdownItem
-                              key={tokenConfig.address}
-                              onClick={() => handleTokenSelect(tokenConfig.address)}
-                              $isSelected={tokenConfig.address.toLowerCase() === formData.token.toLowerCase()}
-                            >
-                              <TokenAddress>{tokenConfig.address}</TokenAddress>
-                              <TokenCapInfo>Cap: {formatUnits(tokenConfig.cap, tokenConfig.decimals)}</TokenCapInfo>
-                            </TokenDropdownItem>
-                          ))}
+                          {hubInfo.tokens.map((tokenConfig) => {
+                            const tokenMeta = resolveToken(tokenConfig.address);
+                            return (
+                              <TokenDropdownItem
+                                key={tokenConfig.address}
+                                onClick={() => handleTokenSelect(tokenConfig.address)}
+                                $isSelected={tokenConfig.address.toLowerCase() === formData.token.toLowerCase()}
+                              >
+                                <TokenOptionRow>
+                                  <TokenIcon logoURI={tokenMeta?.logoURI} symbol={tokenMeta?.symbol} size={20} />
+                                  <TokenOptionInfo>
+                                    <TokenOptionSymbol>
+                                      {tokenMeta?.symbol ??
+                                        `${tokenConfig.address.slice(0, 6)}...${tokenConfig.address.slice(-4)}`}
+                                    </TokenOptionSymbol>
+                                    <TokenCapInfo>
+                                      Cap: {formatUnits(tokenConfig.cap, tokenConfig.decimals)}
+                                    </TokenCapInfo>
+                                  </TokenOptionInfo>
+                                </TokenOptionRow>
+                              </TokenDropdownItem>
+                            );
+                          })}
                         </TokenDropdownMenu>
                       )}
                     </TokenDropdownContainer>
@@ -332,12 +365,42 @@ const TokenDropdownItem = styled("button", {
   },
 }));
 
-const TokenAddress = styled(Typography)({
-  fontSize: "14px",
+const TokenDisplayRow = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
+  flex: 1,
+  minWidth: 0,
+});
+
+const TokenAddressTruncated = styled(Typography)({
+  fontSize: "13px",
   fontWeight: 400,
   lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent0,
+  color: canonHeaderTokens.foreground.accent20,
   fontFamily: "monospace",
+  marginLeft: "auto",
+});
+
+const TokenOptionRow = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  width: "100%",
+});
+
+const TokenOptionInfo = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "2px",
+  minWidth: 0,
+});
+
+const TokenOptionSymbol = styled(Typography)({
+  fontSize: "14px",
+  fontWeight: 600,
+  lineHeight: "20px",
+  color: canonHeaderTokens.foreground.accent0,
 });
 
 const TokenCapInfo = styled(Typography)({
