@@ -660,6 +660,103 @@ export const cappedTokenTransfersHubAbi = [
   },
 ] as const;
 
+// SimpleActions view ABI - returns the stored SimpleAction[] from constructor
+// Used by SimpleActions (arbitrary actions) contracts
+export const simpleActionsViewAbi = [
+  {
+    type: "function",
+    name: "simpleActions",
+    inputs: [],
+    outputs: [
+      {
+        name: "_simpleActions",
+        type: "tuple[]",
+        internalType: "struct ISimpleActions.SimpleAction[]",
+        components: [
+          { name: "target", type: "address", internalType: "address" },
+          { name: "signature", type: "string", internalType: "string" },
+          { name: "data", type: "bytes", internalType: "bytes" },
+          { name: "value", type: "uint256", internalType: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+] as const;
+
+// SimpleTransfers view ABI - returns the stored TransferAction[] from constructor
+// Used by SimpleTransfers contracts
+export const transferActionsViewAbi = [
+  {
+    type: "function",
+    name: "transferActions",
+    inputs: [],
+    outputs: [
+      {
+        name: "_transferActions",
+        type: "tuple[]",
+        internalType: "struct ISimpleTransfers.TransferAction[]",
+        components: [
+          { name: "token", type: "address", internalType: "address" },
+          { name: "to", type: "address", internalType: "address" },
+          { name: "amount", type: "uint256", internalType: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+] as const;
+
+// AllowanceClaimor ABI - for reading action parameters from deployed AllowanceClaimor contracts
+export const allowanceClaimorAbi = [
+  {
+    type: "function",
+    name: "TOKEN",
+    inputs: [],
+    outputs: [{ name: "_token", type: "address", internalType: "contract IERC20" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "TOKEN_OWNER",
+    inputs: [],
+    outputs: [{ name: "_tokenOwner", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "TOKEN_RECIPIENT",
+    inputs: [],
+    outputs: [{ name: "_tokenRecipient", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// CappedTokenTransfers ABI - for reading action parameters from deployed CappedTokenTransfers contracts
+export const cappedTokenTransfersAbi = [
+  {
+    type: "function",
+    name: "TOKEN",
+    inputs: [],
+    outputs: [{ name: "_token", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "AMOUNT",
+    inputs: [],
+    outputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "RECIPIENT",
+    inputs: [],
+    outputs: [{ name: "_recipient", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
 // ChangeSafeGuardAction ABI - for reading the target guard address
 export const changeSafeGuardActionAbi = [
   {
@@ -667,6 +764,46 @@ export const changeSafeGuardActionAbi = [
     name: "SAFE_GUARD",
     inputs: [],
     outputs: [{ name: "_safeGuard", type: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// PreApproveAction ABI - for reading pre-approve action parameters
+export const preApproveActionViewAbi = [
+  {
+    type: "function",
+    name: "ACTIONS_BUILDER",
+    inputs: [],
+    outputs: [{ name: "_actionsBuilder", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "APPROVAL_DURATION",
+    inputs: [],
+    outputs: [{ name: "_approvalDuration", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// SetEmergencyCallerAction ABI - for reading the emergency caller address
+export const setEmergencyCallerActionAbi = [
+  {
+    type: "function",
+    name: "EMERGENCY_CALLER",
+    inputs: [],
+    outputs: [{ name: "_emergencyCaller", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
+// SetEmergencyTriggerAction ABI - for reading the emergency trigger address
+export const setEmergencyTriggerActionAbi = [
+  {
+    type: "function",
+    name: "EMERGENCY_TRIGGER",
+    inputs: [],
+    outputs: [{ name: "_emergencyTrigger", type: "address", internalType: "address" }],
     stateMutability: "view",
   },
 ] as const;

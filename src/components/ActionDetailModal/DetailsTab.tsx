@@ -1,12 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { Box, styled } from "@mui/material";
 import { ExternalLink as ExternalLinkIcon } from "lucide-react";
-import { BoxIcon } from "~/components/icons";
+import { Address } from "viem";
+import { BoxIcon, ChevronDownIcon, ChevronUpIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { useActionParameters } from "~/hooks/useActionParameters";
 import { getFactoryDisplayName } from "~/utils/factoryDisplay";
 import { truncateAddress } from "~/utils/format";
+import { ActionParametersDisplay } from "./ActionParametersDisplay";
 import type { ActionDetailModalData } from "./index";
 
 interface DetailsTabProps {
@@ -19,10 +22,25 @@ export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
 
   const factoryType = isQueue ? data.item.factoryType : data.entity.factoryType;
   const factoryLabel = isQueue ? data.item.factoryLabel : data.entity.factoryLabel;
-  const address = isQueue ? data.item.actionBuilderAddress : data.entity.address;
+  const address = (isQueue ? data.item.actionBuilderAddress : data.entity.address) as Address;
+  const isHub = !isQueue && data.entity.isHub;
 
   const factoryDisplayName = getFactoryDisplayName(factoryType);
   const displayFactory = factoryDisplayName !== "Unknown" ? factoryDisplayName : factoryLabel || "Unknown";
+
+  // Fetch decoded action parameters (isHub flag enables hub-specific fetching)
+  const {
+    data: paramsData,
+    isLoading: paramsLoading,
+    error: paramsError,
+  } = useActionParameters(address, factoryType, isHub);
+
+  // Auto-open technical details when there are no decoded parameters to show
+  const hasParams = paramsData !== null && !paramsError;
+  const shouldAutoOpen = !paramsLoading && !hasParams;
+  const [technicalOpen, setTechnicalOpen] = useState(false);
+  const [userToggled, setUserToggled] = useState(false);
+  const isTechnicalOpen = userToggled ? technicalOpen : technicalOpen || shouldAutoOpen;
 
   const openExplorer = useCallback(
     (addr: string) => {
@@ -35,118 +53,140 @@ export const DetailsTab = ({ data, chainId }: DetailsTabProps) => {
 
   return (
     <Container>
-      <InfoSection>
-        <InfoRows>
-          {/* Action Builder Address */}
-          <InfoRow>
-            <InfoLabel>Action Builder</InfoLabel>
-            <InfoValueRow>
-              <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent20}>
-                <AddressText>{truncateAddress(address)}</AddressText>
-              </CopyableText>
-              <ExplorerLink onClick={() => openExplorer(address)}>
-                <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
-              </ExplorerLink>
-            </InfoValueRow>
-          </InfoRow>
-          <InfoDivider />
+      {/* Human-readable action parameters */}
+      <ActionParametersDisplay data={paramsData} isLoading={paramsLoading} error={paramsError} chainId={chainId} />
 
-          {/* Factory Type */}
-          <InfoRow>
-            <InfoLabel>Canon Factory</InfoLabel>
-            <InfoValueRow>
-              <BoxIcon size={14} color={canonHeaderTokens.foreground.accent20} />
-              <FactoryText>{displayFactory.toUpperCase()}</FactoryText>
-            </InfoValueRow>
-          </InfoRow>
-          <InfoDivider />
+      {/* Technical Details - Collapsible (auto-opens when no params available) */}
+      <TechnicalSection>
+        <TechnicalHeader
+          onClick={() => {
+            setUserToggled(true);
+            setTechnicalOpen(!isTechnicalOpen);
+          }}
+        >
+          <TechnicalLabel>TECHNICAL DETAILS</TechnicalLabel>
+          {isTechnicalOpen ? (
+            <ChevronUpIcon size={14} color={canonHeaderTokens.foreground.accent30} />
+          ) : (
+            <ChevronDownIcon size={14} color={canonHeaderTokens.foreground.accent30} />
+          )}
+        </TechnicalHeader>
 
-          {/* Factory Type Key */}
-          <InfoRow>
-            <InfoLabel>Factory Type</InfoLabel>
-            <InfoValue>{factoryType}</InfoValue>
-          </InfoRow>
-
-          {/* Queue-specific details */}
-          {isQueue && (
-            <>
-              <InfoDivider />
-
-              {/* Proposer */}
+        {isTechnicalOpen && (
+          <InfoSection>
+            <InfoRows>
+              {/* Action Builder Address */}
               <InfoRow>
-                <InfoLabel>Proposer</InfoLabel>
+                <InfoLabel>Action Builder</InfoLabel>
                 <InfoValueRow>
-                  <CopyableText
-                    text={data.item.proposer}
-                    iconSize={10}
-                    iconColor={canonHeaderTokens.foreground.accent20}
-                  >
-                    <AddressText>{truncateAddress(data.item.proposer)}</AddressText>
+                  <CopyableText text={address} iconSize={10} iconColor={canonHeaderTokens.foreground.accent20}>
+                    <AddressText>{truncateAddress(address)}</AddressText>
                   </CopyableText>
-                  <ExplorerLink onClick={() => openExplorer(data.item.proposer)}>
+                  <ExplorerLink onClick={() => openExplorer(address)}>
                     <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
                   </ExplorerLink>
                 </InfoValueRow>
               </InfoRow>
               <InfoDivider />
 
-              {/* Safe Tx Hash */}
+              {/* Factory Type */}
               <InfoRow>
-                <InfoLabel>Safe Tx Hash</InfoLabel>
+                <InfoLabel>Canon Factory</InfoLabel>
                 <InfoValueRow>
-                  <CopyableText
-                    text={data.item.safeTxHash}
-                    iconSize={10}
-                    iconColor={canonHeaderTokens.foreground.accent20}
-                  >
-                    <HashText>{truncateHash(data.item.safeTxHash)}</HashText>
-                  </CopyableText>
+                  <BoxIcon size={14} color={canonHeaderTokens.foreground.accent20} />
+                  <FactoryText>{displayFactory.toUpperCase()}</FactoryText>
                 </InfoValueRow>
               </InfoRow>
               <InfoDivider />
 
-              {/* Actions Data */}
-              <InfoColumn>
-                <InfoLabel>Actions Data</InfoLabel>
-                <DataBox>
-                  <DataText>{data.item.actionsData}</DataText>
-                </DataBox>
-              </InfoColumn>
+              {/* Factory Type Key */}
+              <InfoRow>
+                <InfoLabel>Factory Type</InfoLabel>
+                <InfoValue>{factoryType}</InfoValue>
+              </InfoRow>
 
-              {/* Hub Info (if applicable) */}
-              {data.item.isHubChild && data.item.hubAddress && (
+              {/* Queue-specific details */}
+              {isQueue && (
                 <>
                   <InfoDivider />
+
+                  {/* Proposer */}
                   <InfoRow>
-                    <InfoLabel>Hub Address</InfoLabel>
+                    <InfoLabel>Proposer</InfoLabel>
                     <InfoValueRow>
                       <CopyableText
-                        text={data.item.hubAddress}
+                        text={data.item.proposer}
                         iconSize={10}
                         iconColor={canonHeaderTokens.foreground.accent20}
                       >
-                        <AddressText>{truncateAddress(data.item.hubAddress)}</AddressText>
+                        <AddressText>{truncateAddress(data.item.proposer)}</AddressText>
                       </CopyableText>
-                      <ExplorerLink onClick={() => openExplorer(data.item.hubAddress!)}>
+                      <ExplorerLink onClick={() => openExplorer(data.item.proposer)}>
                         <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
                       </ExplorerLink>
                     </InfoValueRow>
                   </InfoRow>
-                  {data.item.hubLabel && (
+                  <InfoDivider />
+
+                  {/* Safe Tx Hash */}
+                  <InfoRow>
+                    <InfoLabel>Safe Tx Hash</InfoLabel>
+                    <InfoValueRow>
+                      <CopyableText
+                        text={data.item.safeTxHash}
+                        iconSize={10}
+                        iconColor={canonHeaderTokens.foreground.accent20}
+                      >
+                        <HashText>{truncateHash(data.item.safeTxHash)}</HashText>
+                      </CopyableText>
+                    </InfoValueRow>
+                  </InfoRow>
+                  <InfoDivider />
+
+                  {/* Actions Data */}
+                  <InfoColumn>
+                    <InfoLabel>Actions Data</InfoLabel>
+                    <DataBox>
+                      <DataText>{data.item.actionsData}</DataText>
+                    </DataBox>
+                  </InfoColumn>
+
+                  {/* Hub Info (if applicable) */}
+                  {data.item.isHubChild && data.item.hubAddress && (
                     <>
                       <InfoDivider />
                       <InfoRow>
-                        <InfoLabel>Hub Label</InfoLabel>
-                        <InfoValue>{data.item.hubLabel}</InfoValue>
+                        <InfoLabel>Hub Address</InfoLabel>
+                        <InfoValueRow>
+                          <CopyableText
+                            text={data.item.hubAddress}
+                            iconSize={10}
+                            iconColor={canonHeaderTokens.foreground.accent20}
+                          >
+                            <AddressText>{truncateAddress(data.item.hubAddress)}</AddressText>
+                          </CopyableText>
+                          <ExplorerLink onClick={() => openExplorer(data.item.hubAddress!)}>
+                            <ExternalLinkIcon size={10} color={canonHeaderTokens.foreground.accent20} />
+                          </ExplorerLink>
+                        </InfoValueRow>
                       </InfoRow>
+                      {data.item.hubLabel && (
+                        <>
+                          <InfoDivider />
+                          <InfoRow>
+                            <InfoLabel>Hub Label</InfoLabel>
+                            <InfoValue>{data.item.hubLabel}</InfoValue>
+                          </InfoRow>
+                        </>
+                      )}
                     </>
                   )}
                 </>
               )}
-            </>
-          )}
-        </InfoRows>
-      </InfoSection>
+            </InfoRows>
+          </InfoSection>
+        )}
+      </TechnicalSection>
     </Container>
   );
 };
@@ -161,13 +201,43 @@ const truncateHash = (hash: string): string => {
 const Container = styled(Box)({
   display: "flex",
   flexDirection: "column",
+  gap: "16px",
   borderRadius: "8px",
   overflow: "hidden",
 });
 
-const InfoSection = styled(Box)({
+const TechnicalSection = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
   backgroundColor: canonHeaderTokens.background.layer1,
-  padding: "32px",
+  borderRadius: "8px",
+  overflow: "hidden",
+});
+
+const TechnicalHeader = styled("button")({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "16px 20px",
+  backgroundColor: "transparent",
+  border: "none",
+  cursor: "pointer",
+  "&:hover": {
+    backgroundColor: canonHeaderTokens.background.layer1Variation,
+  },
+});
+
+const TechnicalLabel = styled("span")({
+  fontSize: "11px",
+  fontWeight: 600,
+  lineHeight: "12px",
+  letterSpacing: "0.6px",
+  color: canonHeaderTokens.foreground.accent30,
+  textTransform: "uppercase",
+});
+
+const InfoSection = styled(Box)({
+  padding: "0 20px 20px 20px",
 });
 
 const InfoRows = styled(Box)({
