@@ -1,6 +1,36 @@
 import { Box, styled, Typography } from "@mui/material";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 
+export const FactoryLabel = styled(Typography)({
+  fontSize: "12px",
+  fontWeight: 400,
+  lineHeight: "16px",
+  color: canonHeaderTokens.foreground.accent20,
+});
+
+export const FactoryValue = styled(Typography)({
+  fontSize: "12px",
+  fontWeight: 400,
+  lineHeight: "16px",
+  color: canonHeaderTokens.foreground.accent10,
+  textTransform: "uppercase",
+});
+
+export const HubLabel = styled(Typography)({
+  fontSize: "12px",
+  fontWeight: 400,
+  lineHeight: "16px",
+  color: canonHeaderTokens.foreground.accent20,
+});
+
+export const HubValue = styled(Typography)({
+  fontSize: "12px",
+  fontWeight: 400,
+  lineHeight: "16px",
+  color: canonHeaderTokens.foreground.accent10,
+  textTransform: "uppercase",
+});
+
 export const FactorySelector = styled(Box)({
   display: "flex",
   alignItems: "center",

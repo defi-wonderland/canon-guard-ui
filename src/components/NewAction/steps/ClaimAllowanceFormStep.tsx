@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Box, Typography, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import { isAddress } from "viem";
 import { BoxIcon, AsteriskIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
@@ -13,6 +13,8 @@ import {
   ActionButton,
   ButtonRow,
   FactorySelector,
+  FactoryLabel,
+  FactoryValue,
   LeftContent,
   ChangeButton,
   TransactionTitleCard,
@@ -155,21 +157,6 @@ export const ClaimAllowanceFormStep = ({
     </Container>
   );
 };
-
-const FactoryLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const FactoryValue = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent10,
-  textTransform: "uppercase",
-});
 
 const ParametersCard = styled(Box)({
   display: "flex",

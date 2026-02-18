@@ -15,7 +15,11 @@ export {
 export { StepPageContainer, StepContentWrapper } from "./StepLayout";
 export {
   FactorySelector,
+  FactoryLabel,
+  FactoryValue,
   HubSelector,
+  HubLabel,
+  HubValue,
   LeftContent,
   ChangeButton,
   TransactionTitleCard,

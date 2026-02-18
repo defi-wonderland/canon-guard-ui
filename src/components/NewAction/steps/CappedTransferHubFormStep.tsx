@@ -12,6 +12,8 @@ import {
   TokenSelector,
   ActionButton,
   HubSelector,
+  HubLabel,
+  HubValue,
   LeftContent,
   ChangeButton,
   TransactionTitleCard,
@@ -275,21 +277,6 @@ export const CappedTransferHubFormStep = ({
     </Container>
   );
 };
-
-const HubLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const HubValue = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent10,
-  textTransform: "uppercase",
-});
 
 // Unified card for SET ACTION PARAMETERS section
 const UnifiedParametersCard = styled(Box)({
