@@ -8,14 +8,23 @@ export function useModalClose(isOpen: boolean, onClose: () => void, modalRef: Re
       }
     };
 
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    let listenerAdded = false;
+
     if (isOpen) {
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         document.addEventListener("mousedown", handleClickOutside);
+        listenerAdded = true;
       }, 0);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      if (timerId !== null) {
+        clearTimeout(timerId);
+      }
+      if (listenerAdded) {
+        document.removeEventListener("mousedown", handleClickOutside);
+      }
     };
   }, [isOpen, onClose, modalRef]);
 
