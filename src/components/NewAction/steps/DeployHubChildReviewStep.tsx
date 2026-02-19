@@ -88,7 +88,7 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
       <ContentWrapper>
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='Deploy Child' />
 
-        <FormSection label='PREVIEW ACTION'>
+        <FormSection label='PREVIEW ACTION' data-testid='hub-child-review-section'>
           <PreviewCard>
             <PreviewHeader>
               <PreviewTitle>{formData.title || "Untitled Transaction"}</PreviewTitle>
@@ -202,7 +202,7 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
               <ActionButton variant='secondary' onClick={onBack}>
                 BACK
               </ActionButton>
-              <ActionButton variant='primary' onClick={handleInitiate}>
+              <ActionButton variant='primary' data-testid='initiate-button' onClick={handleInitiate}>
                 INITIATE
               </ActionButton>
             </ButtonRow>

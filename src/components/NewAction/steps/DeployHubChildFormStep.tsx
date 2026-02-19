@@ -135,6 +135,7 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
                   placeholder='Eg. Transfer 1000 USDC to Operations...'
                   value={formData.title}
                   onChange={(value) => updateField("title", value)}
+                  data-testid='hub-child-title-input'
                 />
                 <PublicBadge>Public</PublicBadge>
               </FormInputWrapper>
@@ -167,7 +168,10 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
                   <InputWrapper>
                     <InputLabel>Token</InputLabel>
                     <TokenDropdownContainer onClick={(e) => e.stopPropagation()}>
-                      <TokenDropdownButton onClick={() => setTokenDropdownOpen(!tokenDropdownOpen)}>
+                      <TokenDropdownButton
+                        onClick={() => setTokenDropdownOpen(!tokenDropdownOpen)}
+                        data-testid='hub-child-token-select'
+                      >
                         {formData.token ? (
                           <TokenDisplayRow>
                             <TokenIcon
@@ -196,6 +200,7 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
                                 key={tokenConfig.address}
                                 onClick={() => handleTokenSelect(tokenConfig.address)}
                                 $isSelected={tokenConfig.address.toLowerCase() === formData.token.toLowerCase()}
+                                data-testid={`hub-child-token-option-${tokenMeta?.symbol || tokenConfig.address.slice(0, 6)}`}
                               >
                                 <TokenOptionRow>
                                   <TokenIcon logoURI={tokenMeta?.logoURI} symbol={tokenMeta?.symbol} size={20} />
@@ -231,6 +236,7 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
                     value={formData.amount}
                     onChange={(value) => updateField("amount", value)}
                     error={errors.amount}
+                    data-testid='hub-child-amount-input'
                   />
 
                   {/* Cap Remaining Info */}
@@ -241,10 +247,15 @@ export const DeployHubChildFormStep = (props: DeployHubChildFormStepProps) => {
               )}
             </CardContent>
             <ButtonRow>
-              <ActionButton variant='secondary' onClick={onBack}>
+              <ActionButton variant='secondary' onClick={onBack} data-testid='hub-child-form-back-button'>
                 BACK
               </ActionButton>
-              <ActionButton variant='primary' onClick={onContinue} disabled={!isValid || isLoadingHubInfo}>
+              <ActionButton
+                variant='primary'
+                onClick={onContinue}
+                disabled={!isValid || isLoadingHubInfo}
+                data-testid='hub-child-form-continue-button'
+              >
                 CONTINUE
               </ActionButton>
             </ButtonRow>

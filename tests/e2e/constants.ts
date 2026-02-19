@@ -27,6 +27,10 @@ export const ANVIL_ACCOUNTS = [
     address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906" as Address,
     privateKey: "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6" as Hex,
   },
+  {
+    address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65" as Address,
+    privateKey: "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a" as Hex,
+  },
 ] as const;
 
 /**
