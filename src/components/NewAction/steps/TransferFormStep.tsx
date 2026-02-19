@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Typography, styled } from "@mui/material";
 import { BoxIcon, AsteriskIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
@@ -19,6 +18,8 @@ import {
   ActionButtonRow,
   ButtonsContainer,
   FactorySelector,
+  FactoryLabel,
+  FactoryValue,
   LeftContent,
   ChangeButton,
   TransactionTitleCard,
@@ -211,18 +212,3 @@ export const TransferFormStep = ({
     </Container>
   );
 };
-
-const FactoryLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const FactoryValue = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent10,
-  textTransform: "uppercase",
-});

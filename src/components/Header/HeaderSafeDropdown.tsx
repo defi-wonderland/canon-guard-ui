@@ -6,6 +6,14 @@ import { Chain } from "viem/chains";
 import { EmergencyModePanel } from "~/components/EmergencyModePanel";
 import { ChainIcon, ChevronRightIcon, GripIcon, ShieldCheckIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import {
+  DropdownMenuBackdrop,
+  DropdownMenuDivider,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuItemLeft,
+  DropdownMenuItemLabel,
+} from "~/components/shared/DropdownComponents";
 import { SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams, useCanonGuardConfig, useSafeStorage } from "~/hooks";
@@ -84,10 +92,10 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
       </DropdownButton>
 
       {/* Backdrop to close menu */}
-      {menuOpen && <MenuBackdrop onClick={handleCloseMenu} />}
+      {menuOpen && <DropdownMenuBackdrop onClick={handleCloseMenu} />}
 
       {/* Custom dropdown menu */}
-      <SafeMenu $isOpen={menuOpen} data-testid='safe-dropdown-menu'>
+      <DropdownMenu $isOpen={menuOpen} data-testid='safe-dropdown-menu'>
         {/* Safe Profile Section */}
         <SafeProfileSection>
           <SafeProfileContent>
@@ -109,40 +117,42 @@ export const HeaderSafeDropdown = ({ safeAddress, chain }: HeaderSafeDropdownPro
           </SafeProfileContent>
         </SafeProfileSection>
 
-        <MenuDivider />
+        <DropdownMenuDivider />
 
         {/* Settings */}
-        <MenuItem onClick={handleSettingsClick} data-testid='settings-menu-item'>
-          <MenuItemLeft>
+        <DropdownMenuItem onClick={handleSettingsClick} data-testid='settings-menu-item'>
+          <DropdownMenuItemLeft>
             <ChevronRightIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-            <MenuItemLabel>Settings</MenuItemLabel>
-          </MenuItemLeft>
-        </MenuItem>
+            <DropdownMenuItemLabel>Settings</DropdownMenuItemLabel>
+          </DropdownMenuItemLeft>
+        </DropdownMenuItem>
 
-        <MenuDivider />
+        <DropdownMenuDivider />
 
         {/* Emergency Mode */}
-        <MenuItem onClick={handleEmergencyModeClick}>
-          <MenuItemLeft>
+        <DropdownMenuItem onClick={handleEmergencyModeClick}>
+          <DropdownMenuItemLeft>
             <ChevronRightIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-            <MenuItemLabel>Emergency Mode</MenuItemLabel>
-          </MenuItemLeft>
+            <DropdownMenuItemLabel>Emergency Mode</DropdownMenuItemLabel>
+          </DropdownMenuItemLeft>
           <EmergencyStatusIndicator>
             <StatusDot $isActive={emergencyMode === true} />
             <StatusText>{emergencyMode === true ? "ON" : "OFF"}</StatusText>
           </EmergencyStatusIndicator>
-        </MenuItem>
+        </DropdownMenuItem>
 
-        <MenuDivider />
+        <DropdownMenuDivider />
 
         {/* Manage Safe Accounts */}
-        <MenuItem onClick={handleManageSafesClick} data-testid='manage-safes-menu-item'>
-          <MenuItemLeft>
+        <DropdownMenuItem onClick={handleManageSafesClick} data-testid='manage-safes-menu-item'>
+          <DropdownMenuItemLeft>
             <GripIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-            <MenuItemLabel>Manage Safe Accounts{savedSafesCount > 0 ? ` (${savedSafesCount})` : ""}</MenuItemLabel>
-          </MenuItemLeft>
-        </MenuItem>
-      </SafeMenu>
+            <DropdownMenuItemLabel>
+              Manage Safe Accounts{savedSafesCount > 0 ? ` (${savedSafesCount})` : ""}
+            </DropdownMenuItemLabel>
+          </DropdownMenuItemLeft>
+        </DropdownMenuItem>
+      </DropdownMenu>
 
       {/* Emergency Mode Panel */}
       <EmergencyModePanel
@@ -222,36 +232,6 @@ const NetworkLabel = styled("span")({
   color: canonHeaderTokens.foreground.accent20,
 });
 
-// Menu backdrop
-const MenuBackdrop = styled("div")({
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  zIndex: 999,
-});
-
-// Safe menu dropdown
-const SafeMenu = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$isOpen",
-})<{ $isOpen: boolean }>(({ $isOpen }) => ({
-  position: "absolute",
-  top: "78px",
-  right: 0,
-  width: "280px",
-  borderRadius: "12px",
-  border: `0.5px solid ${canonHeaderTokens.foreground.accent40}`,
-  backgroundColor: canonHeaderTokens.background.layer1,
-  boxShadow: "0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)",
-  overflow: "hidden",
-  zIndex: 1000,
-  opacity: $isOpen ? 1 : 0,
-  visibility: $isOpen ? "visible" : "hidden",
-  transform: $isOpen ? "translateY(0)" : "translateY(-8px)",
-  transition: "opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease",
-}));
-
 // Safe Profile Section
 const SafeProfileSection = styled(Box)({
   padding: "16px 20px",
@@ -315,41 +295,6 @@ const ChainName = styled("span")({
   fontWeight: 400,
   lineHeight: "16px",
   color: canonHeaderTokens.foreground.accent20,
-});
-
-const MenuDivider = styled("div")({
-  width: "100%",
-  height: "0.5px",
-  backgroundColor: canonHeaderTokens.foreground.accent40,
-});
-
-// Menu Item
-const MenuItem = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-  padding: "16px",
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  "&:hover": {
-    backgroundColor: canonHeaderTokens.background.layer0,
-  },
-});
-
-const MenuItemLeft = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "16px",
-});
-
-const MenuItemLabel = styled("span")({
-  fontFamily: "Inter, sans-serif",
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent10,
 });
 
 // Emergency Mode Status

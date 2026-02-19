@@ -469,8 +469,7 @@ const MobileSafeSubLine = styled("span")({
   color: canonHeaderTokens.foreground.accent20,
 });
 
-const MobileLinkButton = styled("button")({
-  minHeight: "36px",
+const MobileBaseButton = styled("button")({
   padding: "0 12px",
   borderRadius: "8px",
   border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
@@ -483,16 +482,10 @@ const MobileLinkButton = styled("button")({
   cursor: "pointer",
 });
 
-const MobileWalletButton = styled("button")({
+const MobileLinkButton = styled(MobileBaseButton)({
+  minHeight: "36px",
+});
+
+const MobileWalletButton = styled(MobileBaseButton)({
   minHeight: "40px",
-  padding: "0 12px",
-  borderRadius: "8px",
-  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  backgroundColor: canonHeaderTokens.background.layer1,
-  color: canonHeaderTokens.foreground.accent10,
-  fontFamily: "Inter, sans-serif",
-  fontSize: "12px",
-  fontWeight: 500,
-  textAlign: "left",
-  cursor: "pointer",
 });

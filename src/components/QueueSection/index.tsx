@@ -238,6 +238,24 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
     [guardAddress, isRemoving, executeCancelTransaction, onQueueCountChange],
   );
 
+  const renderQueueItem = (item: QueueItemType) => (
+    <QueueItem
+      key={`${item.actionBuilderAddress}-${item.nonce}`}
+      item={item}
+      connectedAddress={connectedAddress}
+      isSigner={isSigner}
+      emergencyMode={emergencyMode ?? false}
+      emergencyCaller={emergencyCaller}
+      onSign={() => handleSign(item)}
+      onExecute={() => handleExecute(item)}
+      onRemove={() => handleRemove(item)}
+      onTitleClick={() => setSelectedItem(item)}
+      isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
+      isSignLoading={false}
+      isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
+    />
+  );
+
   if (loading) {
     return (
       <LoadingContainer>
@@ -309,25 +327,7 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
               <SectionHeader>
                 <SectionTitle>MISSING NONCE</SectionTitle>
               </SectionHeader>
-              <ItemsList>
-                {missingNonce.map((item) => (
-                  <QueueItem
-                    key={`${item.actionBuilderAddress}-${item.nonce}`}
-                    item={item}
-                    connectedAddress={connectedAddress}
-                    isSigner={isSigner}
-                    emergencyMode={emergencyMode ?? false}
-                    emergencyCaller={emergencyCaller}
-                    onSign={() => handleSign(item)}
-                    onExecute={() => handleExecute(item)}
-                    onRemove={() => handleRemove(item)}
-                    onTitleClick={() => setSelectedItem(item)}
-                    isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
-                    isSignLoading={false}
-                    isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
-                  />
-                ))}
-              </ItemsList>
+              <ItemsList>{missingNonce.map(renderQueueItem)}</ItemsList>
             </SectionGroup>
           )}
 
@@ -337,25 +337,7 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
               <SectionHeader>
                 <SectionTitle>READY TO EXECUTE</SectionTitle>
               </SectionHeader>
-              <ItemsList>
-                {readyToExecute.map((item) => (
-                  <QueueItem
-                    key={`${item.actionBuilderAddress}-${item.nonce}`}
-                    item={item}
-                    connectedAddress={connectedAddress}
-                    isSigner={isSigner}
-                    emergencyMode={emergencyMode ?? false}
-                    emergencyCaller={emergencyCaller}
-                    onSign={() => handleSign(item)}
-                    onExecute={() => handleExecute(item)}
-                    onRemove={() => handleRemove(item)}
-                    onTitleClick={() => setSelectedItem(item)}
-                    isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
-                    isSignLoading={false}
-                    isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
-                  />
-                ))}
-              </ItemsList>
+              <ItemsList>{readyToExecute.map(renderQueueItem)}</ItemsList>
             </SectionGroup>
           )}
 
@@ -365,25 +347,7 @@ export const QueueSection = ({ onQueueCountChange }: QueueSectionProps) => {
               <SectionHeader>
                 <SectionTitle>WAITING FOR APPROVAL</SectionTitle>
               </SectionHeader>
-              <ItemsList>
-                {waitingForApproval.map((item) => (
-                  <QueueItem
-                    key={`${item.actionBuilderAddress}-${item.nonce}`}
-                    item={item}
-                    connectedAddress={connectedAddress}
-                    isSigner={isSigner}
-                    emergencyMode={emergencyMode ?? false}
-                    emergencyCaller={emergencyCaller}
-                    onSign={() => handleSign(item)}
-                    onExecute={() => handleExecute(item)}
-                    onRemove={() => handleRemove(item)}
-                    onTitleClick={() => setSelectedItem(item)}
-                    isLoading={executingItemAddress === item.actionBuilderAddress && isExecuting}
-                    isSignLoading={false}
-                    isRemoveLoading={removingItemAddress === item.actionBuilderAddress && isRemoving}
-                  />
-                ))}
-              </ItemsList>
+              <ItemsList>{waitingForApproval.map(renderQueueItem)}</ItemsList>
             </SectionGroup>
           )}
 
