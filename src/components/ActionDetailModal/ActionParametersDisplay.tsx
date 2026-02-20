@@ -56,11 +56,11 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
                   <TokenIcon logoURI={tokenMeta?.logoURI} symbol={t.symbol} size={16} />
                   <ParamValue>{t.symbol}</ParamValue>
                   <AddressChip>
-                    <CopyableText text={t.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent30}>
+                    <CopyableText text={t.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
                       <ChipText>{truncateAddress(t.token)}</ChipText>
                     </CopyableText>
                     <ExplorerButton onClick={() => openExplorer(t.token)}>
-                      <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent30} />
+                      <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
                     </ExplorerButton>
                   </AddressChip>
                 </ParamValueRow>
@@ -153,11 +153,11 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
               <TokenIcon logoURI={tokenMeta?.logoURI} symbol={ac.symbol} size={16} />
               <ParamValue>{ac.symbol}</ParamValue>
               <AddressChip>
-                <CopyableText text={ac.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent30}>
+                <CopyableText text={ac.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
                   <ChipText>{truncateAddress(ac.token)}</ChipText>
                 </CopyableText>
                 <ExplorerButton onClick={() => openExplorer(ac.token)}>
-                  <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent30} />
+                  <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
                 </ExplorerButton>
               </AddressChip>
             </ParamValueRow>
@@ -205,11 +205,11 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
               <TokenIcon logoURI={tokenMeta?.logoURI} symbol={ct.symbol} size={16} />
               <ParamValue>{ct.symbol}</ParamValue>
               <AddressChip>
-                <CopyableText text={ct.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent30}>
+                <CopyableText text={ct.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
                   <ChipText>{truncateAddress(ct.token)}</ChipText>
                 </CopyableText>
                 <ExplorerButton onClick={() => openExplorer(ct.token)}>
-                  <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent30} />
+                  <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
                 </ExplorerButton>
               </AddressChip>
             </ParamValueRow>
@@ -277,11 +277,11 @@ export const ActionParametersDisplay = ({ data, isLoading, error, chainId }: Act
                 <TokenIcon logoURI={tokenMeta?.logoURI} symbol={t.symbol} size={18} />
                 <ParamValue style={{ fontWeight: 600 }}>{t.symbol}</ParamValue>
                 <AddressChip>
-                  <CopyableText text={t.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent30}>
+                  <CopyableText text={t.token} iconSize={9} iconColor={canonHeaderTokens.foreground.accent20}>
                     <ChipText>{truncateAddress(t.token)}</ChipText>
                   </CopyableText>
                   <ExplorerButton onClick={() => openExplorer(t.token)}>
-                    <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent30} />
+                    <ExternalLinkIcon size={9} color={canonHeaderTokens.foreground.accent20} />
                   </ExplorerButton>
                 </AddressChip>
               </ParamRow>
@@ -505,7 +505,7 @@ const ChipText = styled("span")({
   fontSize: "11px",
   fontWeight: 400,
   lineHeight: "14px",
-  color: canonHeaderTokens.foreground.accent30,
+  color: canonHeaderTokens.foreground.accent20,
 });
 
 const SignatureValue = styled("span")({
