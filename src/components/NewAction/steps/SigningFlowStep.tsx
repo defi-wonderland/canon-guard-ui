@@ -86,10 +86,10 @@ export const SigningFlowStep = ({
 
   // Update selected nonce when recommended nonce changes (e.g., after initial load)
   useEffect(() => {
-    if (!isNonceLocked && currentSafeNonce > 0) {
+    if (!isNonceLocked && nonceSelectionEnabled) {
       setSelectedNonce(recommendedNonce);
     }
-  }, [recommendedNonce, isNonceLocked, currentSafeNonce]);
+  }, [recommendedNonce, isNonceLocked, nonceSelectionEnabled]);
 
   // Navigation hook for completion buttons
   const navigateWithParams = useNavigateWithParams();
