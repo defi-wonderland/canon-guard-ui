@@ -53,7 +53,8 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
   const isRemovePreApproval = isPreApproveMode && navigationState?.approvalDuration === 0n;
 
   // Transaction executor hook for real blockchain transactions
-  const { executeQueueTransaction, executeSignTransaction, executeDeployPreApproval } = useTransactionExecutor();
+  const { executeQueueTransaction, executeSignTransaction, executeDeployPreApproval, getSafeTxHash } =
+    useTransactionExecutor();
 
   // Pre-approve mode state - track deployed address
   const [deployedPreApproveAddress, setDeployedPreApproveAddress] = useState<Address | null>(null);
@@ -240,10 +241,25 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
 
       try {
         let result = null;
+        let nextStepPatch: Partial<TransactionStep> | null = null;
 
         // Queue mode steps
         if (currentStep.id === "queue-transaction") {
           result = await executeQueueTransaction(guardAddress as Address, navigationState.actionBuilderAddress);
+
+          if (result) {
+            const safeTxHash = await getSafeTxHash(guardAddress as Address, navigationState.actionBuilderAddress);
+            if (safeTxHash) {
+              nextStepPatch = {
+                safeTxHash,
+                data: encodeFunctionData({
+                  abi: safeAbi,
+                  functionName: "approveHash",
+                  args: [safeTxHash],
+                }),
+              };
+            }
+          }
         } else if (currentStep.id === "sign-transaction") {
           result = await executeSignTransaction(
             safeAddress as Address,
@@ -265,12 +281,33 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
           if (deployResult?.preApprovalAddress) {
             setDeployedPreApproveAddress(deployResult.preApprovalAddress);
             result = deployResult;
+            nextStepPatch = {
+              data: encodeFunctionData({
+                abi: canonGuardAbi,
+                functionName: "queueTransaction",
+                args: [deployResult.preApprovalAddress],
+              }),
+            };
           }
         } else if (currentStep.id === "queue-preapprove") {
           if (!deployedPreApproveAddress) {
             throw new Error("Pre-approve address not available");
           }
           result = await executeQueueTransaction(guardAddress as Address, deployedPreApproveAddress);
+
+          if (result) {
+            const safeTxHash = await getSafeTxHash(guardAddress as Address, deployedPreApproveAddress);
+            if (safeTxHash) {
+              nextStepPatch = {
+                safeTxHash,
+                data: encodeFunctionData({
+                  abi: safeAbi,
+                  functionName: "approveHash",
+                  args: [safeTxHash],
+                }),
+              };
+            }
+          }
         } else if (currentStep.id === "sign-preapprove") {
           if (!deployedPreApproveAddress) {
             throw new Error("Pre-approve address not available");
@@ -289,6 +326,9 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
           setTransactionSteps((prev) => {
             const updated = [...prev];
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
+            if (nextStepPatch && stepIndex + 1 < updated.length) {
+              updated[stepIndex + 1] = { ...updated[stepIndex + 1], ...nextStepPatch };
+            }
             return updated;
           });
 
@@ -328,6 +368,7 @@ export const QueueActionSection = ({ onQueueCountChange }: QueueActionSectionPro
       executeQueueTransaction,
       executeSignTransaction,
       executeDeployPreApproval,
+      getSafeTxHash,
       onQueueCountChange,
     ],
   );

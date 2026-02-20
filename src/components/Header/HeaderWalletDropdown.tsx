@@ -2,6 +2,12 @@ import { useState } from "react";
 import { KeyboardArrowDown } from "@mui/icons-material";
 import { Box, styled, CircularProgress } from "@mui/material";
 import { LogOutIcon, WalletIcon } from "~/components/icons";
+import {
+  DropdownMenuBackdrop,
+  DropdownMenuDivider,
+  DropdownMenu,
+  DropdownMenuItem,
+} from "~/components/shared/DropdownComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useWallet } from "~/hooks";
 import { truncateAddress } from "~/utils";
@@ -59,10 +65,10 @@ export const HeaderWalletDropdown = () => {
       </DropdownButton>
 
       {/* Backdrop to close menu */}
-      {menuOpen && <MenuBackdrop onClick={handleCloseMenu} />}
+      {menuOpen && <DropdownMenuBackdrop onClick={handleCloseMenu} />}
 
       {/* Custom dropdown menu */}
-      <WalletMenu $isOpen={menuOpen}>
+      <DropdownMenu $isOpen={menuOpen}>
         {/* Info section */}
         <MenuInfoSection>
           <MenuInfoText>You can disconnect and switch to a different wallet.</MenuInfoText>
@@ -72,14 +78,14 @@ export const HeaderWalletDropdown = () => {
         </MenuInfoSection>
 
         {/* Divider */}
-        <MenuDivider />
+        <DropdownMenuDivider />
 
         {/* Disconnect button */}
-        <MenuDisconnectButton onClick={handleDisconnect}>
+        <DropdownMenuItem onClick={handleDisconnect} style={{ gap: "16px" }}>
           <LogOutIcon size={16} color={canonHeaderTokens.foreground.accent10} />
           <MenuDisconnectText>Disconnect Wallet</MenuDisconnectText>
-        </MenuDisconnectButton>
-      </WalletMenu>
+        </DropdownMenuItem>
+      </DropdownMenu>
     </WalletWrapper>
   );
 };
@@ -191,36 +197,6 @@ const ConnectButton = styled("button")({
   },
 });
 
-// Menu backdrop
-const MenuBackdrop = styled("div")({
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  zIndex: 999,
-});
-
-// Wallet menu dropdown
-const WalletMenu = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$isOpen",
-})<{ $isOpen: boolean }>(({ $isOpen }) => ({
-  position: "absolute",
-  top: "78px",
-  right: "12px",
-  width: "280px",
-  borderRadius: "12px",
-  border: `0.5px solid ${canonHeaderTokens.foreground.accent40}`,
-  backgroundColor: canonHeaderTokens.background.layer1,
-  boxShadow: "0px 20px 25px -5px rgba(0,0,0,0.1), 0px 8px 10px -6px rgba(0,0,0,0.1)",
-  overflow: "hidden",
-  zIndex: 1000,
-  opacity: $isOpen ? 1 : 0,
-  visibility: $isOpen ? "visible" : "hidden",
-  transform: $isOpen ? "translateY(0)" : "translateY(-8px)",
-  transition: "opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease",
-}));
-
 const MenuInfoSection = styled(Box)({
   display: "flex",
   alignItems: "center",
@@ -244,27 +220,7 @@ const MenuIconWrapper = styled(Box)({
   justifyContent: "center",
   padding: "8px",
   borderRadius: "8px",
-  backgroundColor: canonHeaderTokens.background.layer2,
-});
-
-const MenuDivider = styled("div")({
-  width: "100%",
-  height: "0.5px",
-  backgroundColor: canonHeaderTokens.foreground.accent40,
-});
-
-const MenuDisconnectButton = styled("button")({
-  display: "flex",
-  alignItems: "center",
-  gap: "16px",
-  width: "100%",
-  padding: "16px",
-  background: "transparent",
-  border: "none",
-  cursor: "pointer",
-  "&:hover": {
-    backgroundColor: canonHeaderTokens.background.layer0,
-  },
+  backgroundColor: canonHeaderTokens.background.layer1Variation,
 });
 
 const MenuDisconnectText = styled("span")({

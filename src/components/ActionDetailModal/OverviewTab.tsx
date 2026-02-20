@@ -11,6 +11,7 @@ import {
   CircleDashedIcon,
 } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
+import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { getFactoryDisplayName } from "~/utils/factoryDisplay";
 import type { ActionDetailModalData } from "./index";
@@ -26,6 +27,8 @@ interface OverviewTabProps {
   isRemoveLoading?: boolean;
   connectedAddress?: Address;
   isSigner?: boolean;
+  emergencyMode?: boolean;
+  emergencyCaller?: Address | null;
 }
 
 export const OverviewTab = ({
@@ -37,6 +40,8 @@ export const OverviewTab = ({
   isRemoveLoading,
   connectedAddress,
   isSigner,
+  emergencyMode,
+  emergencyCaller,
 }: OverviewTabProps) => {
   const isQueue = data.mode === "queue";
 
@@ -59,6 +64,8 @@ export const OverviewTab = ({
           isRemoveLoading={isRemoveLoading}
           connectedAddress={connectedAddress}
           isSigner={isSigner}
+          emergencyMode={emergencyMode}
+          emergencyCaller={emergencyCaller}
         />
       )}
 
@@ -233,6 +240,8 @@ interface ActionButtonsSectionProps {
   isRemoveLoading?: boolean;
   connectedAddress?: Address;
   isSigner?: boolean;
+  emergencyMode?: boolean;
+  emergencyCaller?: Address | null;
 }
 
 const ActionButtonsSection = ({
@@ -244,34 +253,78 @@ const ActionButtonsSection = ({
   isRemoveLoading,
   connectedAddress,
   isSigner,
+  emergencyMode = false,
+  emergencyCaller,
 }: ActionButtonsSectionProps) => {
-  if (data.mode !== "queue") return null;
-  const { item } = data;
+  const item = data.mode === "queue" ? data.item : null;
+
+  const [remainingSeconds, setRemainingSeconds] = useState(item?.executionDelayRemaining ?? 0);
+
+  useEffect(() => {
+    setRemainingSeconds(item?.executionDelayRemaining ?? 0);
+  }, [item?.executionDelayRemaining]);
+
+  useEffect(() => {
+    if (!item?.hasExecutionDelay || remainingSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setRemainingSeconds((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [item?.hasExecutionDelay, remainingSeconds]);
+
+  if (!item) return null;
 
   const hasAlreadySigned =
     connectedAddress && item.approvers.some((a) => a.toLowerCase() === connectedAddress.toLowerCase());
 
-  const showSignButton = isSigner && !item.isFullySigned && !hasAlreadySigned;
-  const showExecuteButton = !!connectedAddress && item.isFullySigned && item.executionDelayRemaining <= 0;
+  const isEmergencyCaller =
+    connectedAddress && emergencyCaller && connectedAddress.toLowerCase() === emergencyCaller.toLowerCase();
+
+  const getExecuteDisableReason = (): string | null => {
+    if (!isSigner && !isEmergencyCaller) return "Connected wallet is not a signer";
+    if (emergencyMode && !isEmergencyCaller) return "Only emergency caller while in emergency mode";
+    if (!item.isFullySigned) return "Waiting for signatures";
+    if (!item.isAtCurrentNonce) return "Waiting to be upcoming nonce";
+    if (remainingSeconds > 0) return "Cooldown in progress";
+    return null;
+  };
+
+  const showSignButton = isSigner && !item.isFullySigned;
+  const showExecuteButton = !!connectedAddress && !showSignButton;
+  const executeDisableReason = showExecuteButton ? getExecuteDisableReason() : null;
+
+  const isProposer =
+    connectedAddress && item.proposer && connectedAddress.toLowerCase() === item.proposer.toLowerCase();
+  const showRemoveButton = !!isProposer;
 
   return (
     <ButtonsContainer>
       <ButtonsRow>
-        <ActionButton $variant='red' onClick={onRemove} disabled={isRemoveLoading}>
-          {isRemoveLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "CANCEL"}
-        </ActionButton>
+        {showRemoveButton && (
+          <ActionButton $variant='red' onClick={onRemove} disabled={isRemoveLoading}>
+            {isRemoveLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "CANCEL"}
+          </ActionButton>
+        )}
         {showSignButton && (
           <ActionButton $variant='green' onClick={onSign}>
             SIGN
           </ActionButton>
         )}
         {showExecuteButton && (
-          <ActionButton $variant='green' onClick={onExecute} disabled={isExecuteLoading}>
-            {isExecuteLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "EXECUTE"}
-          </ActionButton>
+          <StyledTooltip
+            title={executeDisableReason || ""}
+            placement='top'
+            disableHoverListener={!executeDisableReason}
+          >
+            <ExecuteTooltipWrapper>
+              <ActionButton $variant='green' onClick={onExecute} disabled={!!executeDisableReason || isExecuteLoading}>
+                {isExecuteLoading ? <CircularProgress size={16} sx={{ color: "#ffffff" }} /> : "EXECUTE"}
+              </ActionButton>
+            </ExecuteTooltipWrapper>
+          </StyledTooltip>
         )}
         {/* Already signed state */}
-        {hasAlreadySigned && !showExecuteButton && (
+        {hasAlreadySigned && !showSignButton && !showExecuteButton && (
           <SignedStateButton>
             <CheckCheckIcon size={12} color={canonHeaderTokens.foreground.accent10} />
             <SignedStateText>Signed</SignedStateText>
@@ -565,6 +618,11 @@ const ButtonsRow = styled(Box)({
   display: "flex",
   gap: "12px",
   width: "100%",
+});
+
+const ExecuteTooltipWrapper = styled("span")({
+  display: "flex",
+  flex: 1,
 });
 
 const ActionButton = styled("button", {

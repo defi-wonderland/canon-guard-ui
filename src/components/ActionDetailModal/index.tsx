@@ -3,9 +3,10 @@ import { Box, styled } from "@mui/material";
 import { ExternalLink as ShareIcon } from "lucide-react";
 import { XIcon } from "~/components/icons";
 import { CopyableText } from "~/components/shared/CopyButton";
-import { StyledTooltip } from "~/components/shared/StyledComponents";
+import { ModalOverlay } from "~/components/shared/ModalComponents";
 import { getChainConfig, SupportedChainId } from "~/config/chains";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
+import { useModalClose } from "~/hooks";
 import { QueueItem } from "~/services";
 import { RegisteredEntity } from "~/services";
 import { DetailsTab } from "./DetailsTab";
@@ -35,6 +36,8 @@ interface ActionDetailModalProps {
   // Signer info
   connectedAddress?: Address;
   isSigner?: boolean;
+  emergencyMode?: boolean;
+  emergencyCaller?: Address | null;
 }
 
 export const ActionDetailModal = ({
@@ -50,6 +53,8 @@ export const ActionDetailModal = ({
   onQueue,
   connectedAddress,
   isSigner,
+  emergencyMode,
+  emergencyCaller,
 }: ActionDetailModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -67,41 +72,8 @@ export const ActionDetailModal = ({
     }
   }, [isOpen]);
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
-      }, 0);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  // Close on Escape
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose]);
+  // Close on click outside and escape
+  useModalClose(isOpen, onClose, modalRef);
 
   const handleShare = useCallback(() => {
     if (!chainId) return;
@@ -113,7 +85,7 @@ export const ActionDetailModal = ({
   if (!isOpen) return null;
 
   return (
-    <Overlay>
+    <ModalOverlay>
       <ModalContainer ref={modalRef}>
         {/* Header */}
         <ModalHeader>
@@ -143,12 +115,12 @@ export const ActionDetailModal = ({
               <TabLabel $isActive={activeTab === "details"}>DETAILS</TabLabel>
             </Tab>
             <TabDivider />
-            <StyledTooltip title='Transaction simulation coming soon' placement='top'>
+            {/* <StyledTooltip title='Transaction simulation coming soon' placement='top'>
               <TabDisabled>
                 <TabLabel $isActive={false}>SIMULATE</TabLabel>
               </TabDisabled>
-            </StyledTooltip>
-            <TabDivider />
+            </StyledTooltip> */}
+            {/* <TabDivider /> */}
             <TabSpacer />
             <ShareButton onClick={handleShare}>
               <TabLabel $isActive={false}>SHARE</TabLabel>
@@ -170,29 +142,18 @@ export const ActionDetailModal = ({
               isRemoveLoading={isRemoveLoading}
               connectedAddress={connectedAddress}
               isSigner={isSigner}
+              emergencyMode={emergencyMode}
+              emergencyCaller={emergencyCaller}
             />
           )}
           {activeTab === "details" && <DetailsTab data={data} chainId={chainId} />}
         </TabContent>
       </ModalContainer>
-    </Overlay>
+    </ModalOverlay>
   );
 };
 
 // Styled components
-const Overlay = styled(Box)({
-  position: "fixed",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  backgroundColor: "rgba(0, 0, 0, 0.6)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-});
-
 const ModalContainer = styled(Box)({
   width: "512px",
   maxHeight: "800px",
@@ -300,16 +261,16 @@ const Tab = styled("button", {
   },
 }));
 
-const TabDisabled = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "16px 20px",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  cursor: "not-allowed",
-  opacity: 0.5,
-  flexShrink: 0,
-});
+// const TabDisabled = styled(Box)({
+//   display: "flex",
+//   alignItems: "center",
+//   justifyContent: "center",
+//   padding: "16px 20px",
+//   backgroundColor: canonHeaderTokens.background.layer1,
+//   cursor: "not-allowed",
+//   opacity: 0.5,
+//   flexShrink: 0,
+// });
 
 const TabLabel = styled("span", {
   shouldForwardProp: (prop) => prop !== "$isActive",

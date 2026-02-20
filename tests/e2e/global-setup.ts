@@ -14,7 +14,7 @@ const DEPLOYMENTS_CONFIG_FILE = path.join(TEST_RESULTS_DIR, ".deployments.json")
  * Number of parallel Safe/CanonGuard pairs to deploy
  * Each test file can use a different index to run in parallel
  */
-const NUM_DEPLOYMENTS = 3;
+const NUM_DEPLOYMENTS = ANVIL_ACCOUNTS.length;
 
 /**
  * A single deployment containing both Safe and Canon Guard.

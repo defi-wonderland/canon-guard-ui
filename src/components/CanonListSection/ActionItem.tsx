@@ -87,7 +87,11 @@ export const ActionItem = ({
   };
 
   return (
-    <ItemContainer onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+    <ItemContainer
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      data-testid={`canon-list-item-${displayTitle.toLowerCase().replace(/\s+/g, "-")}`}
+    >
       {/* Left icon section */}
       <IconSection $isHubChild={isHubChild} $isClickable={!!onTitleClick} onClick={onTitleClick}>
         {isHub ? (
@@ -165,7 +169,12 @@ export const ActionItem = ({
                 disableHoverListener={isSigner}
               >
                 <span>
-                  <MoreButton ref={moreButtonRef} onClick={isSigner ? handleMoreClick : undefined} disabled={!isSigner}>
+                  <MoreButton
+                    ref={moreButtonRef}
+                    onClick={isSigner ? handleMoreClick : undefined}
+                    disabled={!isSigner}
+                    data-testid='action-menu-button'
+                  >
                     <EllipsisIcon
                       size={16}
                       color={!isSigner ? canonHeaderTokens.foreground.accent20 : canonHeaderTokens.foreground.accent10}

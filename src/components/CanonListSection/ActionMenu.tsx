@@ -83,7 +83,7 @@ export const ActionMenu = ({
         <MenuDivider />
         <MenuItem onClick={onDeployChild}>
           <PlusIcon size={16} color={canonHeaderTokens.foreground.accent0} />
-          <MenuItemText>Deploy Child</MenuItemText>
+          <MenuItemText data-testid='deploy-child-menu-item'>Deploy Child</MenuItemText>
         </MenuItem>
         <MenuDivider />
         <MenuItem onClick={onRemove} disabled={isRemoving}>

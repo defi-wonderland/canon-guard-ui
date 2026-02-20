@@ -4,6 +4,7 @@ import { WalletConnectModal } from "~/components/WalletConnect";
 import { router } from "~/router";
 import { StateProvider } from "./StateProvider";
 import { ThemeProvider } from "./ThemeProvider";
+import { ToastProvider } from "./ToastProvider";
 import { WalletConnectProvider } from "./WalletConnectProvider";
 import { WalletProvider } from "./WalletProvider";
 
@@ -17,9 +18,11 @@ export const Providers = ({ children }: Props) => {
       <StateProvider>
         <WalletProvider>
           <WalletConnectProvider>
-            <RouterProvider router={router} />
-            <WalletConnectModal />
-            {children}
+            <ToastProvider>
+              <RouterProvider router={router} />
+              <WalletConnectModal />
+              {children}
+            </ToastProvider>
           </WalletConnectProvider>
         </WalletProvider>
       </StateProvider>

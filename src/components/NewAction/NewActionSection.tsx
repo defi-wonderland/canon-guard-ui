@@ -101,6 +101,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
     executeQueueTransaction,
     executeSignTransaction,
     executeDeployPreApproval,
+    getSafeTxHash,
     reset: resetExecutor,
   } = useTransactionExecutor();
 
@@ -650,6 +651,59 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
   };
 
   /**
+   * Update remaining steps' data with real addresses (replacing placeholders).
+   * Call this inside setTransactionSteps to ensure steps display correct data.
+   */
+  const enrichStepsWithRealData = (
+    steps: TransactionStep[],
+    fromIndex: number,
+    addresses: {
+      deployedAddress?: Address;
+      preApprovalAddress?: Address;
+      actionSafeTxHash?: `0x${string}`;
+      preApprovalSafeTxHash?: `0x${string}`;
+    },
+  ): TransactionStep[] => {
+    return steps.map((step, idx) => {
+      if (idx <= fromIndex) return step;
+
+      const { deployedAddress: addr, preApprovalAddress: paAddr, actionSafeTxHash, preApprovalSafeTxHash } = addresses;
+
+      // Re-encode queue steps with real action builder address
+      if (step.id === "queue-action" && addr) {
+        return {
+          ...step,
+          data: encodeFunctionData({ abi: canonGuardAbi, functionName: "queueTransaction", args: [addr] }),
+        };
+      }
+      if (step.id === "queue-preapprove" && paAddr) {
+        return {
+          ...step,
+          data: encodeFunctionData({ abi: canonGuardAbi, functionName: "queueTransaction", args: [paAddr] }),
+        };
+      }
+
+      // Re-encode sign steps with real safeTxHash
+      if ((step.id === "sign-safe-tx" || step.id === "sign-emergency-off") && actionSafeTxHash) {
+        return {
+          ...step,
+          safeTxHash: actionSafeTxHash,
+          data: encodeFunctionData({ abi: safeAbi, functionName: "approveHash", args: [actionSafeTxHash] }),
+        };
+      }
+      if (step.id === "sign-preapprove" && preApprovalSafeTxHash) {
+        return {
+          ...step,
+          safeTxHash: preApprovalSafeTxHash,
+          data: encodeFunctionData({ abi: safeAbi, functionName: "approveHash", args: [preApprovalSafeTxHash] }),
+        };
+      }
+
+      return step;
+    });
+  };
+
+  /**
    * Execute the current transaction step
    * For the Deploy step, this calls the real contract
    * For subsequent steps, this uses a mock (to be implemented later)
@@ -685,7 +739,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           console.log("[handleExecuteStep] Updating step", stepIndex, "to signed and advancing to", stepIndex + 1);
 
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              deployedAddress: result.deployedAddress,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             // Set next step to pending
             if (stepIndex + 1 < updated.length) {
@@ -722,7 +778,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           console.log("[handleExecuteStep] ArbitraryAction deployed at:", result.deployedAddress);
 
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              deployedAddress: result.deployedAddress,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -752,7 +810,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           console.log("[handleExecuteStep] ClaimAllowance deployed at:", result.deployedAddress);
 
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              deployedAddress: result.deployedAddress,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -782,7 +842,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           console.log("[handleExecuteStep] CappedTransferHub deployed at:", result.deployedAddress);
 
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              deployedAddress: result.deployedAddress,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -822,7 +884,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           console.log("[handleExecuteStep] Hub Child deployed at:", result.deployedAddress);
 
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              deployedAddress: result.deployedAddress,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -919,8 +983,16 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
 
         if (result) {
           console.log("[handleExecuteStep] Queued with hash:", result.txHash);
+
+          // Fetch the real safeTxHash for the sign step
+          const fetchedSafeTxHash = guardAddress
+            ? await getSafeTxHash(guardAddress as Address, deployedActionAddress!)
+            : null;
+
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              actionSafeTxHash: fetchedSafeTxHash || undefined,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -972,6 +1044,12 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
             return updated;
           });
           setCurrentStepIndex(stepIndex + 1);
+          // Advance nonce and mark it as occupied so the next sign step
+          // (e.g. pre-approval) correctly uses nonce + 1
+          if (nonce !== undefined) {
+            setCurrentSafeNonce((prev) => prev + 1);
+            setQueueItems((prev) => [...prev, { nonce, approversCount: 1 } as QueueItem]);
+          }
           // Notify that queue count may have changed
           onQueueCountChange?.();
         } else {
@@ -1013,7 +1091,9 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
           console.log("[handleExecuteStep] Pre-approval deployed at:", result.preApprovalAddress);
 
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              preApprovalAddress: result.preApprovalAddress,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -1051,8 +1131,16 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
 
         if (result) {
           console.log("[handleExecuteStep] Pre-approval queued with hash:", result.txHash);
+
+          // Fetch the real safeTxHash for the sign-preapprove step
+          const fetchedSafeTxHash = guardAddress
+            ? await getSafeTxHash(guardAddress as Address, preApprovalAddress!)
+            : null;
+
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              preApprovalSafeTxHash: fetchedSafeTxHash || undefined,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -1136,8 +1224,16 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
 
         if (result) {
           console.log("[handleExecuteStep] Queued emergency off with hash:", result.txHash);
+
+          // Fetch the real safeTxHash for the sign-emergency-off step
+          const fetchedSafeTxHash = guardAddress
+            ? await getSafeTxHash(guardAddress as Address, UNSET_EMERGENCY_MODE_ACTION)
+            : null;
+
           setTransactionSteps((prev) => {
-            const updated = [...prev];
+            const updated = enrichStepsWithRealData(prev, stepIndex, {
+              actionSafeTxHash: fetchedSafeTxHash || undefined,
+            });
             updated[stepIndex] = { ...updated[stepIndex], status: "signed" };
             if (stepIndex + 1 < updated.length) {
               updated[stepIndex + 1] = { ...updated[stepIndex + 1], status: "pending" };
@@ -1230,6 +1326,7 @@ export const NewActionSection = ({ onQueueCountChange }: NewActionSectionProps) 
       executeQueueTransaction,
       executeSignTransaction,
       executeDeployPreApproval,
+      getSafeTxHash,
       guardAddress,
       safeAddress,
       deployedActionAddress,

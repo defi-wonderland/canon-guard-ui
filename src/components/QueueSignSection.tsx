@@ -45,7 +45,7 @@ export const QueueSignSection = ({ onQueueCountChange }: QueueSignSectionProps) 
   const navigationState = location.state as QueueSignState | null;
 
   // Transaction executor
-  const { executeSignTransaction } = useTransactionExecutor();
+  const { executeSignTransaction, getSafeTxHash } = useTransactionExecutor();
 
   // Steps state
   const [transactionSteps, setTransactionSteps] = useState<TransactionStep[]>([]);
@@ -106,6 +106,37 @@ export const QueueSignSection = ({ onQueueCountChange }: QueueSignSectionProps) 
       setInitialized(true);
     }
   }, [navigationState, initialized, guardAddress, safeAddress, buildSignSteps, navigateWithParams]);
+
+  // Fetch safeTxHash for display once initialized
+  useEffect(() => {
+    if (!initialized || !navigationState || !guardAddress) return;
+
+    const fetchHash = async () => {
+      try {
+        const hash = await getSafeTxHash(
+          guardAddress as Address,
+          navigationState.actionBuilderAddress,
+          navigationState.nonce,
+        );
+        if (hash) {
+          const realSignData = encodeFunctionData({
+            abi: safeAbi,
+            functionName: "approveHash",
+            args: [hash],
+          });
+          setTransactionSteps((prev) =>
+            prev.map((step) =>
+              step.id === "sign-transaction" ? { ...step, data: realSignData, safeTxHash: hash } : step,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("[QueueSignSection] Failed to fetch safeTxHash for display:", error);
+      }
+    };
+
+    fetchHash();
+  }, [initialized, navigationState, guardAddress, getSafeTxHash]);
 
   // Fetch nonce data
   useEffect(() => {

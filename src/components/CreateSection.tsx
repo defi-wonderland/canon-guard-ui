@@ -5,6 +5,7 @@ import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { useNavigateWithParams } from "~/hooks";
 import { NewActionSection } from "./NewAction";
+import { StepContentWrapper as ContentWrapper, StepPageContainer as Container } from "./NewAction/shared";
 
 // Action type definitions
 type ActionType = "new-action" | "new-action-hub" | "import-json" | "canon-list";
@@ -134,37 +135,27 @@ export const CreateSection = ({ onQueueCountChange }: CreateSectionProps) => {
 };
 
 // Styled components
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
-const TitleSection = styled(Box)({
+const TitleSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
   padding: "32px 8px 12px",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "20px 4px 10px",
+  },
+}));
 
-const PageTitle = styled(Typography)({
+const PageTitle = styled(Typography)(({ theme }) => ({
   fontSize: "24px",
   fontWeight: 600,
   fontStyle: "italic",
   lineHeight: "32px",
   color: canonHeaderTokens.foreground.accent0,
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "20px",
+    lineHeight: "28px",
+  },
+}));
 
 const HelpIconWrapper = styled(Box)({
   display: "flex",
@@ -199,7 +190,7 @@ const CardsContainer = styled(Box)({
 });
 
 // Card components
-const CardContainer = styled(Box)({
+const CardContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "stretch",
   borderRadius: "8px",
@@ -209,17 +200,26 @@ const CardContainer = styled(Box)({
   "&:hover": {
     opacity: 0.85,
   },
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+  },
+}));
 
-const IconArea = styled(Box)({
+const IconArea = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   width: "132px",
   backgroundColor: canonHeaderTokens.background.layer1,
-});
+  flexShrink: 0,
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+    minHeight: "64px",
+    borderBottom: `1px dashed ${canonHeaderTokens.background.layer0}`,
+  },
+}));
 
-const ContentArea = styled(Box)({
+const ContentArea = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   gap: "8px",
@@ -227,7 +227,11 @@ const ContentArea = styled(Box)({
   padding: "20px 24px",
   backgroundColor: canonHeaderTokens.background.layer1,
   borderLeft: `1px dashed ${canonHeaderTokens.background.layer0}`,
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "16px",
+    borderLeft: "none",
+  },
+}));
 
 const CardTitle = styled(Typography)({
   fontSize: "14px",
@@ -241,5 +245,5 @@ const CardDescription = styled(Typography)({
   fontWeight: 400,
   lineHeight: "20px",
   color: canonHeaderTokens.foreground.accent20,
-  maxWidth: "264px",
+  maxWidth: "100%",
 });

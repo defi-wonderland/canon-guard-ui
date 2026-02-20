@@ -39,15 +39,20 @@ export const Breadcrumb = ({
   );
 };
 
-const BreadcrumbContainer = styled(Box)({
+const BreadcrumbContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
   padding: "32px 8px 12px 8px",
   width: "100%",
-});
+  flexWrap: "wrap",
+  [theme.breakpoints.down("sm")]: {
+    gap: "8px",
+    padding: "20px 4px 10px 4px",
+  },
+}));
 
-const BreadcrumbLink = styled(Typography)({
+const BreadcrumbLink = styled(Typography)(({ theme }) => ({
   fontSize: "24px",
   fontWeight: 600,
   fontStyle: "italic",
@@ -58,15 +63,24 @@ const BreadcrumbLink = styled(Typography)({
   "&:hover": {
     color: canonHeaderTokens.foreground.accent10,
   },
-});
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "20px",
+    lineHeight: "28px",
+  },
+}));
 
-const CurrentPage = styled(Typography)({
+const CurrentPage = styled(Typography)(({ theme }) => ({
   fontSize: "24px",
   fontWeight: 600,
   fontStyle: "italic",
   lineHeight: "32px",
   color: canonHeaderTokens.foreground.accent0,
-});
+  overflowWrap: "anywhere",
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "20px",
+    lineHeight: "28px",
+  },
+}));
 
 const HelpIconWrapper = styled(Box)({
   display: "flex",

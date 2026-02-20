@@ -1,6 +1,34 @@
 import { useState } from "react";
-import { Box, Typography, styled } from "@mui/material";
 import { Address } from "viem";
+import {
+  PreviewCard,
+  PreviewHeader,
+  PreviewTitle,
+  PreviewRow,
+  PreviewInfo,
+  PreviewLabel,
+  PreviewValue,
+  EditButton,
+  ParametersToggle,
+  ToggleContent,
+  ToggleLabel,
+  ParametersContent,
+  ParameterRow,
+  ParameterLabel,
+  ParameterValue,
+  DeployOptionsCard,
+  CheckboxRow,
+  CheckboxLeft,
+  LockedCheckbox,
+  CheckIconWrapper,
+  LockIconWrapper,
+  Checkbox,
+  CheckboxLabel,
+  RightContent,
+  PathTag,
+  PathLabel,
+  InfoIconWrapper,
+} from "~/components/NewAction/shared/SharedStyledComponents";
 import {
   VectorSquareIcon,
   PlusIcon,
@@ -16,10 +44,16 @@ import { StyledTooltip } from "~/components/shared/StyledComponents";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType, CappedTokenTransfersHubInfo } from "~/types/canon-guard";
 import { HUB_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection, ActionButton, ButtonRow } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  ActionButton,
+  ButtonRow,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { HubChildFormData } from "./DeployHubChildFormStep";
 
-// Tooltip content
 const TOOLTIP_DEPLOY_SAVE = "Deploy and save for future use. Deploying and saving doesn't require multisig.";
 const TOOLTIP_PROPOSE_TRANSACTION_SLOW =
   "Request signatures from Safe signers. This transaction will follow the slow path with a 7-day delay.";
@@ -43,12 +77,10 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
   const [parametersExpanded, setParametersExpanded] = useState(false);
   const [proposeTransaction, setProposeTransaction] = useState(true);
 
-  // Handle initiate
   const handleInitiate = () => {
     onInitiate(proposeTransaction);
   };
 
-  // Get recipient from hub info
   const recipient = hubInfo?.recipient || "Unknown";
 
   return (
@@ -56,22 +88,20 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
       <ContentWrapper>
         <Breadcrumb onNavigateToCreate={onNavigateToCreate} currentPage='Deploy Child' />
 
-        {/* Preview Action Section */}
-        <FormSection label='PREVIEW ACTION'>
-          <ActionPreviewCard>
+        <FormSection label='PREVIEW ACTION' data-testid='hub-child-review-section'>
+          <PreviewCard>
             <PreviewHeader>
-              <ActionTitle>{formData.title || "Untitled Transaction"}</ActionTitle>
+              <PreviewTitle>{formData.title || "Untitled Transaction"}</PreviewTitle>
               <PreviewRow>
-                <FactoryInfo>
-                  <FactoryLabel>FROM HUB</FactoryLabel>
+                <PreviewInfo>
+                  <PreviewLabel>FROM HUB</PreviewLabel>
                   <VectorSquareIcon size={16} color={canonHeaderTokens.foreground.accent20} />
-                  <FactoryValue>HUB: {HUB_DISPLAY_NAMES[ActionFactoryType.CAPPED_TOKEN_TRANSFERS]}</FactoryValue>
-                </FactoryInfo>
+                  <PreviewValue>HUB: {HUB_DISPLAY_NAMES[ActionFactoryType.CAPPED_TOKEN_TRANSFERS]}</PreviewValue>
+                </PreviewInfo>
                 <EditButton onClick={onEdit}>EDIT</EditButton>
               </PreviewRow>
             </PreviewHeader>
 
-            {/* Parameters Expandable Section */}
             <ParametersToggle onClick={() => setParametersExpanded(!parametersExpanded)}>
               <ToggleContent>
                 {parametersExpanded ? (
@@ -117,13 +147,11 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
                 </ParameterRow>
               </ParametersContent>
             )}
-          </ActionPreviewCard>
+          </PreviewCard>
         </FormSection>
 
-        {/* Setup Action Deploy Section */}
         <FormSection label='SETUP ACTION DEPLOY'>
           <DeployOptionsCard>
-            {/* Deploy & Save Transaction - Locked */}
             <CheckboxRow>
               <CheckboxLeft>
                 <LockedCheckbox>
@@ -143,7 +171,6 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
               </StyledTooltip>
             </CheckboxRow>
 
-            {/* Propose Transaction */}
             <CheckboxRow style={{ borderBottom: "none" }}>
               <CheckboxLeft>
                 <Checkbox checked={proposeTransaction} onClick={() => setProposeTransaction(!proposeTransaction)}>
@@ -152,7 +179,7 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
                 <CheckboxLabel>Propose Transaction</CheckboxLabel>
               </CheckboxLeft>
               <RightContent>
-                <PathTag $isFastPath={isFastPath}>
+                <PathTag>
                   {isFastPath ? (
                     <ZapIcon size={12} color={canonHeaderTokens.brand.green} />
                   ) : (
@@ -175,7 +202,7 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
               <ActionButton variant='secondary' onClick={onBack}>
                 BACK
               </ActionButton>
-              <ActionButton variant='primary' onClick={handleInitiate}>
+              <ActionButton variant='primary' data-testid='initiate-button' onClick={handleInitiate}>
                 INITIATE
               </ActionButton>
             </ButtonRow>
@@ -185,249 +212,3 @@ export const DeployHubChildReviewStep = (props: DeployHubChildReviewStepProps) =
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
-const ActionPreviewCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
-});
-
-const PreviewHeader = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "20px",
-  padding: "16px",
-});
-
-const ActionTitle = styled(Typography)({
-  fontSize: "18px",
-  fontWeight: 600,
-  lineHeight: "28px",
-  color: canonHeaderTokens.foreground.accent0,
-});
-
-const PreviewRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-});
-
-const FactoryInfo = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const FactoryLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const FactoryValue = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-  textTransform: "uppercase",
-});
-
-const EditButton = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-  cursor: "pointer",
-  "&:hover": {
-    color: canonHeaderTokens.foreground.accent10,
-  },
-});
-
-const ParametersToggle = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  height: "36px",
-  backgroundColor: canonHeaderTokens.background.layer1Variation,
-  borderTop: `0.5px solid ${canonHeaderTokens.foreground.accent50}`,
-  cursor: "pointer",
-  "&:hover": {
-    opacity: 0.9,
-  },
-});
-
-const ToggleContent = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  padding: "12px",
-});
-
-const ToggleLabel = styled(Typography)({
-  fontSize: "11px",
-  fontWeight: 600,
-  lineHeight: "12px",
-  color: canonHeaderTokens.foreground.accent30,
-  textTransform: "uppercase",
-});
-
-const ParametersContent = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-});
-
-const ParameterRow = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$noBorder",
-})<{ $noBorder?: boolean }>(({ $noBorder }) => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: "8px",
-  padding: "16px 16px 16px 36px",
-  borderTop: $noBorder ? "none" : `0.5px solid ${canonHeaderTokens.foreground.accent50}`,
-}));
-
-const ParameterLabel = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const ParameterValue = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent0,
-  fontFamily: "monospace",
-  wordBreak: "break-all",
-});
-
-const DeployOptionsCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
-});
-
-const CheckboxRow = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "16px",
-  borderBottom: `1px dashed ${canonHeaderTokens.foreground.accent50}`,
-});
-
-const CheckboxLeft = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "20px",
-});
-
-const LockedCheckbox = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "28px",
-  height: "28px",
-  borderRadius: "8px",
-  backgroundColor: canonHeaderTokens.brand.green,
-  position: "relative",
-  "&:hover": {
-    "& .check-icon": {
-      opacity: 0,
-    },
-    "& .lock-icon": {
-      opacity: 1,
-    },
-  },
-});
-
-const CheckIconWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  transition: "opacity 0.15s ease",
-});
-
-const LockIconWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  position: "absolute",
-  opacity: 0,
-  transition: "opacity 0.15s ease",
-});
-
-const Checkbox = styled(Box)<{ checked: boolean }>(({ checked }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "28px",
-  height: "28px",
-  borderRadius: "8px",
-  backgroundColor: checked ? canonHeaderTokens.brand.green : "transparent",
-  border: checked ? "none" : `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-  "&:hover": {
-    opacity: 0.9,
-  },
-}));
-
-const CheckboxLabel = styled(Typography)({
-  fontSize: "14px",
-  fontWeight: 600,
-  lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent0,
-});
-
-const RightContent = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const PathTag = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "$isFastPath",
-})<{ $isFastPath: boolean }>({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const PathLabel = styled(Typography, {
-  shouldForwardProp: (prop) => prop !== "$isFastPath",
-})<{ $isFastPath: boolean }>(({ $isFastPath }) => ({
-  fontSize: "11px",
-  fontWeight: 400,
-  lineHeight: "12px",
-  color: $isFastPath ? canonHeaderTokens.brand.green : canonHeaderTokens.status.red,
-}));
-
-const InfoIconWrapper = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-});

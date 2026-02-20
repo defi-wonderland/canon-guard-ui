@@ -1,11 +1,32 @@
 import { useMemo } from "react";
-import { Box, Typography, styled } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import { isAddress } from "viem";
 import { BoxIcon, AsteriskIcon } from "~/components/icons";
 import { canonHeaderTokens } from "~/config/themes/safeTheme";
 import { ActionFactoryType } from "~/types/canon-guard";
 import { FACTORY_DISPLAY_NAMES } from "~/utils/factoryDisplay";
-import { Breadcrumb, FormSection, FormInput, ActionButton, ButtonRow } from "../shared";
+import {
+  Breadcrumb,
+  FormSection,
+  FormInput,
+  TokenSelector,
+  ActionButton,
+  ButtonRow,
+  FactorySelector,
+  FactoryLabel,
+  FactoryValue,
+  LeftContent,
+  ChangeButton,
+  TransactionTitleCard,
+  CardContent,
+  FormInputWrapper,
+  PublicBadge,
+  EncryptionNote,
+  NoteText,
+  LearnMoreLink,
+  StepContentWrapper as ContentWrapper,
+  StepPageContainer as Container,
+} from "../shared";
 import type { ClaimAllowanceFormData } from "./index";
 
 // Validation helpers
@@ -101,9 +122,8 @@ export const ClaimAllowanceFormStep = ({
         <FormSection label='SET ACTION PARAMETERS'>
           <ParametersCard>
             <CardContent>
-              <FormInput
+              <TokenSelector
                 label='Token Address'
-                placeholder='0x...'
                 value={formData.token}
                 onChange={(value) => updateField("token", value)}
                 error={errors.token}
@@ -137,119 +157,6 @@ export const ClaimAllowanceFormStep = ({
     </Container>
   );
 };
-
-const Container = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  padding: "32px 120px 64px",
-  width: "100%",
-  boxSizing: "border-box",
-});
-
-const ContentWrapper = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  width: "100%",
-  maxWidth: "576px",
-});
-
-const FactorySelector = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "16px",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  cursor: "pointer",
-  transition: "opacity 0.2s ease",
-  "&:hover": {
-    opacity: 0.85,
-  },
-});
-
-const LeftContent = styled(Box)({
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-});
-
-const FactoryLabel = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const FactoryValue = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent10,
-  textTransform: "uppercase",
-});
-
-const ChangeButton = styled(Typography)({
-  fontSize: "12px",
-  fontWeight: 400,
-  lineHeight: "16px",
-  color: canonHeaderTokens.foreground.accent20,
-});
-
-const TransactionTitleCard = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  backgroundColor: canonHeaderTokens.background.layer1,
-  borderRadius: "8px",
-  overflow: "hidden",
-  position: "relative",
-});
-
-const CardContent = styled(Box)({
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px",
-  padding: "24px",
-});
-
-const FormInputWrapper = styled(Box)({
-  position: "relative",
-});
-
-const PublicBadge = styled(Box)({
-  position: "absolute",
-  top: "42px",
-  right: "14px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "6px 12px",
-  borderRadius: "100px",
-  border: `1px solid ${canonHeaderTokens.amber.border}`,
-  fontSize: "11px",
-  fontWeight: 400,
-  lineHeight: "12px",
-  color: canonHeaderTokens.amber.text,
-});
-
-const EncryptionNote = styled(Box)({
-  display: "flex",
-  alignItems: "flex-start",
-  gap: "6px",
-});
-
-const NoteText = styled(Typography)({
-  fontSize: "13px",
-  fontWeight: 400,
-  lineHeight: "20px",
-  color: canonHeaderTokens.foreground.accent10,
-});
-
-const LearnMoreLink = styled("span")({
-  textDecoration: "underline",
-  cursor: "pointer",
-});
 
 const ParametersCard = styled(Box)({
   display: "flex",

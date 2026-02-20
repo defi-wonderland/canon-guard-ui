@@ -178,13 +178,13 @@ export const QueueItem = ({
           </TitleSection>
           <ActionSection>
             {showRemoveButton && (isHovered || isRemoveLoading) && (
-              <RemoveButton onClick={onRemove} disabled={isRemoveLoading}>
+              <QueueActionButton onClick={onRemove} disabled={isRemoveLoading}>
                 {isRemoveLoading ? (
                   <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent10 }} />
                 ) : (
                   "REMOVE"
                 )}
-              </RemoveButton>
+              </QueueActionButton>
             )}
             {showExecuteButton && (
               <StyledTooltip
@@ -208,13 +208,13 @@ export const QueueItem = ({
               </StyledTooltip>
             )}
             {showSignButton && (
-              <SignButton onClick={onSign} disabled={isSignLoading} data-testid='sign-button'>
+              <QueueActionButton onClick={onSign} disabled={isSignLoading} data-testid='sign-button'>
                 {isSignLoading ? (
                   <CircularProgress size={14} sx={{ color: canonHeaderTokens.foreground.accent10 }} />
                 ) : (
                   "SIGN"
                 )}
-              </SignButton>
+              </QueueActionButton>
             )}
             {showNoAction && !showRemoveButton && <EmptyAction />}
           </ActionSection>
@@ -293,16 +293,19 @@ const getSignedState = (count: number, threshold: number): SignedState => {
 };
 
 // Styled Components
-const ItemContainer = styled(Box)({
+const ItemContainer = styled(Box)(({ theme }) => ({
   display: "flex",
   width: "100%",
   borderRadius: "8px",
   overflow: "hidden",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+  },
+}));
 
 const LeftPanel = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$isClickable",
-})<{ $isClickable?: boolean }>(({ $isClickable }) => ({
+})<{ $isClickable?: boolean }>(({ $isClickable, theme }) => ({
   display: "flex",
   flexDirection: "column",
   justifyContent: "space-between",
@@ -311,13 +314,24 @@ const LeftPanel = styled(Box, {
   padding: "16px",
   backgroundColor: "#202026", // layer1-variation
   cursor: $isClickable ? "pointer" : "default",
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+    minWidth: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "12px 14px",
+  },
 }));
 
-const NonceSection = styled(Box)({
+const NonceSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-end",
-});
+  [theme.breakpoints.down("sm")]: {
+    justifyContent: "flex-start",
+  },
+}));
 
 const NonceText = styled("span")({
   fontFamily: "Inter, sans-serif",
@@ -342,12 +356,16 @@ const WarningText = styled("span")({
   color: canonHeaderTokens.status.amber,
 });
 
-const SignedSection = styled(Box)({
+const SignedSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   width: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    width: "auto",
+    gap: "8px",
+  },
+}));
 
 const SignedIndicator = styled(Box, {
   shouldForwardProp: (prop) => prop !== "$state",
@@ -407,7 +425,7 @@ const SignedCount = styled("span", {
         : canonHeaderTokens.foreground.accent10,
 }));
 
-const RightPanel = styled(Box)({
+const RightPanel = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   flex: 1,
@@ -415,14 +433,23 @@ const RightPanel = styled(Box)({
   gap: "32px",
   backgroundColor: canonHeaderTokens.background.layer1,
   justifyContent: "center",
-});
+  [theme.breakpoints.down("sm")]: {
+    padding: "12px 14px",
+    gap: "14px",
+  },
+}));
 
-const TopRow = styled(Box)({
+const TopRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "flex-start",
   justifyContent: "space-between",
   width: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "10px",
+  },
+}));
 
 const TitleSection = styled(Box)({
   display: "flex",
@@ -470,13 +497,16 @@ const AddressText = styled("span")({
   color: canonHeaderTokens.foreground.accent20,
 });
 
-const ActionSection = styled(Box)({
+const ActionSection = styled(Box)(({ theme }) => ({
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
   gap: "8px",
   height: "36px",
-});
+  [theme.breakpoints.down("sm")]: {
+    width: "100%",
+  },
+}));
 
 const ExecuteButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   display: "flex",
@@ -500,30 +530,7 @@ const ExecuteButton = styled("button")<{ disabled?: boolean }>(({ disabled }) =>
   },
 }));
 
-const SignButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minWidth: "80px",
-  height: "28px",
-  padding: "8px 20px",
-  borderRadius: "100px",
-  border: `1px solid ${canonHeaderTokens.foreground.accent40}`,
-  backgroundColor: "transparent",
-  cursor: disabled ? "not-allowed" : "pointer",
-  fontFamily: "Inter, sans-serif",
-  fontSize: "12px",
-  fontWeight: 600,
-  letterSpacing: "0.6px",
-  textTransform: "uppercase",
-  color: canonHeaderTokens.foreground.accent10,
-  opacity: disabled ? 0.6 : 1,
-  "&:hover": {
-    opacity: disabled ? 0.6 : 0.8,
-  },
-}));
-
-const RemoveButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
+const QueueActionButton = styled("button")<{ disabled?: boolean }>(({ disabled }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -551,12 +558,17 @@ const EmptyAction = styled(Box)({
   height: "36px",
 });
 
-const BottomRow = styled(Box)({
+const BottomRow = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   width: "100%",
-});
+  [theme.breakpoints.down("sm")]: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "8px",
+  },
+}));
 
 const FactoryInfo = styled(Box)({
   display: "flex",
@@ -573,11 +585,15 @@ const FactoryLabel = styled("span")({
   textTransform: "uppercase",
 });
 
-const FactoryInfoSection = styled(Box)({
+const FactoryInfoSection = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "16px",
-});
+  [theme.breakpoints.down("sm")]: {
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+}));
 
 const HubInfo = styled(Box)({
   display: "flex",
@@ -593,11 +609,15 @@ const HubLabel = styled("span")({
   color: canonHeaderTokens.foreground.accent20,
 });
 
-const StatusInfo = styled(Box)({
+const StatusInfo = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   gap: "12px",
-});
+  [theme.breakpoints.down("sm")]: {
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+}));
 
 const DelayInfo = styled(Box)({
   display: "flex",
