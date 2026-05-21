@@ -47,12 +47,28 @@ interface ChainIconByIdProps extends ChainIconProps {
   chainId: SupportedChainId;
 }
 
+/**
+ * Sepolia Testnet Icon - Ethereum icon with a testnet indicator
+ */
+export const SepoliaIcon = ({ size = 14, className }: ChainIconProps) => (
+  <ChainIconImage
+    src={ethereumIcon}
+    alt='Sepolia'
+    width={size}
+    height={size}
+    className={className}
+    style={{ filter: "hue-rotate(200deg) saturate(0.7)" }}
+  />
+);
+
 export const ChainIcon = ({ chainId, size = 14, className }: ChainIconByIdProps) => {
   switch (chainId) {
     case SupportedChainId.ETHEREUM:
       return <EthereumIcon size={size} className={className} />;
     case SupportedChainId.OPTIMISM:
       return <OptimismIcon size={size} className={className} />;
+    case SupportedChainId.SEPOLIA:
+      return <SepoliaIcon size={size} className={className} />;
     default: {
       // Fallback to a colored circle based on chain config
       const config = getChainConfig(chainId);

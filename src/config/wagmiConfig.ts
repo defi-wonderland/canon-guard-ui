@@ -1,7 +1,7 @@
 import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 import { rainbowWallet, walletConnectWallet, injectedWallet } from "@rainbow-me/rainbowkit/wallets";
 import { createConfig, http, cookieStorage, createStorage } from "wagmi";
-import { mainnet, optimism } from "wagmi/chains";
+import { mainnet, optimism, sepolia } from "wagmi/chains";
 import { getConfig } from "~/config";
 import { SUPPORTED_CHAINS, SupportedChainId } from "~/config/chains";
 import { e2eWallet } from "./e2eConnector";
@@ -34,7 +34,7 @@ const connectors = connectorsForWallets(
 );
 
 export const config = createConfig({
-  chains: [mainnet, optimism],
+  chains: [mainnet, optimism, sepolia],
   ssr: false, // Client-side only app
   storage: createStorage({
     storage: cookieStorage,
@@ -42,6 +42,7 @@ export const config = createConfig({
   transports: {
     [mainnet.id]: http(SUPPORTED_CHAINS[SupportedChainId.ETHEREUM].rpcUrl),
     [optimism.id]: http(SUPPORTED_CHAINS[SupportedChainId.OPTIMISM].rpcUrl),
+    [sepolia.id]: http(SUPPORTED_CHAINS[SupportedChainId.SEPOLIA].rpcUrl),
   },
   batch: { multicall: true },
   connectors,

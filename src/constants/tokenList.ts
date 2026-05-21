@@ -2960,8 +2960,38 @@ const OPTIMISM_TOKENS: TokenInfo[] = [
   },
 ];
 
+const SEPOLIA_TOKENS: TokenInfo[] = [
+  {
+    chainId: 11155111,
+    address: "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9" as Address,
+    name: "Wrapped Ether",
+    symbol: "WETH",
+    decimals: 18,
+    logoURI:
+      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png",
+  },
+  {
+    chainId: 11155111,
+    address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" as Address,
+    name: "USDCoin",
+    symbol: "USDC",
+    decimals: 6,
+    logoURI:
+      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png",
+  },
+  {
+    chainId: 11155111,
+    address: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0" as Address,
+    name: "Tether USD",
+    symbol: "USDT",
+    decimals: 6,
+    logoURI:
+      "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png",
+  },
+];
+
 /** Combined token list for all supported chains */
-export const TOKEN_LIST: TokenInfo[] = [...ETHEREUM_TOKENS, ...OPTIMISM_TOKENS];
+export const TOKEN_LIST: TokenInfo[] = [...ETHEREUM_TOKENS, ...OPTIMISM_TOKENS, ...SEPOLIA_TOKENS];
 
 /** Get tokens filtered by chain ID */
 export const getTokensByChainId = (chainId: number): TokenInfo[] => {

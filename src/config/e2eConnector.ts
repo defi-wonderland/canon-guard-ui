@@ -9,12 +9,12 @@ import {
   E2EProviderWithInternal,
 } from "@wonderland/walletless";
 import { createConnector } from "wagmi";
-import { mainnet, optimism } from "wagmi/chains";
+import { mainnet, optimism, sepolia } from "wagmi/chains";
 import { TEST_RPC_URLS } from "./chains";
 
 // Create an external provider so tests can control it via setSigningAccount
 export const e2eProvider = createE2EProvider({
-  chains: [mainnet, optimism],
+  chains: [mainnet, optimism, sepolia],
   rpcUrls: TEST_RPC_URLS,
 });
 
