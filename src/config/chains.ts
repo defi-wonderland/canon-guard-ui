@@ -9,7 +9,7 @@
  */
 
 import { Chain } from "viem";
-import { mainnet, optimism } from "viem/chains";
+import { mainnet, optimism, sepolia } from "viem/chains";
 import { getEnv } from "./env";
 
 const { IS_PLAYWRIGHT } = getEnv();
@@ -21,6 +21,7 @@ const { IS_PLAYWRIGHT } = getEnv();
 export const TEST_RPC_URLS = {
   [optimism.id]: "http://127.0.0.1:8545",
   [mainnet.id]: "http://127.0.0.1:8546",
+  [sepolia.id]: "http://127.0.0.1:8547",
 } as const;
 
 /**
@@ -29,6 +30,7 @@ export const TEST_RPC_URLS = {
 export enum SupportedChainId {
   ETHEREUM = 1,
   OPTIMISM = 10,
+  SEPOLIA = 11155111,
 }
 
 /**
@@ -73,6 +75,15 @@ export const SUPPORTED_CHAINS: Record<SupportedChainId, ChainConfig> = {
     rpcUrl: IS_PLAYWRIGHT ? TEST_RPC_URLS[optimism.id] : getRpcUrl("VITE_RPC_OPTIMISM"),
     blockExplorerUrl: "https://optimistic.etherscan.io",
     iconColor: "#FF0420",
+  },
+  [SupportedChainId.SEPOLIA]: {
+    id: SupportedChainId.SEPOLIA,
+    name: "Sepolia Testnet",
+    shortName: "Sepolia",
+    chain: sepolia,
+    rpcUrl: IS_PLAYWRIGHT ? TEST_RPC_URLS[sepolia.id] : getRpcUrl("VITE_RPC_SEPOLIA"),
+    blockExplorerUrl: "https://sepolia.etherscan.io",
+    iconColor: "#6B8AFF",
   },
 };
 
