@@ -1,4 +1,4 @@
-# 🏦 Canon Guard UI
+# 🏦 Canon Guard UI 2
 
 A web application for managing Canon Guard multisig security system. Canon Guard adds timelock protection to Gnosis Safe operations, preventing immediate transaction execution and providing time to review and stop malicious actions.
 
